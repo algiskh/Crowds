@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b425686a8bddbd940bbb841f02b75b3a, type: 3}
+  m_Name: MainHolder
+  m_EditorClassIdentifier: 
+  _mobConfig: {fileID: 11400000, guid: f126796bf60eb4e408c02843d6c02878, type: 2}
+  _effectsHolder: {fileID: 11400000, guid: f0d7d40b821587347b41124124bedf8e, type: 2}
+  _prefab: {fileID: 4635986969134950211, guid: d3e264603209c9c4d9bc3e4eecaa0243, type: 3}
+  _lootPrefab: {fileID: 0}
+  _spawnCooldown: 2
+  _pathRecalculationInterval: 0.5
+  _utilizationTimer: 5
+  _cameraSpeed: 3
+  _minSpawnCoolDown: 1
+  _maxSpawnCoolDown: 10
+  _playerConfig: {fileID: 11400000, guid: e76d675ca41bc2a4a9e6a9a2efd51893, type: 2}
+  _gunConfig: {fileID: 11400000, guid: 5ddadc99ce8bf824a8e6d7d90ed111d9, type: 2}
+  _soundHolder: {fileID: 11400000, guid: 729264cdb4e2fb743802d88da75cc8e0, type: 2}
+  _defaultCollisionRadius: 0.5
