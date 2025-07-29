@@ -8,6 +8,7 @@ public class MainHolder : ScriptableObject
 
     [SerializeField, BoxGroup("Configs")] private MobConfig _mobConfig;
 	[SerializeField, BoxGroup("Configs")] private EffectsHolder _effectsHolder;
+	[SerializeField, BoxGroup("Configs")] private DecalsConfigHolder _decalsConfigHolder;
 
 	[SerializeField,BoxGroup("Prefabs")] private Mob _prefab;
 	[SerializeField, BoxGroup("Prefabs")] private Loot _lootPrefab;
@@ -42,6 +43,7 @@ public class MainHolder : ScriptableObject
 	public float CameraSpeed => _cameraSpeed;
 	public FollowTarget CameraFollowTarget => FollowTarget;
 	public PlayerConfig PlayerConfig => _playerConfig;
+	public DecalsConfigHolder DecalsConfigHolder => _decalsConfigHolder;
 	public MobConfig GetConfig(string id) => _mobConfig;
 	public GunConfig GunConfig => _gunConfig;
 	public EffectsHolder EffectsHolder => _effectsHolder;

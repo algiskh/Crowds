@@ -27,6 +27,10 @@ namespace ECS
 					case BulletCheckType.OverlapSphere:
 						overlapped = Physics.OverlapSphere(position, bullet.Radius);
 						break;
+					case BulletCheckType.OverlapBox:
+						var halfExtents = new Vector3(bullet.Radius, bullet.Radius, bullet.Radius);
+						overlapped = Physics.OverlapBox(position, halfExtents, move.Transform.rotation);
+						break;
 
 					case BulletCheckType.Raycast:
 						// Можно хранить в BulletComponent предыдущее положение (prevPosition),
@@ -40,14 +44,13 @@ namespace ECS
 							overlapped = new Collider[hits.Length];
 							for (int i = 0; i < hits.Length; i++)
 								overlapped[i] = hits[i].collider;
+							Debug.Log($"Raycast hit {hits.Length} colliders from bullet {bulletEntity} at position {position} with direction {direction}");
 						}
 						else
 						{
 							overlapped = new Collider[0];
 						}
 						break;
-
-						// Здесь могут быть другие режимы...
 				}
 
 				if (overlapped != null && overlapped.Length > 0)

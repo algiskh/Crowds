@@ -1,5 +1,5 @@
 ﻿using Leopotam.EcsLite;
-
+using UnityEngine;
 namespace ECS
 {
 	public class DamageSystem : IEcsRunSystem
@@ -39,7 +39,7 @@ namespace ECS
 			}
 			#endregion
 
-			#region Handling DeadZombies
+			#region Handling zombie health
 			var mobFilter = world.Filter<MobComponent>().Inc<HealthComponent>().End();
 			foreach (var mobEntity in mobFilter)
 			{
@@ -47,16 +47,19 @@ namespace ECS
 					continue;
 				ref var mobComponent = ref mobPool.Get(mobEntity);
 				ref var healthComponent = ref healthPool.Get(mobEntity);
+
+				var position = mobComponent.Value.transform.position;
+
 				if (healthComponent.CurrentHealth <= 0)
 				{
 					mobSpawnPool.Value.Add(mobComponent.Value);
-					mobComponent.Value.SimpleAnimator.Stop();
+					//mobComponent.Value.SimpleAnimator.Stop();
 					mobComponent.Value.gameObject.SetActive(false);
 
 					//Request Effect
 					ref var effectRequest = ref world.CreateSimpleEntity<RequestEffectComponent>();
 					effectRequest.EffectId = "zombie_dead";
-					effectRequest.Position = mobComponent.Value.transform.position;
+					effectRequest.Position = position;
 
 					world.DelEntity(mobEntity);
 				}

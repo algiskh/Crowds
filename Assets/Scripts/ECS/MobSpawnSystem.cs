@@ -31,7 +31,7 @@ namespace ECS
 				var spawnPoint = spawnPoints.Value.GetRandomElement();
 
 
-				Mob mob = SpawnMob(mobPool, mobConfig, spawnPoint);
+				Mob mob = SpawnMob(mobPool, mobConfig);
 
 				mob.transform.position = spawnPoint.position;
 				var mobEntity = world.NewEntity();
@@ -39,14 +39,14 @@ namespace ECS
 				var mobComponentPool = world.GetPool<MobComponent>();
 				var moveComponentPool = world.GetPool<MoveComponent>();
 				var healthComponentPool = world.GetPool<HealthComponent>();
-				var collisionComponentPool = world.GetPool<CollisionComponent>();
+				var colliderComponentPool = world.GetPool<ColliderComponent>();
 				var pathRecalculationPool = world.GetPool<PathRecalculation>();
 				var lookerPool = world.GetPool<LookAtCamera>();
 
 				ref var mobComponent = ref mobComponentPool.Add(mobEntity);
 				ref var moveComponent = ref moveComponentPool.Add(mobEntity);
 				ref var healthComponent = ref healthComponentPool.Add(mobEntity);
-				ref var collisionComponent = ref collisionComponentPool.Add(mobEntity);
+				ref var colliderComponent = ref colliderComponentPool.Add(mobEntity);
 				ref var pathRecalculationComponent = ref pathRecalculationPool.Add(mobEntity);
 				ref var looker = ref lookerPool.Add(mobEntity);
 
@@ -60,8 +60,8 @@ namespace ECS
 				moveComponent.Transform = mob.transform;
 				healthComponent.CurrentHealth = mobConfig.Health;
 				healthComponent.MaxHealth = mobConfig.Health;
-				collisionComponent.CollisionType = CollisionType.Mob;
-				collisionComponent.Radius = mobConfig.CollisionRadius;
+				colliderComponent.CollisionType = CollisionType.Mob;
+				colliderComponent.Value = mob.Collider;
 				looker.Transform = mob.ValueBar.Transform;
 				looker.FlatBillboard = true;
 
@@ -73,7 +73,7 @@ namespace ECS
 		/// <summary>
 		/// Spawn new mob or take used mob from pool
 		/// </summary>
-		private Mob SpawnMob(MobPoolComponent mobPool, MobConfig mobConfig, Transform spawnPoint)
+		private Mob SpawnMob(MobPoolComponent mobPool, MobConfig mobConfig)
 		{
 			Mob mob;
 			if (mobPool.Value != null &&
@@ -87,7 +87,7 @@ namespace ECS
 			{
 				mob = Object.Instantiate(
 					mobConfig.Prefab,
-					spawnPoint);
+					mobPool.Parent);
 				mob.SetId(mobConfig.Id);
 			}
 			return mob;
@@ -103,7 +103,7 @@ namespace ECS
 						.SetVisible(true);
 
 			mob.gameObject.SetActive(true);
-			mob.SimpleAnimator.SetAnimation("Run");
+			//mob.SimpleAnimator.SetAnimation("Run");
 		}
 	}
 }

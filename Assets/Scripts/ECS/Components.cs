@@ -20,9 +20,9 @@ public struct EffectsHolderComponent
 	public EffectsHolder Value;
 }
 
-public struct MobParent
+public struct DecalsHolderComponent
 {
-	public Transform Value;
+	public DecalsConfigHolder Value;
 }
 
 /// <summary>
@@ -39,16 +39,13 @@ public struct SpawnPointsComponent
 public struct MobPoolComponent
 {
 	public List<Mob> Value;
+	public Transform Parent;
 }
 
 public struct BulletPoolComponent
 {
 	public Stack<Bullet> Value;
-}
-
-public struct BulletParentComponent
-{
-	public Transform Value;
+	public Transform Parent;
 }
 
 public struct EffectPoolComponent
@@ -95,18 +92,10 @@ public struct RequestDamageComponent
 	public int TargetEntity;
 }
 
-/// <summary>
-/// Component for holding a simple collision handling (try to avoid using physics for this)
-/// </summary>
-public struct CollisionComponent
-{
-	public CollisionType CollisionType;
-	public float Radius; // simple collision radius for collision detection
-}
-
 public struct ColliderComponent
 {
 	public Collider Value;
+	public CollisionType CollisionType;
 }
 
 /// <summary>
@@ -173,8 +162,6 @@ public struct BulletComponent
 	public float LifeTime;
 	public float Radius;
 	public BulletCheckType CheckType;
-
-	public bool IsDisposed;
 }
 
 public struct BulletOverlapComponent
@@ -183,10 +170,6 @@ public struct BulletOverlapComponent
 }
 #endregion
 
-public struct ParallaxComponent
-{
-	public ParallaxObject Value;
-}
 
 public struct RequestLootSpawn
 {
@@ -198,7 +181,6 @@ public struct LootComponent
 {
 	public Loot Loot;
 	public LootType LootType;
-	public bool IsDisposed;
 	public int Count;
 }
 
@@ -292,3 +274,34 @@ public struct CameraComponent
 	public Camera Value;
 }
 
+public struct DisposableComponent
+{
+	public bool IsDisposed;
+}
+
+public struct LifeTimeComponent
+{
+	public float Value;
+}
+
+#region Decals
+public struct DecalPoolComponent
+{
+	public List<Decal> Value;
+	public Transform Parent;
+}
+
+public struct DecalComponent
+{
+	public Decal Value;
+	public float Lifetime;
+	public bool IsDisposed;
+}
+
+public struct RequestDecalComponent
+{
+	public string Id;
+	public Vector3 Direction;
+	public Vector3 Position;
+}
+#endregion

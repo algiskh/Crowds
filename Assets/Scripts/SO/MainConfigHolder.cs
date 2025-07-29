@@ -8,6 +8,7 @@ public class MainConfigHolder : ScriptableObject
 	[SerializeField] private MobConfig[] _mobConfigs;
 	[SerializeField] private PlayerConfig _playerConfig;
 	[SerializeField] private GunConfig _gunConfig;
+	[SerializeField] private DecalsConfigHolder _decalsConfigHolder;
 	[SerializeField] private float _minSpawnCoolDown = 1f;
 	[SerializeField] private float _maxSpawnCoolDown = 10f;
 	[SerializeField] private float _defaultCollisionRadius = 0.9f;
@@ -20,6 +21,7 @@ public class MainConfigHolder : ScriptableObject
 	public int InitialAmmo => _initialAmmo;
 	public PlayerConfig PlayerConfig => _playerConfig;
 	public GunConfig GunConfig => _gunConfig;
+	public DecalsConfigHolder DecalsConfigHolder => _decalsConfigHolder;
 	public Loot LootPrefab => _lootPrefab;
 
 	public MobConfig GetRandomConfig()

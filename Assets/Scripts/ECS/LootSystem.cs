@@ -15,15 +15,17 @@ namespace ECS
 			ref var lootParent = ref world.GetAsSingleton<LootParentComponent>();
 			ref var mainHolder = ref world.GetAsSingleton<MainHolderComponent>();
 			var lootPool = world.GetPool<LootComponent>();
-			var collisionPool = world.GetPool<CollisionComponent>();
+			var collisionPool = world.GetPool<ColliderComponent>();
+			var disposablePool = world.GetPool<DisposableComponent>();
 
 			#region CheckingDisposed
 			// Check disposed loots and return them to the pool
-			var disposedFilter = world.Filter<LootComponent>().End();
+			var disposedFilter = world.Filter<LootComponent>().Inc<DisposableComponent>().End();
 			foreach (var disposedEntity in disposedFilter)
 			{
 				ref var loot = ref lootPool.Get(disposedEntity);
-				if (loot.IsDisposed)
+				ref var disposable = ref disposablePool.Get(disposedEntity);
+				if (disposable.IsDisposed)
 				{
 					loot.Loot.gameObject.SetActive(false);
 					lootMainPool.Value.Push(loot.Loot);
@@ -75,16 +77,17 @@ namespace ECS
 					var lootEntity = world.NewEntity();
 					ref var lootComponent = ref lootPool.Add(lootEntity);
 					ref var collisionComponent = ref collisionPool.Add(lootEntity);
+					ref var disposableComponent = ref disposablePool.Add(lootEntity);
 					// Ensure LootComponent has LootType and Value properties  
 					lootComponent.LootType = selectedLoot.LootType;
 					lootComponent.Count = selectedLoot.Count;
 					lootComponent.Loot = loot;
-					lootComponent.IsDisposed = false;
+					disposableComponent.IsDisposed = false;
 					loot.gameObject.SetActive(true);
 					loot.transform.position = requestLootSpawn.Position;
 
 					collisionComponent.CollisionType = CollisionType.Loot;
-					collisionComponent.Radius = mainHolder.Value.DefaultCollisionRadius;
+					//collisionComponent.Radius = mainHolder.Value.DefaultCollisionRadius;
 				}
 				world.DelEntity(entity); // delete request entity
 			}

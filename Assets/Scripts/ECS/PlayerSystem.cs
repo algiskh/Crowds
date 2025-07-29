@@ -40,10 +40,5 @@ namespace ECS
 			//	player.State = PlayerState.Run;
 			//}
 		}
-
-		private void SetIdle(ref PlayerComponent player)
-		{
-
-		}
 	}
 }

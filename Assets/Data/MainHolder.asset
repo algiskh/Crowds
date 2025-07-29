@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _mobConfig: {fileID: 11400000, guid: f126796bf60eb4e408c02843d6c02878, type: 2}
   _effectsHolder: {fileID: 11400000, guid: f0d7d40b821587347b41124124bedf8e, type: 2}
+  _decalsConfigHolder: {fileID: 11400000, guid: 6a949710cfc340943b51ed23b5fabf89, type: 2}
   _prefab: {fileID: 4635986969134950211, guid: d3e264603209c9c4d9bc3e4eecaa0243, type: 3}
   _lootPrefab: {fileID: 0}
+  _bulletPrefab: {fileID: 0}
   _spawnCooldown: 2
   _pathRecalculationInterval: 0.5
   _utilizationTimer: 5

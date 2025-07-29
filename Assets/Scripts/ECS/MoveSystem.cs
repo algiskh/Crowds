@@ -77,7 +77,7 @@ namespace ECS
 				Debug.LogWarning("MoveComponent has no Transform assigned.");
 				return;
 			}
-			Debug.Log($"MoveDirect: {moveComponent.Direction} Speed: {moveComponent.Speed}");
+			//Debug.Log($"MoveDirect: {moveComponent.Direction} Speed: {moveComponent.Speed}");
 			var move = moveComponent.Direction;
 			moveComponent.Transform.position += moveComponent.Speed * Time.deltaTime * move;
 		}

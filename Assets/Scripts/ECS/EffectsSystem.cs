@@ -58,6 +58,10 @@ namespace ECS
 				if (effect != null)
 				{
 					effect.Show();
+					var newEntity = world.NewEntity();
+					ref var effectComponent = ref effectPool.Add(newEntity);
+					effectComponent.Effect = effect;
+					effectComponent.LifeTime = wrapper.Duration;
 				}
 				world.DelEntity(entity);
 			}

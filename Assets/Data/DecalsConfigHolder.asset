@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89b2b3ad891be9a4a87ca0a85ea9061e, type: 3}
+  m_Name: DecalsConfigHolder
+  m_EditorClassIdentifier: 
+  _configs:
+  - _id: Blood
+    _size: 1
+    _lifetime: 60
+    _materials:
+    - {fileID: 2100000, guid: 1bd105422537135418f420adbc96b465, type: 2}
+    - {fileID: 2100000, guid: 2f6447d260ab70b47a03c76dea57c66e, type: 2}
+  _prefab: {fileID: 7792998123683358362, guid: 7ec4d157cae863b47ab829237cf1ea70, type: 3}
