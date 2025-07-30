@@ -12,7 +12,6 @@ namespace ECS
 
 			var requestLootSpawnPool = world.GetPool<RequestLootSpawn>();
 			ref var lootMainPool = ref world.GetAsSingleton<LootPoolComponent>();
-			ref var lootParent = ref world.GetAsSingleton<LootParentComponent>();
 			ref var mainHolder = ref world.GetAsSingleton<MainHolderComponent>();
 			var lootPool = world.GetPool<LootComponent>();
 			var collisionPool = world.GetPool<ColliderComponent>();
@@ -71,7 +70,7 @@ namespace ECS
 					{
 						loot = Object.Instantiate( // Fixed ambiguous reference  
 							mainHolder.Value.LootPrefab,
-							lootParent.Value);
+							lootMainPool.Parent);
 					}
 
 					var lootEntity = world.NewEntity();

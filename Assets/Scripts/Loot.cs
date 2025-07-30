@@ -2,10 +2,10 @@ using UnityEngine;
 
 public class Loot : MonoBehaviour
 {
-	[SerializeField] private SpriteRenderer _renderer;
+	private LootType _lootType;
 
-	public void SetSprite(Sprite sprite)
+	public void SetLootType(LootType type)
 	{
-		_renderer.sprite = sprite;
+		_lootType = type;
 	}
 }

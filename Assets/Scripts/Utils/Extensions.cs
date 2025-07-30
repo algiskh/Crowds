@@ -185,4 +185,9 @@ public static class Extensions
 	{
 		return q * Quaternion.Euler(90f, 0f, 0f);
 	}
+
+	public static float DistanceTo(this Vector3 a, Vector3 b)
+	{
+		return Vector3.Distance(a, b);
+	}
 }

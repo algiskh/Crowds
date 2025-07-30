@@ -16,8 +16,8 @@ MonoBehaviour:
   _effectsHolder: {fileID: 11400000, guid: f0d7d40b821587347b41124124bedf8e, type: 2}
   _decalsConfigHolder: {fileID: 11400000, guid: 6a949710cfc340943b51ed23b5fabf89, type: 2}
   _prefab: {fileID: 4635986969134950211, guid: d3e264603209c9c4d9bc3e4eecaa0243, type: 3}
-  _lootPrefab: {fileID: 0}
-  _bulletPrefab: {fileID: 0}
+  _lootPrefab: {fileID: 8950431889810804258, guid: d02615f5b7f7e5943a44c8d98bc5ca71, type: 3}
+  _bulletPrefab: {fileID: 3834319163352093731, guid: 4ccad587412ec194e812f98752fa1afb, type: 3}
   _spawnCooldown: 2
   _pathRecalculationInterval: 0.5
   _utilizationTimer: 5

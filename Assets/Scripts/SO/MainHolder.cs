@@ -22,6 +22,8 @@ public class MainHolder : ScriptableObject
 	[SerializeField, BoxGroup("SpawnPresets")] private float _minSpawnCoolDown = 1f;
 	[SerializeField, BoxGroup("SpawnPresets")] private float _maxSpawnCoolDown = 10f;
 
+	[SerializeField, BoxGroup("GameplayParameters")] private float _lootRadius = 0.5f;
+
 	[Header("Camera presets")]
 	[SerializeField] private FollowTarget FollowTarget;
 
@@ -51,4 +53,5 @@ public class MainHolder : ScriptableObject
 	public float DefaultCollisionRadius => _defaultCollisionRadius;
 	public float MinSpawnCoolDown => _minSpawnCoolDown;
 	public float MaxSpawnCoolDown => _maxSpawnCoolDown;
+	public float LootRadius => _lootRadius;
 }

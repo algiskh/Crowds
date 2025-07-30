@@ -41,7 +41,7 @@ namespace ECS
 				var healthComponentPool = world.GetPool<HealthComponent>();
 				var colliderComponentPool = world.GetPool<ColliderComponent>();
 				var pathRecalculationPool = world.GetPool<PathRecalculation>();
-				var lookerPool = world.GetPool<LookAtCamera>();
+				var lookerPool = world.GetPool<LookerAtCamera>();
 
 				ref var mobComponent = ref mobComponentPool.Add(mobEntity);
 				ref var moveComponent = ref moveComponentPool.Add(mobEntity);

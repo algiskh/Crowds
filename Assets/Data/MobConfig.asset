@@ -17,4 +17,16 @@ MonoBehaviour:
   _speed: 3
   _collisionRadius: 0.5
   _prefab: {fileID: 4635986969134950211, guid: d3e264603209c9c4d9bc3e4eecaa0243, type: 3}
-  _possibleLoots: []
+  _possibleLoots:
+  - LootType: 0
+    Count: 5
+    Chance: 0.1
+  - LootType: 0
+    Count: 10
+    Chance: 0.05
+  - LootType: 0
+    Count: 15
+    Chance: 0.01
+  - LootType: 1
+    Count: 1
+    Chance: 0.05

@@ -19,7 +19,7 @@ namespace ECS
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _bulletParent;
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _effectParent;
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _decalParent;
-
+		[SerializeField, Required, BoxGroup("Parents")] private Transform _lootParent;
 		[Space]
 		[Title("Точки спауна мобов")]
 		[SerializeField, Required, ListDrawerSettings, BoxGroup("Spawn Points")]
@@ -115,10 +115,15 @@ namespace ECS
 			decalPool.Value = new();
 			decalPool.Parent = _decalParent;
 
+			ref var lootPool = ref _world.CreateSimpleEntity<LootPoolComponent>();
+			lootPool.Value = new();
+			lootPool.Parent = _lootParent;
+
 			// --- Игрок ---
 			int playerEntity = _world.NewEntity();
 			ref var playerComponent = ref _world.GetPool<PlayerComponent>().Add(playerEntity);
 			playerComponent.Value = _player;
+			_player.Initialize(playerEntity);
 			ref var playerMovement = ref _world.GetPool<MoveComponent>().Add(playerEntity);
 			playerMovement.Speed = _mainHolder.PlayerConfig.Speed;
 			ref var playerInput = ref _world.GetPool<PlayerInputComponent>().Add(playerEntity);
@@ -172,6 +177,7 @@ namespace ECS
 				.Add(new BulletOverlapSystem())
 				.Add(new CollisionSystem())
 				.Add(new DamageSystem())
+				.Add(new LootSystem())
 				.Add(new InputSystem())
 				.Add(new EffectsSystem())
 				.Add(new DecalSystem())

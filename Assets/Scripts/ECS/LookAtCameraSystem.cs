@@ -8,7 +8,7 @@ namespace ECS
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
-			var lookAtCameraPool = world.GetPool<LookAtCamera>();
+			var lookAtCameraPool = world.GetPool<LookerAtCamera>();
 			var cameraPool = world.GetPool<CameraComponent>();
 
 			// Находим камеру
@@ -20,7 +20,7 @@ namespace ECS
 			}
 			if (camera == null) return;
 
-			foreach (var entity in world.Filter<LookAtCamera>().End())
+			foreach (var entity in world.Filter<LookerAtCamera>().End())
 			{
 				ref var comp = ref lookAtCameraPool.Get(entity);
 				if (comp.Transform == null) continue;

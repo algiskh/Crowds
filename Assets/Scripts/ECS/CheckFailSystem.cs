@@ -61,7 +61,6 @@ namespace ECS
 			foreach (var entity in mobFilter)
 			{
 				ref var mobComponent = ref mobPool.Get(entity);
-				//mobComponent.Value.SimpleAnimator.Stop();
 			}
 
 			player.Value.Animator.Pause();

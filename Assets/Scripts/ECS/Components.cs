@@ -181,17 +181,14 @@ public struct LootComponent
 {
 	public Loot Loot;
 	public LootType LootType;
+	public float Radius;
 	public int Count;
 }
 
 public struct LootPoolComponent
 {
 	public Stack<Loot> Value;
-}
-
-public struct LootParentComponent
-{
-	public Transform Value;
+	public Transform Parent;
 }
 
 public struct AmmoCounterComponent
@@ -257,7 +254,7 @@ public struct Looker
 	public bool FlatBillboard;
 }
 
-public struct LookAtCamera
+public struct LookerAtCamera
 {
 	public Transform Transform;
 	public bool FlatBillboard;

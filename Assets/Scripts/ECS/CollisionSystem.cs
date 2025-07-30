@@ -12,6 +12,7 @@ namespace ECS
 		{
 			#region GettingPools
 			var world = systems.GetWorld();
+			ref var mainHolder = ref world.GetAsSingleton<MainHolderComponent>();
 			var colliderPool = world.GetPool<ColliderComponent>();
 			var bulletOverlapPool = world.GetPool<BulletOverlapComponent>();
 			var disposedPool = world.GetPool<DisposableComponent>();
@@ -19,6 +20,9 @@ namespace ECS
 			var bulletPool = world.GetPool<BulletComponent>();
 			var lootPool = world.GetPool<LootComponent>();
 			ref var player = ref world.GetAsSingleton<PlayerComponent>();
+
+			var playerTransform = player.Value.transform;
+
 			var playerPool = world.GetPool<PlayerComponent>();
 			var healthPool = world.GetPool<HealthComponent>();
 			var borderPool = world.GetPool<BorderComponent>();
@@ -122,25 +126,34 @@ namespace ECS
 			//}
 			//#endregion
 
-			//#region CheckingPlayerWithLootCollision
-			//var lootFilter = world.Filter<LootComponent>().Inc<ColliderComponent>().End();
-			//foreach (var lootEntity in lootFilter)
-			//{
-			//	ref var loot = ref lootPool.Get(lootEntity);
-			//	ref var lootCollision = ref collisionPool.Get(lootEntity);
+			#region CheckingPlayerWithLootCollision
+			var lootFilter = world.Filter<LootComponent>().Inc<DisposableComponent>().End();
+			foreach (var lootEntity in lootFilter)
+			{
+				ref var loot = ref lootPool.Get(lootEntity);
+				ref var disposable = ref disposedPool.Get(lootEntity);
+				if (playerTransform.position.DistanceTo(loot.Loot.transform.position)
+					<= mainHolder.Value.LootRadius)
+				{
+					disposable.IsDisposed = true;
+					if (loot.LootType is LootType.Ammo)
+					{
+						ref var muzzle = ref world.GetAsSingleton<MuzzleComponent>();
+						muzzle.Count += loot.Count;
+					}
+					else if(loot.LootType is LootType.Health)
+					{
+						ref var healthComponent = ref healthPool.Get(player.Value.Entity);
 
-			//	if (player.Value.transform.position.DistanceTo(loot.Loot.transform.position)
-			//		<= lootCollision.Radius)
-			//	{
-			//		loot.IsDisposed = true;
-			//		if (loot.LootType is LootType.Ammo)
-			//		{
-			//			ref var muzzle = ref world.GetAsSingleton<MuzzleComponent>();
-			//			muzzle.Count += loot.Count;
-			//		}
-			//	}
-			//}
-			//#endregion
+						healthComponent.CurrentHealth += loot.Count;
+						if (healthComponent.CurrentHealth > healthComponent.MaxHealth)
+						{
+							healthComponent.CurrentHealth = healthComponent.MaxHealth;
+						}
+					}
+				}
+			}
+			#endregion
 
 			//#region CheckingPlayerWithBorderCollision
 			//var borderFilter = world.Filter<BorderComponent>().Inc<ColliderComponent>().End();
