@@ -49,7 +49,6 @@ namespace ECS
 
 			input.Move = moveDir;
 			input.IsFiring = Input.GetButton("Fire1");
-			Debug.Log($"is firing {input.IsFiring}");
 		}
 	}
 }

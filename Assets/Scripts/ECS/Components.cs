@@ -302,3 +302,8 @@ public struct RequestDecalComponent
 	public Vector3 Position;
 }
 #endregion
+
+public struct NavMeshManagerComponent
+{
+	public NavMeshManager Value;
+}

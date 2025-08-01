@@ -20,7 +20,7 @@ MonoBehaviour:
   _fireSoundId: Fire01
   _bulletPrefab: {fileID: 3834319163352093731, guid: 4ccad587412ec194e812f98752fa1afb, type: 3}
   _bulletCheckType: 0
-  _bulletSpeed: 7
-  _bulletDamage: 25
+  _bulletSpeed: 15
+  _bulletDamage: 50
   _bulletLifeTime: 2
   _radius: 0.1

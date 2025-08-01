@@ -190,4 +190,52 @@ public static class Extensions
 	{
 		return Vector3.Distance(a, b);
 	}
+
+	public static float DistanceTo(this Component a, Component b)
+	{
+		return Vector3.Distance(a.transform.position, b.transform.position);
+	}
+
+	public static bool IsWithinXZBoundsFromMeshes(this Component target, Component areaCenter, float offsetZ = 0f)
+	{
+		var meshFilters = areaCenter.GetComponentsInChildren<MeshFilter>();
+
+		if (meshFilters.Length == 0)
+		{
+			Debug.LogWarning("Нет MeshFilter у объекта или его дочерних элементов!");
+			return false;
+		}
+
+		var combinedBounds = meshFilters[0].mesh.bounds;
+		var worldMatrix = meshFilters[0].transform.localToWorldMatrix;
+		var min = worldMatrix.MultiplyPoint3x4(combinedBounds.min);
+		var max = worldMatrix.MultiplyPoint3x4(combinedBounds.max);
+
+		float minX = min.x;
+		float maxX = max.x;
+		float minZ = min.z;
+		float maxZ = max.z;
+
+		for (int i = 1; i < meshFilters.Length; i++)
+		{
+			var mesh = meshFilters[i].mesh;
+			var matrix = meshFilters[i].transform.localToWorldMatrix;
+
+			var boundsMin = matrix.MultiplyPoint3x4(mesh.bounds.min);
+			var boundsMax = matrix.MultiplyPoint3x4(mesh.bounds.max);
+
+			minX = Mathf.Min(minX, boundsMin.x);
+			maxX = Mathf.Max(maxX, boundsMax.x);
+			minZ = Mathf.Min(minZ, boundsMin.z);
+			maxZ = Mathf.Max(maxZ, boundsMax.z);
+		}
+
+		minZ += offsetZ;
+		maxZ += offsetZ;
+
+		Vector3 targetPos = target.transform.position;
+
+		return targetPos.x >= minX && targetPos.x <= maxX &&
+			   targetPos.z >= minZ && targetPos.z <= maxZ;
+	}
 }

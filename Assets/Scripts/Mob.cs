@@ -1,5 +1,6 @@
 ﻿using Scene.UI;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class Mob: MonoBehaviour
 {
@@ -8,6 +9,8 @@ public class Mob: MonoBehaviour
 	public Vector2 Position => transform.position;
 	public IValueBar ValueBar => _valueBar;
 	public Collider Collider => _collider;
+
+	private NavMeshAgent _agent;
 
 	private void Awake()
 	{

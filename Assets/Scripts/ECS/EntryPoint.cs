@@ -68,6 +68,9 @@ namespace ECS
 			ref var config = ref _world.GetPool<MainHolderComponent>().Add(appEntity);
 			config.Value = _mainHolder;
 
+			ref var navMeshManager = ref _world.CreateSimpleEntity<NavMeshManagerComponent>();
+			navMeshManager.Value = FindFirstObjectByType<NavMeshManager>();
+
 			// --- Точки спауна ---
 			var spawnPointPool = _world.GetPool<SpawnPoint>();
 			var spawnTimerPool = _world.GetPool<SpawnTimer>();
@@ -166,6 +169,7 @@ namespace ECS
 			// --- Регистрируем ECS системы ---
 			#region RegisterSystems
 			_systems
+				.Add(new CheckSectorSystem())
 				.Add(new SpawnPointSystem())
 				.Add(new MobSpawnSystem())
 				.Add(new MobPathfindingSystem())

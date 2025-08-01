@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 4024051011077222215}
   - component: {fileID: 4358559445545799627}
   - component: {fileID: 7596210863017957109}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Capsule
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -142,11 +142,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5689457051142550505}
-  - component: {fileID: 834447937836092472}
-  - component: {fileID: 7347874090990234213}
   - component: {fileID: 4635986969134950211}
   - component: {fileID: 8702875503701655654}
-  m_Layer: 0
+  - component: {fileID: 8641291612382326793}
+  m_Layer: 3
   m_Name: Mob
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -170,55 +169,6 @@ Transform:
   - {fileID: 1594195020425960036}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!195 &834447937836092472
-NavMeshAgent:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3683111880471000716}
-  m_Enabled: 1
-  m_AgentTypeID: 0
-  m_Radius: 0.5
-  m_Speed: 3.5
-  m_Acceleration: 8
-  avoidancePriority: 50
-  m_AngularSpeed: 120
-  m_StoppingDistance: 0
-  m_AutoTraverseOffMeshLink: 1
-  m_AutoBraking: 1
-  m_AutoRepath: 1
-  m_Height: 2
-  m_BaseOffset: 0
-  m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
---- !u!50 &7347874090990234213
-Rigidbody2D:
-  serializedVersion: 5
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3683111880471000716}
-  m_BodyType: 0
-  m_Simulated: 1
-  m_UseFullKinematicContacts: 0
-  m_UseAutoMass: 0
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_GravityScale: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_Interpolate: 0
-  m_SleepingMode: 1
-  m_CollisionDetection: 0
-  m_Constraints: 4
 --- !u!114 &4635986969134950211
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -247,6 +197,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _animations: []
   _image: {fileID: 0}
+--- !u!195 &8641291612382326793
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3683111880471000716}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
 --- !u!1 &4628887756555838070
 GameObject:
   m_ObjectHideFlags: 0
@@ -258,7 +230,7 @@ GameObject:
   - component: {fileID: 6796282954218620536}
   - component: {fileID: 525950805554292277}
   - component: {fileID: 4726756647413236717}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: BarBG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -336,7 +308,7 @@ GameObject:
   - component: {fileID: 4625233505105182598}
   - component: {fileID: 2618860173490056177}
   - component: {fileID: 7461023444188557637}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -480,7 +452,7 @@ GameObject:
   - component: {fileID: 5293698747077692190}
   - component: {fileID: 702409268202998808}
   - component: {fileID: 8669784861270704266}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Bar
   m_TagString: Untagged
   m_Icon: {fileID: 0}

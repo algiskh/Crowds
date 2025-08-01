@@ -16,3 +16,6 @@ MonoBehaviour:
   - Id: zombie_dead
     Prefab: {fileID: 7970544682367293265, guid: b1fbcfd566c42d849b01d8db0b329ea3, type: 3}
     Duration: 1
+  - Id: collect
+    Prefab: {fileID: 7970544682367293265, guid: 4ee4c35a51d4cd14bbaca95d83d125dd, type: 3}
+    Duration: 1
