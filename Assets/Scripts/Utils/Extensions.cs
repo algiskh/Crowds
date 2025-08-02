@@ -196,9 +196,14 @@ public static class Extensions
 		return Vector3.Distance(a.transform.position, b.transform.position);
 	}
 
-	public static bool IsWithinXZBoundsFromMeshes(this Component target, Component areaCenter, float offsetZ = 0f)
+	public static bool IsWithinXZBoundsFromMeshes(this Component target, FloorSector floorSector, float offsetZ = 0f)
 	{
-		var meshFilters = areaCenter.GetComponentsInChildren<MeshFilter>();
+		return IsWithinXZBoundsFromMeshes(target.transform.position, floorSector, offsetZ);
+	}
+
+	public static bool IsWithinXZBoundsFromMeshes(this Vector3 targetPos, FloorSector floorSector, float offsetZ = 0f)
+	{
+		var meshFilters = floorSector.MeshFilters;
 
 		if (meshFilters.Length == 0)
 		{
@@ -233,7 +238,6 @@ public static class Extensions
 		minZ += offsetZ;
 		maxZ += offsetZ;
 
-		Vector3 targetPos = target.transform.position;
 
 		return targetPos.x >= minX && targetPos.x <= maxX &&
 			   targetPos.z >= minZ && targetPos.z <= maxZ;

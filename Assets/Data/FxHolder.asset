@@ -19,3 +19,6 @@ MonoBehaviour:
   - Id: collect
     Prefab: {fileID: 7970544682367293265, guid: 4ee4c35a51d4cd14bbaca95d83d125dd, type: 3}
     Duration: 1
+  - Id: blood
+    Prefab: {fileID: 7970544682367293265, guid: 47147e3b89d723e4bb38a689e0eb8f54, type: 3}
+    Duration: 1

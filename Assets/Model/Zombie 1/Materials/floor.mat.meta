@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: b25b957bda40218419f684fc131196a6
+timeCreated: 1658908967
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 232270
+  packageName: Zombie 1
+  packageVersion: 1.0
+  assetPath: Assets/Model/Zombie 1/Materials/floor.mat
+  uploadId: 524477

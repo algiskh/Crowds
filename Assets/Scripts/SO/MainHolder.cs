@@ -28,7 +28,7 @@ public class MainHolder : ScriptableObject
 	[SerializeField] private FollowTarget FollowTarget;
 
 	[SerializeField, BoxGroup("Player")] private PlayerConfig _playerConfig;
-	[SerializeField, BoxGroup("Player")] private GunConfig _gunConfig;
+	[SerializeField, BoxGroup("Player")] private GunConfigHolder _gunConfigHolder;
 
 
 	[SerializeField] private SoundHolder _soundHolder;
@@ -47,7 +47,7 @@ public class MainHolder : ScriptableObject
 	public PlayerConfig PlayerConfig => _playerConfig;
 	public DecalsConfigHolder DecalsConfigHolder => _decalsConfigHolder;
 	public MobConfig GetConfig(string id) => _mobConfig;
-	public GunConfig GunConfig => _gunConfig;
+	public GunConfigHolder GunConfigHolder => _gunConfigHolder;
 	public EffectsHolder EffectsHolder => _effectsHolder;
 	public SoundHolder SoundHolder => _soundHolder;
 	public float DefaultCollisionRadius => _defaultCollisionRadius;

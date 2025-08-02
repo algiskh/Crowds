@@ -7,11 +7,9 @@ namespace ECS
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
-			ref var muzzle = ref world.GetAsSingleton<MuzzleComponent>();
-			ref var ammoCounter = ref world.GetAsSingleton<AmmoCounterComponent>();
-
-
-			ammoCounter.Value.SetAmmo(muzzle.Count);
+			ref var weapon = ref world.GetAsSingleton<WeaponComponent>();
+			ref var weaponView = ref world.GetAsSingleton<WeaponUIViewComponent>();
+			ref var reloading = ref world.GetAsSingleton<ReloadingComponent>();
 
 
 			var requestPool = world.GetPool<RequestOpenWindowComponent>();
@@ -28,8 +26,40 @@ namespace ECS
 				world.DelEntity(requestEntity);
 			}
 
-			world.DeleteAllWith<RequestOpenWindowComponent>();	
+			if (reloading.ReloadTime > 0)
+			{
+				weaponView.Value.ShowReloading(1 / (reloading.ReloadTime / weapon.ReloadTime));
+			}
 
+
+
+			var ammoRequestFilter = world.Filter<UpdateAmmoViewRequestComponent>()
+				.End();
+			
+			var weaponRequestFilter = world.Filter<UpdateWeaponViewRequestComponent>()
+				.End();
+
+			if(weaponRequestFilter.GetEntitiesCount() > 0)
+			{
+				foreach (var weaponRequestEntity in weaponRequestFilter)
+				{
+					ref var weaponRequest = ref world.GetPool<UpdateWeaponViewRequestComponent>().Get(weaponRequestEntity);
+					weaponView.Value.SetWeaponView(weapon.GunConfig, weapon.AmmoCount);
+				}
+			}
+
+			if (ammoRequestFilter.GetEntitiesCount() > 0 || weaponRequestFilter.GetEntitiesCount() > 0)
+			{
+				foreach (var ammoRequestEntity in ammoRequestFilter)
+				{
+					ref var ammoRequest = ref world.GetPool<UpdateAmmoViewRequestComponent>().Get(ammoRequestEntity);
+					weaponView.Value.UpdateMagazine(weapon.CurrentMagazineCount, weapon.AmmoCount);
+				}
+			}
+
+			world.DeleteAllWith<UpdateWeaponViewRequestComponent>();
+			world.DeleteAllWith<UpdateAmmoViewRequestComponent>();
+			world.DeleteAllWith<RequestOpenWindowComponent>();
 		}
 	}
 }

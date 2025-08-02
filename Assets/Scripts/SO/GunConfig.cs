@@ -50,6 +50,9 @@ public class GunConfig : ScriptableObject
 	[LabelText("Радиус поражения"), MinValue(0f)]
 	[SerializeField] private float _radius = 0.1f;
 
+	[LabelText("Время перезарядки"), MinValue(0f)]
+	[SerializeField] private float _reloadTime = 1f;
+
 	public string Id => _id;
 	public Sprite Preview => _preview;
 	public float BulletSpeed => _bulletSpeed;
@@ -61,6 +64,7 @@ public class GunConfig : ScriptableObject
 	public Bullet BulletPrefab => _bulletPrefab;
 	public float BulletRadius => _radius;
 	public BulletCheckType BulletCheckType => _bulletCheckType;
+	public float ReloadTime => _reloadTime;
 
 #if UNITY_EDITOR
 	private void SetDefaultName()

@@ -19,3 +19,5 @@ MonoBehaviour:
     Clip: {fileID: 8300000, guid: ce707b101b540c14baaff3836d8e683e, type: 3}
   - Id: Zombie
     Clip: {fileID: 8300000, guid: 89c472a189e96a6499bbc3183ed9280e, type: 3}
+  - Id: Reload
+    Clip: {fileID: 8300000, guid: f7441826056eebe438079bdf61664da2, type: 3}

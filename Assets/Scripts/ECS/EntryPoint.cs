@@ -1,5 +1,6 @@
 using Leopotam.EcsLite;
 using Sirenix.OdinInspector;
+using Sirenix.OdinInspector.Editor.GettingStarted;
 using UnityEngine;
 
 namespace ECS
@@ -24,6 +25,9 @@ namespace ECS
 		[Title("Точки спауна мобов")]
 		[SerializeField, Required, ListDrawerSettings, BoxGroup("Spawn Points")]
 		private Transform[] _spawnPoints;
+		[Title("UI")]
+		[SerializeField, Required, BoxGroup("UI")] private PlayerStats _playerStats;
+		[SerializeField, Required, BoxGroup("UI")] private WeaponUIView _weaponView;
 
 		// ECS
 		private EcsWorld _world;
@@ -70,6 +74,13 @@ namespace ECS
 
 			ref var navMeshManager = ref _world.CreateSimpleEntity<NavMeshManagerComponent>();
 			navMeshManager.Value = FindFirstObjectByType<NavMeshManager>();
+
+			// --- UI компоненты ---
+			ref var weaponViewComponent = ref _world.CreateSimpleEntity<WeaponUIViewComponent>();
+			weaponViewComponent.Value = _weaponView;
+
+			ref var playerStatsComponent = ref _world.CreateSimpleEntity<PlayerStatsComponent>();
+			playerStatsComponent.Value = _playerStats;
 
 			// --- Точки спауна ---
 			var spawnPointPool = _world.GetPool<SpawnPoint>();
@@ -148,10 +159,16 @@ namespace ECS
 			cameraComponent.Value = _mainCamera;
 
 			// --- Оружие/Магазин ---
-			ref var muzzle = ref _world.CreateSimpleEntity<MuzzleComponent>();
+			ref var muzzle = ref _world.CreateSimpleEntity<WeaponComponent>();
 			muzzle.Weapon = _player.Weapon;
-			muzzle.GunConfig = _mainHolder.GunConfig;
-			muzzle.Count = _mainHolder.GunConfig.MagazineCapacity;
+			muzzle.GunConfig = _mainHolder.GunConfigHolder.GetConfig("Pistol");
+			muzzle.CurrentMagazineCount = muzzle.GunConfig.MagazineCapacity;
+			muzzle.AmmoCount = 0;
+			ref var reloadingComponent = ref _world.GetPool<ReloadingComponent>().Add(playerEntity);
+			reloadingComponent.ReloadTime = 0;
+
+			_weaponView.SetWeaponView(muzzle.GunConfig, muzzle.AmmoCount);
+
 
 			// --- Система LookAtCursor ---
 			ref var lookAtCursor = ref _world.CreateSimpleEntity<LookAtCursor>();
@@ -170,6 +187,7 @@ namespace ECS
 			#region RegisterSystems
 			_systems
 				.Add(new CheckSectorSystem())
+				.Add(new DifficultySystem())
 				.Add(new SpawnPointSystem())
 				.Add(new MobSpawnSystem())
 				.Add(new MobPathfindingSystem())
@@ -187,6 +205,7 @@ namespace ECS
 				.Add(new DecalSystem())
 				.Add(new PlayerSystem())
 				.Add(new PlayerMovementSystem())
+				.Add(new UISystem())
 				.Init();
 			#endregion
 		}

@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7ab228b774cbe34aabaabe57bac3b9b, type: 3}
+  m_Name: GunConfigHolder
+  m_EditorClassIdentifier: 
+  _configs:
+  - {fileID: 11400000, guid: 4a5f48a43fee8674b8ac55d08da77942, type: 2}
+  - {fileID: 11400000, guid: 5ddadc99ce8bf824a8e6d7d90ed111d9, type: 2}
+  - {fileID: 11400000, guid: 0351c2a82691aa141bad522dd7066b19, type: 2}

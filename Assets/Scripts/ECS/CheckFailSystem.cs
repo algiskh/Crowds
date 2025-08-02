@@ -17,12 +17,12 @@ namespace ECS
 			}
 
 			var playerPool = world.GetPool<PlayerComponent>();
-			var muzzlePool = world.GetPool<MuzzleComponent>();
+			var muzzlePool = world.GetPool<WeaponComponent>();
 			var healthPool = world.GetPool<HealthComponent>();
 
 
 			var filter = world.Filter<PlayerComponent>()
-				.Inc<MuzzleComponent>()
+				.Inc<WeaponComponent>()
 				.Inc<HealthComponent>()
 				.End();
 
@@ -31,7 +31,7 @@ namespace ECS
 				ref var muzzle = ref muzzlePool.Get(entity);
 				ref var health = ref healthPool.Get(entity);
 				ref var player = ref playerPool.Get(entity);
-				if (muzzle.Count <= 0 || health.CurrentHealth <= 0)
+				if (muzzle.AmmoCount <= 0 || health.CurrentHealth <= 0)
 				{
 					ref var requestOpenWindow = ref world.CreateSimpleEntity<RequestOpenWindowComponent>();
 					requestOpenWindow.WindowType = WindowType.FailWindow;

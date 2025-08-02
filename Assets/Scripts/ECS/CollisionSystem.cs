@@ -13,6 +13,7 @@ namespace ECS
 			#region GettingPools
 			var world = systems.GetWorld();
 			ref var mainHolder = ref world.GetAsSingleton<MainHolderComponent>();
+			ref var muzzle = ref world.GetAsSingleton<WeaponComponent>();
 			var colliderPool = world.GetPool<ColliderComponent>();
 			var bulletOverlapPool = world.GetPool<BulletOverlapComponent>();
 			var disposedPool = world.GetPool<DisposableComponent>();
@@ -68,10 +69,15 @@ namespace ECS
 
 						ref var move = ref movePool.Get(bulletEntity);
 
-						ref var bloodEffect = ref world.CreateSimpleEntity<RequestDecalComponent>();
+						ref var bloodDecal = ref world.CreateSimpleEntity<RequestDecalComponent>();
+						bloodDecal.Position = transform.position;
+						bloodDecal.Id = "Blood";
+						bloodDecal.Direction = move.Direction;
+
+
+						ref var bloodEffect = ref world.CreateSimpleEntity<RequestEffectComponent>();
+						bloodEffect.EffectId = "blood";
 						bloodEffect.Position = transform.position;
-						bloodEffect.Id = "Blood";
-						bloodEffect.Direction = move.Direction;
 
 					}
 				}
@@ -138,8 +144,19 @@ namespace ECS
 					disposable.IsDisposed = true;
 					if (loot.LootType is LootType.Ammo)
 					{
-						ref var muzzle = ref world.GetAsSingleton<MuzzleComponent>();
-						muzzle.Count += loot.Count;
+						muzzle.AmmoCount += loot.Count;
+
+						ref var requestAmmoViewUpdate = ref world.CreateSimpleEntity<UpdateAmmoViewRequestComponent>();
+					}
+					else if(loot.LootType is LootType.Weapon)
+					{
+						var newConfig = mainHolder.Value.GunConfigHolder.GetConfig(loot.Id);
+						if (newConfig == null)
+							continue;
+
+						muzzle.GunConfig = newConfig;
+						muzzle.CurrentMagazineCount = newConfig.MagazineCapacity;
+						
 					}
 					else if(loot.LootType is LootType.Health)
 					{

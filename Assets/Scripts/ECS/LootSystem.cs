@@ -13,9 +13,11 @@ namespace ECS
 			var requestLootSpawnPool = world.GetPool<RequestLootSpawn>();
 			ref var lootMainPool = ref world.GetAsSingleton<LootPoolComponent>();
 			ref var mainHolder = ref world.GetAsSingleton<MainHolderComponent>();
+			ref var navmeshManager = ref world.GetAsSingleton<NavMeshManagerComponent>();
 			var lootPool = world.GetPool<LootComponent>();
 			var collisionPool = world.GetPool<ColliderComponent>();
 			var disposablePool = world.GetPool<DisposableComponent>();
+			var currentSectorPool = world.GetPool<CurrentSectorComponent>();
 
 			#region CheckingDisposed
 			// Check disposed loots and return them to the pool
@@ -77,10 +79,12 @@ namespace ECS
 					ref var lootComponent = ref lootPool.Add(lootEntity);
 					ref var collisionComponent = ref collisionPool.Add(lootEntity);
 					ref var disposableComponent = ref disposablePool.Add(lootEntity);
+
 					// Ensure LootComponent has LootType and Value properties  
 					lootComponent.LootType = selectedLoot.LootType;
 					lootComponent.Count = selectedLoot.Count;
 					lootComponent.Loot = loot;
+					lootComponent.Id = selectedLoot.Id;
 					disposableComponent.IsDisposed = false;
 					loot.gameObject.SetActive(true);
 					loot.transform.position = requestLootSpawn.Position;

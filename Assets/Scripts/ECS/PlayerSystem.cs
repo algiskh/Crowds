@@ -12,7 +12,7 @@ namespace ECS
 			ref var playerInput = ref world.GetAsSingleton<PlayerInputComponent>();
 			Vector3 input = playerInput.Move;
 			Vector3 previousInput = playerInput.PreviousMove;
-			ref var muzzle = ref world.GetAsSingleton<MuzzleComponent>();
+			ref var muzzle = ref world.GetAsSingleton<WeaponComponent>();
 
 			var filter = world.Filter<PlayerComponent>().End();
 			foreach (var entity in filter)

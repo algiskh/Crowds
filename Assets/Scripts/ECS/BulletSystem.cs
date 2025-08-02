@@ -14,10 +14,13 @@ namespace ECS
 			var requestFirePool = world.GetPool<RequestFireComponent>();
 			var movePool = world.GetPool<MoveComponent>();
 			var disposePool = world.GetPool<DisposableComponent>();
-			ref var muzzle = ref world.GetAsSingleton<MuzzleComponent>();
+			ref var muzzle = ref world.GetAsSingleton<WeaponComponent>();
 			ref var bulletPoolPool = ref world.GetAsSingleton<BulletPoolComponent>();
+			ref var reloading = ref world.GetAsSingleton<ReloadingComponent>();
 			var soundHolder = world.GetAsSingleton<SoundHolderComponent>();
 			#endregion
+
+			var capacity = muzzle.GunConfig.MagazineCapacity;
 
 			// Check disposed bullets and return them to the pool
 			var disposedFilter = world.Filter<BulletComponent>().Inc<MoveComponent>().Inc<DisposableComponent>().End();
@@ -41,9 +44,21 @@ namespace ECS
 
 			// Handle fire requests
 			var fireFilter = world.Filter<RequestFireComponent>().End();
+			var hasRequest = fireFilter.GetEntitiesCount() > 0;
 
-			if (fireFilter.GetEntitiesCount() == 0 && isCoolDownPassed || muzzle.Count <= 0)
+			if (!hasRequest && isCoolDownPassed
+				|| muzzle.CurrentMagazineCount <= 0
+				|| reloading.ReloadTime > 0)
 			{
+				
+				// Try to start reloading 
+				if (hasRequest && muzzle.CurrentMagazineCount == 0 && muzzle.AmmoCount > 0 && reloading.ReloadTime <= 0)
+				{
+					var sound = soundHolder.Value.GetClip("reload");
+					muzzle.Weapon.AudioSource.PlayOneShot(sound);
+					reloading.ReloadTime = muzzle.GunConfig.ReloadTime;
+				}
+
 				muzzle.IsFiring = false;
 			}
 			else
@@ -88,12 +103,26 @@ namespace ECS
 
 						muzzle.IsFiring = true;
 						muzzle.PrevFireTime = Time.time;
-						muzzle.Count--;
+						muzzle.CurrentMagazineCount--;
 
 						var sound = soundHolder.Value.GetClip(muzzle.GunConfig.FireSoundId);
 						muzzle.Weapon.AudioSource.PlayOneShot(sound);
+						ref var changeAmmoTextRequest = ref world.CreateSimpleEntity<UpdateAmmoViewRequestComponent>();
 					}
 					world.DelEntity(entity);
+				}
+			}
+
+			// Finish reloading
+			if (reloading.ReloadTime > 0)
+			{
+				reloading.ReloadTime -= Time.deltaTime;
+				if (reloading.ReloadTime <= 0)
+				{
+					muzzle.CurrentMagazineCount = capacity >= muzzle.AmmoCount ? capacity : muzzle.AmmoCount;
+					muzzle.AmmoCount -= muzzle.CurrentMagazineCount;
+					reloading.ReloadTime = 0;
+					// FIX HERE
 				}
 			}
 		}

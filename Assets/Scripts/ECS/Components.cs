@@ -142,13 +142,20 @@ public struct PlayerInputComponent
 	public bool IsFiring;
 }
 
-public struct MuzzleComponent
+public struct WeaponComponent
 {
 	public Weapon Weapon;
 	public GunConfig GunConfig;
 	public float PrevFireTime;
 	public bool IsFiring;
-	public int Count;
+	public int CurrentMagazineCount;
+	public int AmmoCount;
+	public float ReloadTime;
+}
+
+public struct ReloadingComponent
+{
+	public float ReloadTime;
 }
 
 public struct RequestFireComponent
@@ -181,6 +188,7 @@ public struct LootComponent
 {
 	public Loot Loot;
 	public LootType LootType;
+	public string Id;
 	public float Radius;
 	public int Count;
 }
@@ -194,16 +202,6 @@ public struct LootPoolComponent
 public struct AmmoCounterComponent
 {
 	public AmmoCounter Value;
-}
-
-public struct RequestOpenWindowComponent
-{
-	public WindowType WindowType;
-}
-
-public struct FailWindowComponent
-{
-	public FailWindow Value;
 }
 
 public struct BorderComponent
@@ -303,7 +301,48 @@ public struct RequestDecalComponent
 }
 #endregion
 
+#region Navigation
 public struct NavMeshManagerComponent
 {
 	public NavMeshManager Value;
 }
+
+public struct CurrentSectorComponent
+{
+	public FloorSector Value;
+}
+#endregion
+
+#region UI
+public struct PlayerStatsComponent
+{
+	public PlayerStats Value;
+}
+public struct WeaponUIViewComponent
+{
+	public WeaponUIView Value;
+}
+
+public struct RequestOpenWindowComponent
+{
+	public WindowType WindowType;
+}
+
+public struct FailWindowComponent
+{
+	public FailWindow Value;
+}
+
+public struct WinWindowComponent
+{
+	public WinWindow Value;
+}
+
+public struct UpdateAmmoViewRequestComponent
+{
+}
+
+public struct UpdateWeaponViewRequestComponent
+{
+}
+#endregion

@@ -10,9 +10,11 @@ namespace ECS
 		{
 			var world = systems.GetWorld();
 			var decalHolder = world.GetAsSingleton<DecalsHolderComponent>();
+			var navmeshManager = world.GetAsSingleton<NavMeshManagerComponent>();
 			ref var decalMainPool = ref world.GetAsSingleton<DecalPoolComponent>();
 			var decalPool = world.GetPool<DecalComponent>();
-			
+			var currentSectorPool = world.GetPool<CurrentSectorComponent>();
+
 			var lifetimePool = world.GetPool<LifeTimeComponent>();
 			var disposablePool = world.GetPool<DisposableComponent>();
 
@@ -73,6 +75,7 @@ namespace ECS
 					ref var effectComponent = ref decalPool.Add(newEntity);
 					ref var lifetimeComponent = ref lifetimePool.Add(newEntity);
 					ref var disposableComponent = ref disposablePool.Add(newEntity);
+
 					effectComponent.Value = decal;
 					lifetimeComponent.Value = config.LifeTime;
 				}

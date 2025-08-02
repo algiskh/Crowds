@@ -41,6 +41,23 @@ public class NavMeshManager : MonoBehaviour
 		RebuildNavMesh();
 	}
 
+	public FloorSector GetSector(Vector3 position)
+	{
+		if (position.IsWithinXZBoundsFromMeshes(_currentSector))
+		{
+			return _currentSector;
+		}
+		else if (position.IsWithinXZBoundsFromMeshes(_rightSector))
+		{
+			return _rightSector;
+		}
+		else if (position.IsWithinXZBoundsFromMeshes(_leftSector))
+		{
+			return _leftSector;
+		}
+		return null;
+	}
+
 	private void ShiftSectorPositions(bool shiftRightSector)
 	{
 		if (shiftRightSector)
