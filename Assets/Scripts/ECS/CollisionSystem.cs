@@ -20,6 +20,8 @@ namespace ECS
 			var movePool = world.GetPool<MoveComponent>();
 			var bulletPool = world.GetPool<BulletComponent>();
 			var lootPool = world.GetPool<LootComponent>();
+			var mobPool = world.GetPool<MobComponent>();
+			
 			ref var player = ref world.GetAsSingleton<PlayerComponent>();
 
 			var playerTransform = player.Value.transform;
@@ -83,54 +85,28 @@ namespace ECS
 				}
 			}
 
+			#region CheckingPlayerWithMobCollision
+			var mobFilter = world.Filter<MobComponent>().End();
+			foreach (var mobEntity in mobFilter)
+			{
+				ref var mob = ref mobPool.Get(mobEntity);
+				var distance = mob.Value.transform.position.DistanceTo(player.Value.transform.position);
+				Debug.Log($"mob is in {distance}m");
+				if (distance < mob.Config.HitRadius && mob.Cooldown <= 0)
+				{
+					Debug.Log($"Try to request damage for player");
+					ref var requestDamage = ref world.CreateSimpleEntity<RequestDamageComponent>();
+					requestDamage.TargetEntity = player.Value.Entity;
+					requestDamage.Damage = mob.Config.Damage;
 
-
-			//#region CheckingMobsCollision
-			//var applyDamagePool = world.GetPool<RequestDamageComponent>();
-			//foreach (var bulletEntity in bulletsList)
-			//{
-			//	ref var bulletMove = ref movePool.Get(bulletEntity);
-			//	ref var bulletCollision = ref colliderPool.Get(bulletEntity);
-
-			//	foreach (var mobEntity in mobList)
-			//	{
-			//		ref var mobMove = ref movePool.Get(mobEntity);
-			//		if (mobMove.Transform.position.DistanceTo(bulletMove.Transform.position)
-			//			< bulletCollision.Radius
-			//			&& bulletPool.Has(bulletEntity))
-			//		{
-			//			ref var bulletComponent = ref bulletPool.Get(bulletEntity);
-			//			var applyDamageEntity = world.NewEntity();
-			//			ref var applyDamage = ref applyDamagePool.Add(applyDamageEntity);
-			//			applyDamage.Damage = bulletComponent.Damage;
-			//			applyDamage.TargetEntity = mobEntity;
-			//			bulletComponent.IsDisposed = true; // Mark bullet for disposal
-			//		}
-			//	}
-			//}
-			//#endregion
-
-			//#region CheckingPlayerWithMobCollision
-			//var playerFilter = world.Filter<PlayerComponent>().Inc<HealthComponent>().End();
-			//foreach (var mob in mobList)
-			//{
-			//	ref var mobMove = ref movePool.Get(mob);
-			//	var distance = mobMove.Transform.position.DistanceTo(player.Value.transform.position);
-
-			//	if (distance < collisionPool.Get(mob).Radius)
-			//	{
-			//		foreach (var playerEntity in playerFilter)
-			//		{
-			//			ref var playerComponent = ref playerPool.Get(playerEntity);
-			//			if (playerComponent.Value == player.Value)
-			//			{
-			//				ref var healthComponent = ref healthPool.Get(playerEntity);
-			//				healthComponent.CurrentHealth -= healthComponent.MaxHealth;
-			//			}
-			//		}
-			//	}
-			//}
-			//#endregion
+					mob.Cooldown = mob.Config.HitCooldown;
+				}
+				else if (mob.Cooldown > 0)
+				{
+					mob.Cooldown -= Time.deltaTime;
+				}
+			}
+			#endregion
 
 			#region CheckingPlayerWithLootCollision
 			var lootFilter = world.Filter<LootComponent>().Inc<DisposableComponent>().End();
@@ -156,7 +132,7 @@ namespace ECS
 
 						muzzle.GunConfig = newConfig;
 						muzzle.CurrentMagazineCount = newConfig.MagazineCapacity;
-						
+						ref var requestWeaponViewUpdate = ref world.CreateSimpleEntity<UpdateWeaponViewRequestComponent>();
 					}
 					else if(loot.LootType is LootType.Health)
 					{
@@ -167,28 +143,11 @@ namespace ECS
 						{
 							healthComponent.CurrentHealth = healthComponent.MaxHealth;
 						}
+						ref var requestUIHealthUpdate = ref world.CreateSimpleEntity<UpdateHealthViewRequestComponent>();
 					}
 				}
 			}
 			#endregion
-
-			//#region CheckingPlayerWithBorderCollision
-			//var borderFilter = world.Filter<BorderComponent>().Inc<ColliderComponent>().End();
-			//foreach (var borderEntity in borderFilter)
-			//{
-			//	ref var border = ref borderPool.Get(borderEntity);
-			//	ref var borderCollision = ref colliderPool.Get(borderEntity);
-			//	if (player.Value.transform.position.DistanceTo(border.Transform.position)
-			//		<= borderCollision.Radius)
-			//	{
-			//		border.IsPlayerNearBy = true;
-			//	}
-			//	else
-			//	{
-			//		border.IsPlayerNearBy = false;
-			//	}
-			//}
-			//#endregion
 		}
 	}
 }

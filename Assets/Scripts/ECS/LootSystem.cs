@@ -18,6 +18,7 @@ namespace ECS
 			var collisionPool = world.GetPool<ColliderComponent>();
 			var disposablePool = world.GetPool<DisposableComponent>();
 			var currentSectorPool = world.GetPool<CurrentSectorComponent>();
+			var lookerPool = world.GetPool<LookerAtCamera>();
 
 			#region CheckingDisposed
 			// Check disposed loots and return them to the pool
@@ -85,6 +86,20 @@ namespace ECS
 					lootComponent.Count = selectedLoot.Count;
 					lootComponent.Loot = loot;
 					lootComponent.Id = selectedLoot.Id;
+
+					if (loot.SpriteLooker != null)
+					{
+						ref var lookerComponent = ref lookerPool.Add(lootEntity);
+						lookerComponent.Transform = loot.SpriteLooker.transform;
+						lookerComponent.FlatBillboard = true;
+
+						var sprite = lootComponent.LootType != LootType.Weapon ?
+							mainHolder.Value.SpriteHolder.GetSpriteById(selectedLoot.LootType.ToString()) :
+							mainHolder.Value.GunConfigHolder.GetConfig(selectedLoot.Id).Preview;
+
+						loot.SetSprite(sprite);
+					}
+
 					disposableComponent.IsDisposed = false;
 					loot.gameObject.SetActive(true);
 					loot.transform.position = requestLootSpawn.Position;

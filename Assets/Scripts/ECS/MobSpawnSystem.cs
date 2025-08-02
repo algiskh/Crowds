@@ -53,6 +53,7 @@ namespace ECS
 
 				mobComponent.Value = mob;
 				mobComponent.Config = mobConfig;
+				mobComponent.Cooldown = 0;
 
 				var playerPosition = playerComponent.Value.transform.position;
 				moveComponent.Direction = new Vector2(playerPosition.x - spawnPoint.position.x, 0).normalized;

@@ -9,6 +9,7 @@ public class MainHolder : ScriptableObject
     [SerializeField, BoxGroup("Configs")] private MobConfig _mobConfig;
 	[SerializeField, BoxGroup("Configs")] private EffectsHolder _effectsHolder;
 	[SerializeField, BoxGroup("Configs")] private DecalsConfigHolder _decalsConfigHolder;
+	[SerializeField, BoxGroup("Configs")] private SpriteHolder _spriteHolder;
 
 	[SerializeField,BoxGroup("Prefabs")] private Mob _prefab;
 	[SerializeField, BoxGroup("Prefabs")] private Loot _lootPrefab;
@@ -24,6 +25,7 @@ public class MainHolder : ScriptableObject
 
 	[SerializeField, BoxGroup("GameplayParameters")] private float _lootRadius = 0.5f;
 	[SerializeField, BoxGroup("GameplayParameters")] private float _sectorUpdateOffset = 5f;
+	[SerializeField, BoxGroup("GameplayParameters")] private int _startAmmo = 10;
 	[Header("Camera presets")]
 	[SerializeField] private FollowTarget FollowTarget;
 
@@ -50,9 +52,11 @@ public class MainHolder : ScriptableObject
 	public GunConfigHolder GunConfigHolder => _gunConfigHolder;
 	public EffectsHolder EffectsHolder => _effectsHolder;
 	public SoundHolder SoundHolder => _soundHolder;
+	public SpriteHolder SpriteHolder => _spriteHolder;
 	public float DefaultCollisionRadius => _defaultCollisionRadius;
 	public float MinSpawnCoolDown => _minSpawnCoolDown;
 	public float MaxSpawnCoolDown => _maxSpawnCoolDown;
 	public float LootRadius => _lootRadius;
 	public float SectorUpdateOffset => _sectorUpdateOffset;
+	public int StartAmmo => _startAmmo;
 }

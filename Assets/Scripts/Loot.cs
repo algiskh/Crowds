@@ -1,11 +1,15 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Loot : MonoBehaviour
 {
-	private LootType _lootType;
+	[SerializeField] private Canvas _spriteLooker;
+	[SerializeField] private Image _image;
 
-	public void SetLootType(LootType type)
+	public Canvas SpriteLooker => _spriteLooker;
+
+	public void SetSprite(Sprite sprite)
 	{
-		_lootType = type;
+		_image.sprite = sprite;
 	}
 }

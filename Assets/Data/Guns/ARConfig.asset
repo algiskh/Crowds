@@ -24,3 +24,4 @@ MonoBehaviour:
   _bulletDamage: 50
   _bulletLifeTime: 1.5
   _radius: 0.2
+  _reloadTime: 2

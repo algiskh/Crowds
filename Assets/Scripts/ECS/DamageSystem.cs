@@ -12,30 +12,52 @@ namespace ECS
 			var requestDamagePool = world.GetPool<RequestDamageComponent>();
 			var mobPool = world.GetPool<MobComponent>();
 			var healthPool = world.GetPool<HealthComponent>();
+			var playerPool = world.GetPool<PlayerComponent>();
 
 			#region Handling DamageRequests
 			var filter = world.Filter<RequestDamageComponent>().End();
-			foreach (var entity in filter)
+			foreach (var requestEntity in filter)
 			{
-				ref var requestDamageComponent = ref requestDamagePool.Get(entity);
+				var requestDamageComponent = requestDamagePool.Get(requestEntity);
 				var target = requestDamageComponent.TargetEntity;
+
+				var isPlayer = playerPool.Has(target);
+
+				if (!healthPool.Has(target))
+				{
+					// If the target does not have health or mob component, skip processing
+					continue;
+				}
+
 				ref var healthComponent = ref healthPool.Get(target);
 				// Apply damage to health
 				healthComponent.CurrentHealth -= requestDamageComponent.Damage;
-				ref var mob = ref mobPool.Get(target);
-				mob.Value.ValueBar
-					.ApplyValue(healthComponent.CurrentHealth);
 
-				// Check if health is below zero
-				if (healthComponent.CurrentHealth <= 0)
+
+				if (isPlayer)
 				{
-					healthComponent.CurrentHealth = 0;
-
-					ref var mobLoot = ref world.CreateSimpleEntity<RequestLootSpawn>();
-					mobLoot.PossibleLoots = mob.Config.PossibleLoots;
-					mobLoot.Position = mob.Value.transform.position;
+					ref var requestUIHealthUpdate = ref world.CreateSimpleEntity<UpdateHealthViewRequestComponent>();
+					if (healthComponent.CurrentHealth <= 0)
+					{
+						ref var failedRequest = ref world.CreateSimpleEntity<EndGameComponent>();
+					}
 				}
-				requestDamagePool.Del(entity);
+				else if (mobPool.Has(target))
+				{
+					ref var mob = ref mobPool.Get(target);
+					mob.Value.ValueBar
+						.ApplyValue(healthComponent.CurrentHealth);
+
+					//Request for loot
+					if (healthComponent.CurrentHealth <= 0)
+					{
+						ref var mobLoot = ref world.CreateSimpleEntity<RequestLootSpawn>();
+						mobLoot.PossibleLoots = mob.Config.PossibleLoots;
+						mobLoot.Position = mob.Value.transform.position;
+					}
+
+				}
+				requestDamagePool.Del(requestEntity);
 			}
 			#endregion
 
@@ -64,6 +86,10 @@ namespace ECS
 					world.DelEntity(mobEntity);
 				}
 			}
+			#endregion
+
+			#region Handling player health
+
 			#endregion
 		}
 	}

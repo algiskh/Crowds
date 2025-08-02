@@ -9,19 +9,19 @@ namespace ECS
 		{
 			var world = systems.GetWorld();
 			var playerPool = world.GetPool<PlayerComponent>();
+			var healthPool = world.GetPool<HealthComponent>();
 			ref var playerInput = ref world.GetAsSingleton<PlayerInputComponent>();
+
 			Vector3 input = playerInput.Move;
 			Vector3 previousInput = playerInput.PreviousMove;
 			ref var muzzle = ref world.GetAsSingleton<WeaponComponent>();
 
-			var filter = world.Filter<PlayerComponent>().End();
+			var filter = world.Filter<PlayerComponent>().Inc<HealthComponent>().End();
 			foreach (var entity in filter)
 			{
 				ref var player = ref playerPool.Get(entity);
-				// Состояние Idle определяется по обеим осям (X и Z)
 				bool isIdle = Mathf.Approximately(input.x, 0f) && Mathf.Approximately(input.z, 0f);
 
-				// Fire input
 				var fireRequestPool = world.GetPool<RequestFireComponent>();
 				if (playerInput.IsFiring)
 				{

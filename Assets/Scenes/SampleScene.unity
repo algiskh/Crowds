@@ -1968,6 +1968,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _weaponView: {fileID: 1765589239}
   _ammoText: {fileID: 1797960039}
+  _weaponTitle: {fileID: 1723652568}
 --- !u!1 &733220076
 GameObject:
   m_ObjectHideFlags: 0

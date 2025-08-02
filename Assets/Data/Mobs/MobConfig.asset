@@ -15,7 +15,9 @@ MonoBehaviour:
   _id: Slow
   _health: 100
   _speed: 3
-  _collisionRadius: 0.5
+  _damage: 10
+  _collisionRadius: 1
+  _hitCooldown: 0.5
   _prefab: {fileID: 4635986969134950211, guid: d3e264603209c9c4d9bc3e4eecaa0243, type: 3}
   _possibleLoots:
   - LootType: 0
@@ -32,9 +34,13 @@ MonoBehaviour:
     Chance: 0.01
   - LootType: 1
     Id: 
-    Count: 1
+    Count: 15
     Chance: 0.05
   - LootType: 2
     Id: SMG
     Count: 1
-    Chance: 0.01
+    Chance: 0.02
+  - LootType: 2
+    Id: AR
+    Count: 1
+    Chance: 0.005

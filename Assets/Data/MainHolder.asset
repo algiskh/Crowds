@@ -15,6 +15,7 @@ MonoBehaviour:
   _mobConfig: {fileID: 11400000, guid: f126796bf60eb4e408c02843d6c02878, type: 2}
   _effectsHolder: {fileID: 11400000, guid: f0d7d40b821587347b41124124bedf8e, type: 2}
   _decalsConfigHolder: {fileID: 11400000, guid: 6a949710cfc340943b51ed23b5fabf89, type: 2}
+  _spriteHolder: {fileID: 11400000, guid: fcebf26feaeaf794aa449c4180dd8e01, type: 2}
   _prefab: {fileID: 4635986969134950211, guid: d3e264603209c9c4d9bc3e4eecaa0243, type: 3}
   _lootPrefab: {fileID: 8950431889810804258, guid: d02615f5b7f7e5943a44c8d98bc5ca71, type: 3}
   _bulletPrefab: {fileID: 3834319163352093731, guid: 4ccad587412ec194e812f98752fa1afb, type: 3}
@@ -26,6 +27,7 @@ MonoBehaviour:
   _maxSpawnCoolDown: 10
   _lootRadius: 0.5
   _sectorUpdateOffset: 5
+  _startAmmo: 10
   _playerConfig: {fileID: 11400000, guid: e76d675ca41bc2a4a9e6a9a2efd51893, type: 2}
   _gunConfigHolder: {fileID: 11400000, guid: ec2dc9cc0e8b712428c4a63f67295746, type: 2}
   _soundHolder: {fileID: 11400000, guid: 729264cdb4e2fb743802d88da75cc8e0, type: 2}

@@ -141,6 +141,10 @@ namespace ECS
 			ref var playerMovement = ref _world.GetPool<MoveComponent>().Add(playerEntity);
 			playerMovement.Speed = _mainHolder.PlayerConfig.Speed;
 			ref var playerInput = ref _world.GetPool<PlayerInputComponent>().Add(playerEntity);
+			ref var healthComponent = ref _world.GetPool<HealthComponent>().Add(playerEntity);
+			healthComponent.MaxHealth = _mainHolder.PlayerConfig.MaxHealth;
+			healthComponent.CurrentHealth = healthComponent.MaxHealth;
+			_playerStats.SetHealthValue(healthComponent.CurrentHealth);
 
 			// --- Камера ---
 			int cameraFollowerEntity = _world.NewEntity();
@@ -163,7 +167,7 @@ namespace ECS
 			muzzle.Weapon = _player.Weapon;
 			muzzle.GunConfig = _mainHolder.GunConfigHolder.GetConfig("Pistol");
 			muzzle.CurrentMagazineCount = muzzle.GunConfig.MagazineCapacity;
-			muzzle.AmmoCount = 0;
+			muzzle.AmmoCount = _mainHolder.StartAmmo;
 			ref var reloadingComponent = ref _world.GetPool<ReloadingComponent>().Add(playerEntity);
 			reloadingComponent.ReloadTime = 0;
 

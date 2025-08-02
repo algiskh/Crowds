@@ -1,4 +1,5 @@
 ﻿using Leopotam.EcsLite;
+using System.Diagnostics;
 
 namespace ECS
 {
@@ -9,9 +10,11 @@ namespace ECS
 			var world = systems.GetWorld();
 			ref var weapon = ref world.GetAsSingleton<WeaponComponent>();
 			ref var weaponView = ref world.GetAsSingleton<WeaponUIViewComponent>();
+			ref var playerStats = ref world.GetAsSingleton<PlayerStatsComponent>();
 			ref var reloading = ref world.GetAsSingleton<ReloadingComponent>();
+			ref var player = ref world.GetAsSingleton<PlayerComponent>();
 
-
+			var healthPool = world.GetPool<HealthComponent>();
 			var requestPool = world.GetPool<RequestOpenWindowComponent>();
 			var filter = world.Filter<RequestOpenWindowComponent>()
 				.End();
@@ -28,18 +31,22 @@ namespace ECS
 
 			if (reloading.ReloadTime > 0)
 			{
-				weaponView.Value.ShowReloading(1 / (reloading.ReloadTime / weapon.ReloadTime));
+				UnityEngine.Debug.Log($"Reloading: {(weapon.GunConfig.ReloadTime - reloading.ReloadTime) / 1}");
+				weaponView.Value.ShowReloading((weapon.GunConfig.ReloadTime - reloading.ReloadTime) / 1);
 			}
 
 
 
 			var ammoRequestFilter = world.Filter<UpdateAmmoViewRequestComponent>()
 				.End();
-			
+
 			var weaponRequestFilter = world.Filter<UpdateWeaponViewRequestComponent>()
 				.End();
 
-			if(weaponRequestFilter.GetEntitiesCount() > 0)
+			var healthUpdateFilter = world.Filter<UpdateHealthViewRequestComponent>()
+				.End();
+
+			if (weaponRequestFilter.GetEntitiesCount() > 0)
 			{
 				foreach (var weaponRequestEntity in weaponRequestFilter)
 				{
@@ -57,9 +64,17 @@ namespace ECS
 				}
 			}
 
+			if (healthUpdateFilter.GetEntitiesCount() > 0)
+			{
+				var health = healthPool.Get(player.Value.Entity);
+				playerStats.Value.SetHealthValue(health.CurrentHealth);
+				UnityEngine.Debug.Log($"Change health to {health.CurrentHealth}");
+			}
+
 			world.DeleteAllWith<UpdateWeaponViewRequestComponent>();
 			world.DeleteAllWith<UpdateAmmoViewRequestComponent>();
 			world.DeleteAllWith<RequestOpenWindowComponent>();
+			world.DeleteAllWith<UpdateHealthViewRequestComponent>();
 		}
 	}
 }

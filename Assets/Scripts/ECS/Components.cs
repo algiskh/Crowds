@@ -59,6 +59,7 @@ public struct  MobComponent
 {
 	public Mob Value;
 	public MobConfig Config;
+	public float Cooldown;
 }
 
 public struct MoveComponent
@@ -146,7 +147,7 @@ public struct WeaponComponent
 {
 	public Weapon Weapon;
 	public GunConfig GunConfig;
-	public float PrevFireTime;
+	public float CoolDown;
 	public bool IsFiring;
 	public int CurrentMagazineCount;
 	public int AmmoCount;
@@ -224,7 +225,7 @@ public struct RequestEffectComponent
 
 public struct EndGameComponent
 {
-
+	public bool isWin;
 }
 
 public struct FollowTarget
@@ -344,5 +345,10 @@ public struct UpdateAmmoViewRequestComponent
 
 public struct UpdateWeaponViewRequestComponent
 {
+}
+
+public struct UpdateHealthViewRequestComponent
+{
+
 }
 #endregion
