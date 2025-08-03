@@ -9,35 +9,16 @@ namespace ECS
 		{
 			var world = systems.GetWorld();
 
+			ref var playerComponent = ref world.GetAsSingleton<PlayerComponent>();
 			var endGameFilter = world.Filter<EndGameComponent>()
 				.End();
-			if (endGameFilter.GetEntitiesCount() > 0)
+
+			foreach (var entity in endGameFilter)
 			{
-				return;
-			}
-
-			var playerPool = world.GetPool<PlayerComponent>();
-			var muzzlePool = world.GetPool<WeaponComponent>();
-			var healthPool = world.GetPool<HealthComponent>();
-
-
-			var filter = world.Filter<PlayerComponent>()
-				.Inc<WeaponComponent>()
-				.Inc<HealthComponent>()
-				.End();
-
-			foreach (var entity in filter)
-			{
-				ref var muzzle = ref muzzlePool.Get(entity);
-				ref var health = ref healthPool.Get(entity);
-				ref var player = ref playerPool.Get(entity);
-				if (muzzle.AmmoCount <= 0 || health.CurrentHealth <= 0)
-				{
-					ref var requestOpenWindow = ref world.CreateSimpleEntity<RequestOpenWindowComponent>();
-					requestOpenWindow.WindowType = WindowType.FailWindow;
-					StopAllMoves(world, player);
-					var endGame = world.CreateSimpleEntity<EndGameComponent>();
-				}
+				ref var requestOpenWindow = ref world.CreateSimpleEntity<RequestOpenWindowComponent>();
+				requestOpenWindow.WindowType = WindowType.FailWindow;
+				StopAllMoves(world, playerComponent);
+				world.DelEntity(entity);
 			}
 		}
 

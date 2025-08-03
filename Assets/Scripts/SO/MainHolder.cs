@@ -20,12 +20,16 @@ public class MainHolder : ScriptableObject
 	[SerializeField, BoxGroup("TimerPresets")] private float _utilizationTimer = 5f;
 	[SerializeField, BoxGroup("TimerPresets")] private float _cameraSpeed = 3f;
 
-	[SerializeField, BoxGroup("SpawnPresets")] private float _minSpawnCoolDown = 1f;
-	[SerializeField, BoxGroup("SpawnPresets")] private float _maxSpawnCoolDown = 10f;
+	[SerializeField, BoxGroup("SpawnPresets")] private float _minSpawnCoolDown = 0.75f;
+	[SerializeField, BoxGroup("SpawnPresets")] private float _maxSpawnCoolDown = 5f;
 
 	[SerializeField, BoxGroup("GameplayParameters")] private float _lootRadius = 0.5f;
 	[SerializeField, BoxGroup("GameplayParameters")] private float _sectorUpdateOffset = 5f;
 	[SerializeField, BoxGroup("GameplayParameters")] private int _startAmmo = 10;
+
+	[SerializeField, BoxGroup("DifficultyParameters")] private float _difficultyIncreaseTime = 60f;
+	[SerializeField, BoxGroup("DifficultyParameters")] private int _activeMobLimit = 60;
+
 	[Header("Camera presets")]
 	[SerializeField] private FollowTarget FollowTarget;
 
@@ -59,4 +63,6 @@ public class MainHolder : ScriptableObject
 	public float LootRadius => _lootRadius;
 	public float SectorUpdateOffset => _sectorUpdateOffset;
 	public int StartAmmo => _startAmmo;
+	public float DifficultyIncreaseTime => _difficultyIncreaseTime;
+	public int ActiveMobLimit => _activeMobLimit;
 }

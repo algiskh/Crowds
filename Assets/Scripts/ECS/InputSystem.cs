@@ -16,8 +16,10 @@ namespace ECS
 			var world = systems.GetWorld();
 			ref var input = ref world.GetAsSingleton<PlayerInputComponent>();
 
-			var endGameFilter = world.Filter<EndGameComponent>().End();
-			if (endGameFilter.GetEntitiesCount() > 0)
+			// Check if fail window is active
+			ref var failWindow = ref world.GetAsSingleton<FailWindowComponent>();
+
+			if (failWindow.Value.gameObject.activeSelf)
 			{
 				input.Move = Vector3.zero;
 				return;

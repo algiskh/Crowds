@@ -8,11 +8,13 @@ namespace ECS
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
+			ref var fragCount = ref world.GetAsSingleton<FragCountComponent>();
 			ref var weapon = ref world.GetAsSingleton<WeaponComponent>();
 			ref var weaponView = ref world.GetAsSingleton<WeaponUIViewComponent>();
 			ref var playerStats = ref world.GetAsSingleton<PlayerStatsComponent>();
 			ref var reloading = ref world.GetAsSingleton<ReloadingComponent>();
 			ref var player = ref world.GetAsSingleton<PlayerComponent>();
+			ref var failedWindow =  ref world.GetAsSingleton<FailWindowComponent>();
 
 			var healthPool = world.GetPool<HealthComponent>();
 			var requestPool = world.GetPool<RequestOpenWindowComponent>();
@@ -24,7 +26,7 @@ namespace ECS
 				if (request.WindowType is WindowType.FailWindow)
 				{
 					ref var failWindow = ref world.GetAsSingleton<FailWindowComponent>();
-					failWindow.Value.Open();
+					failWindow.Value.Show(fragCount.Value);
 				}
 				world.DelEntity(requestEntity);
 			}
@@ -35,8 +37,6 @@ namespace ECS
 				weaponView.Value.ShowReloading((weapon.GunConfig.ReloadTime - reloading.ReloadTime) / 1);
 			}
 
-
-
 			var ammoRequestFilter = world.Filter<UpdateAmmoViewRequestComponent>()
 				.End();
 
@@ -44,6 +44,9 @@ namespace ECS
 				.End();
 
 			var healthUpdateFilter = world.Filter<UpdateHealthViewRequestComponent>()
+				.End();
+
+			var fragCountUpdateFilter = world.Filter<RequestUpdateFragCountComponent>()
 				.End();
 
 			if (weaponRequestFilter.GetEntitiesCount() > 0)
@@ -71,10 +74,16 @@ namespace ECS
 				UnityEngine.Debug.Log($"Change health to {health.CurrentHealth}");
 			}
 
+			if (fragCountUpdateFilter.GetEntitiesCount() > 0)
+			{
+				playerStats.Value.SetFragCount(fragCount.Value);
+			}
+
 			world.DeleteAllWith<UpdateWeaponViewRequestComponent>();
 			world.DeleteAllWith<UpdateAmmoViewRequestComponent>();
 			world.DeleteAllWith<RequestOpenWindowComponent>();
 			world.DeleteAllWith<UpdateHealthViewRequestComponent>();
+			world.DeleteAllWith<RequestUpdateFragCountComponent>();
 		}
 	}
 }

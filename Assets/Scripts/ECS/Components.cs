@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 #region Singleton_entities
@@ -115,6 +116,7 @@ public struct SpawnRequestComponent
 
 public struct SpawnPoint
 {
+	public float Cooldown;
 	public Transform Value;
 }
 
@@ -351,4 +353,26 @@ public struct UpdateHealthViewRequestComponent
 {
 
 }
+
+public struct RequestUpdateFragCountComponent
+{
+
+}
+
+public struct FragCountComponent
+{
+	public int Value;
+}
 #endregion
+
+public struct DifficultyComponent
+{
+	public float DifficultyTimer;
+	public float SpawnCooldown;
+	public float SpeedMultiplier;
+}
+
+public struct InterSpawnCooldown
+{
+	public float Value;
+}

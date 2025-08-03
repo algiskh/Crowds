@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.Windows;
 
 namespace ECS
 {
@@ -23,13 +24,21 @@ namespace ECS
 			var mobPool = world.GetPool<MobComponent>();
 			
 			ref var player = ref world.GetAsSingleton<PlayerComponent>();
-
 			var playerTransform = player.Value.transform;
+			var playerPos = playerTransform.position;
 
 			var playerPool = world.GetPool<PlayerComponent>();
 			var healthPool = world.GetPool<HealthComponent>();
 			var borderPool = world.GetPool<BorderComponent>();
 			#endregion
+
+			// todo: refactor
+			ref var failWindow = ref world.GetAsSingleton<FailWindowComponent>();
+
+			if (failWindow.Value.gameObject.activeSelf)
+			{
+				return;
+			}
 
 			#region CreatingCollidersList
 			var filter = world.Filter<ColliderComponent>().End();
@@ -90,7 +99,7 @@ namespace ECS
 			foreach (var mobEntity in mobFilter)
 			{
 				ref var mob = ref mobPool.Get(mobEntity);
-				var distance = mob.Value.transform.position.DistanceTo(player.Value.transform.position);
+				var distance = mob.Value.transform.position.DistanceTo(playerPos);
 				Debug.Log($"mob is in {distance}m");
 				if (distance < mob.Config.HitRadius && mob.Cooldown <= 0)
 				{
@@ -100,6 +109,17 @@ namespace ECS
 					requestDamage.Damage = mob.Config.Damage;
 
 					mob.Cooldown = mob.Config.HitCooldown;
+
+					//Request Effect
+					ref var effectRequest = ref world.CreateSimpleEntity<RequestEffectComponent>();
+					effectRequest.EffectId = "playerHit";
+					effectRequest.Position = playerPos;
+
+					ref var bloodDecal = ref world.CreateSimpleEntity<RequestDecalComponent>();
+					bloodDecal.Position = playerPos;
+					bloodDecal.Id = "Blood";
+					bloodDecal.Direction = playerTransform.rotation * Vector3.forward;
+
 				}
 				else if (mob.Cooldown > 0)
 				{

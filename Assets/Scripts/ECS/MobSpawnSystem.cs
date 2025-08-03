@@ -11,24 +11,22 @@ namespace ECS
 			var world = systems.GetWorld();
 
 			// Spawn 1 mob at a time, if cooldown is over
-			ref var spawnRequest = ref world.GetAsSingleton<SpawnRequestComponent>();
+			var spawnRequestPool = world.GetPool<SpawnRequest>();
 
 			var currentTime = Time.time;
 
-			#region HandlingRequest
-			if (spawnRequest.CurrentCoolDown + spawnRequest.LastSpawnTime <= currentTime && !spawnRequest.IsBlocked)
+			var filter = world.Filter<SpawnRequest>()
+				.End();
+			foreach ( var spawnEntity in filter)
 			{
-				spawnRequest.LastSpawnTime = currentTime;
-
-				spawnRequest.CurrentCoolDown = Random.Range(spawnRequest.MinCoolDown, spawnRequest.MaxCoolDown);
-
+				ref var spawnRequest = ref spawnRequestPool.Get(spawnEntity);
 				ref var spawnPoints = ref world.GetAsSingleton<SpawnPointsComponent>();
 				ref var mobPool = ref world.GetAsSingleton<MobPoolComponent>();
 				ref var mainConfig = ref world.GetAsSingleton<MainHolderComponent>();
 				ref var playerComponent = ref world.GetAsSingleton<PlayerComponent>();
 
 				var mobConfig = mainConfig.Value.MobConfig; // add more mobconfigs
-				var spawnPoint = spawnPoints.Value.GetRandomElement();
+				var spawnPoint = spawnRequest.SpawnPoint;
 
 
 				Mob mob = SpawnMob(mobPool, mobConfig);
@@ -55,6 +53,7 @@ namespace ECS
 				mobComponent.Config = mobConfig;
 				mobComponent.Cooldown = 0;
 
+
 				var playerPosition = playerComponent.Value.transform.position;
 				moveComponent.Direction = new Vector2(playerPosition.x - spawnPoint.position.x, 0).normalized;
 				moveComponent.Speed = mobConfig.Speed;
@@ -67,8 +66,8 @@ namespace ECS
 				looker.FlatBillboard = true;
 
 				InitializeMobGameObject(mob, mobConfig, playerPosition);
+				world.DelEntity(spawnEntity);
 			}
-			#endregion
 		}
 
 		/// <summary>

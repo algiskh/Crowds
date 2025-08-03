@@ -22,3 +22,6 @@ MonoBehaviour:
   - Id: blood
     Prefab: {fileID: 7970544682367293265, guid: 47147e3b89d723e4bb38a689e0eb8f54, type: 3}
     Duration: 1
+  - Id: playerHit
+    Prefab: {fileID: 7970544682367293265, guid: ca6104c49abb81941a19bc22d2cff9af, type: 3}
+    Duration: 1

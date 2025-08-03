@@ -8,7 +8,8 @@ namespace ECS
 		{
 			var world = systems.GetWorld();
 
-			ref var mobSpawnPool = ref world.GetAsSingleton<MobPoolComponent>();
+			ref var fragCount = ref world.GetAsSingleton<FragCountComponent>();
+			ref var mobSpawnPool = ref world.GetAsSingleton<MobPoolComponent>(); 
 			var requestDamagePool = world.GetPool<RequestDamageComponent>();
 			var mobPool = world.GetPool<MobComponent>();
 			var healthPool = world.GetPool<HealthComponent>();
@@ -39,6 +40,7 @@ namespace ECS
 					ref var requestUIHealthUpdate = ref world.CreateSimpleEntity<UpdateHealthViewRequestComponent>();
 					if (healthComponent.CurrentHealth <= 0)
 					{
+						Debug.Log($"END_GAME");
 						ref var failedRequest = ref world.CreateSimpleEntity<EndGameComponent>();
 					}
 				}
@@ -52,6 +54,8 @@ namespace ECS
 					if (healthComponent.CurrentHealth <= 0)
 					{
 						ref var mobLoot = ref world.CreateSimpleEntity<RequestLootSpawn>();
+						++fragCount.Value;
+						ref var uiRequest = ref world.CreateSimpleEntity<RequestUpdateFragCountComponent>();
 						mobLoot.PossibleLoots = mob.Config.PossibleLoots;
 						mobLoot.Position = mob.Value.transform.position;
 					}

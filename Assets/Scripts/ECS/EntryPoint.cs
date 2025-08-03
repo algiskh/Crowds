@@ -1,6 +1,5 @@
 using Leopotam.EcsLite;
 using Sirenix.OdinInspector;
-using Sirenix.OdinInspector.Editor.GettingStarted;
 using UnityEngine;
 
 namespace ECS
@@ -28,6 +27,7 @@ namespace ECS
 		[Title("UI")]
 		[SerializeField, Required, BoxGroup("UI")] private PlayerStats _playerStats;
 		[SerializeField, Required, BoxGroup("UI")] private WeaponUIView _weaponView;
+		[SerializeField, Required, BoxGroup("UI")] private FailWindow _failWindow;
 
 		// ECS
 		private EcsWorld _world;
@@ -74,6 +74,8 @@ namespace ECS
 
 			ref var navMeshManager = ref _world.CreateSimpleEntity<NavMeshManagerComponent>();
 			navMeshManager.Value = FindFirstObjectByType<NavMeshManager>();
+			ref var fragCount = ref _world.CreateSimpleEntity<FragCountComponent>();
+			fragCount.Value = 0;
 
 			// --- UI компоненты ---
 			ref var weaponViewComponent = ref _world.CreateSimpleEntity<WeaponUIViewComponent>();
@@ -81,6 +83,9 @@ namespace ECS
 
 			ref var playerStatsComponent = ref _world.CreateSimpleEntity<PlayerStatsComponent>();
 			playerStatsComponent.Value = _playerStats;
+
+			ref var failWindowComponent = ref _world.CreateSimpleEntity<FailWindowComponent>();
+			failWindowComponent.Value = _failWindow;
 
 			// --- Точки спауна ---
 			var spawnPointPool = _world.GetPool<SpawnPoint>();
@@ -209,6 +214,7 @@ namespace ECS
 				.Add(new DecalSystem())
 				.Add(new PlayerSystem())
 				.Add(new PlayerMovementSystem())
+				.Add(new CheckFailSystem())
 				.Add(new UISystem())
 				.Init();
 			#endregion

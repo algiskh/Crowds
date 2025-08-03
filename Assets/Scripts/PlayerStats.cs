@@ -40,4 +40,9 @@ public class PlayerStats : MonoBehaviour
 			_shieldbar.ApplyValue(value);
 		}
 	}
+
+	public void SetFragCount(int count)
+	{
+		_killsText.text = $"Kills: {count}";
+	}
 }

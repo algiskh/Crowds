@@ -16,7 +16,7 @@ public class GunConfig : ScriptableObject
 
 	[VerticalGroup("Top/Right")]
 	[LabelText("Название оружия"), PropertyOrder(-8)]
-	[SerializeField][InlineButton(nameof(SetDefaultName), "По ID")] private string _gunName;
+	[SerializeField] private string _gunName;
 
 	[Space]
 	[Title("Стрельба"), GUIColor(1, 0.95f, 0.7f)]
