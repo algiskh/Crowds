@@ -17,11 +17,11 @@ MonoBehaviour:
   _gunName: AR
   _fireRate: 0.1
   _magazineCapacity: 30
-  _fireSoundId: Fire01
+  _fireSoundId: ar_shot
   _bulletPrefab: {fileID: 3834319163352093731, guid: 4ccad587412ec194e812f98752fa1afb, type: 3}
   _bulletCheckType: 0
   _bulletSpeed: 30
-  _bulletDamage: 50
+  _bulletDamage: 70
   _bulletLifeTime: 1.5
   _radius: 0.2
   _reloadTime: 2

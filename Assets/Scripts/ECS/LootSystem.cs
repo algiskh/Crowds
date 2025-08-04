@@ -52,14 +52,28 @@ namespace ECS
 				var cumulativeChance = possibleLoots.Sum(b => b.Chance);
 
 				// Select loot based on chance  
-				var randomValue = UnityEngine.Random.value;
-
+				var randomValue = UnityEngine.Random.value * Mathf.Clamp(cumulativeChance, 1f, float.MaxValue);
+				UnityEngine.Debug.Log($"Random value is {randomValue}");
 				if (randomValue > cumulativeChance)
 				{
 					continue;
 				}
 
-				var selectedLoot = possibleLoots.FirstOrDefault(b => randomValue <= b.Chance);
+				MobConfig.PossibleLoot selectedLoot = null;
+
+				for (int i = possibleLoots.Length - 1; i >= 0; i--)
+				{
+					if (i > 0)
+					{
+						cumulativeChance -= possibleLoots[i].Chance;
+						selectedLoot = possibleLoots[i];
+						if (randomValue > cumulativeChance)
+						{
+							break;
+						}
+					}
+				}
+				//var selectedLoot = possibleLoots.FirstOrDefault(b => randomValue <= b.Chance);
 
 				if (selectedLoot != null)
 				{

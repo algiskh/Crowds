@@ -33,31 +33,51 @@ namespace ECS
 				Vector3 currentPos = follower.Value.position;
 				float distance = Vector3.Distance(currentPos, targetPos);
 
-				// ≈сли уже достаточно близко Ч стоим
-				if (distance < target.Threshold)
-					continue;
-
-				// === ƒинамическое ускорение ===
-				float speed = movement.Speed;
-				if (target.IsAcceleratable)
+				// --- ќграничение максимального разрыва ---
+				if (target.MatchTargetSpeedIfFar && distance > target.MatchSpeedDistance)
 				{
-					// Ѕазовое ускорение Ч линейно от рассто€ни€
-					speed += target.AccelerationMultiplier * distance;
+					// —тавим на границу лимита
+					Vector3 dir = (currentPos - targetPos).normalized;
+					follower.Value.position = targetPos + dir * target.MatchSpeedDistance;
 
-					// ≈сли задан максимальный множитель, ограничиваем максимальную скорость
-					if (target.MaxAccelerationMultiplier > 0f)
-						speed = Mathf.Min(speed, movement.Speed * target.MaxAccelerationMultiplier);
+					// ѕосле телепорта/догонки пересчитываем рассто€ние
+					currentPos = follower.Value.position;
+					distance = Vector3.Distance(currentPos, targetPos);
+
+					// ≈сли ещЄ есть дистанци€ дл€ плавного движени€ Ч двигаем обычным образом
+					if (distance > target.Threshold)
+					{
+						float speed = movement.Speed;
+						if (target.IsAcceleratable)
+						{
+							speed += target.AccelerationMultiplier * distance;
+							if (target.MaxAccelerationMultiplier > 0f)
+								speed = Mathf.Min(speed, movement.Speed * target.MaxAccelerationMultiplier);
+						}
+
+						float moveStep = speed * Time.deltaTime;
+						Vector3 newPos = Vector3.MoveTowards(currentPos, targetPos, moveStep);
+						follower.Value.position = newPos;
+					}
+					continue;
 				}
 
-				float moveStep = speed * Time.deltaTime;
-				Vector3 newPos = Vector3.MoveTowards(currentPos, targetPos, moveStep);
+				// ќбычное движение, если в пределах лимита и нужно ещЄ идти к цели
+				if (distance > target.Threshold)
+				{
+					float speed = movement.Speed;
+					if (target.IsAcceleratable)
+					{
+						speed += target.AccelerationMultiplier * distance;
+						if (target.MaxAccelerationMultiplier > 0f)
+							speed = Mathf.Min(speed, movement.Speed * target.MaxAccelerationMultiplier);
+					}
 
-				follower.Value.position = newPos;
-
-				// --- по желанию: если хочешь поворот за движением ---
-				// Vector3 moveDir = targetPos - currentPos;
-				// if (moveDir.sqrMagnitude > 0.0001f)
-				//     follower.Value.right = moveDir.normalized;
+					float moveStep = speed * Time.deltaTime;
+					Vector3 newPos = Vector3.MoveTowards(currentPos, targetPos, moveStep);
+					follower.Value.position = newPos;
+				}
+				// ≈сли рассто€ние уже маленькое Ч стоим.
 			}
 		}
 	}

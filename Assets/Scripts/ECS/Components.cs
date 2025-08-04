@@ -237,6 +237,9 @@ public struct FollowTarget
 	public bool IsAcceleratable;
 	public float AccelerationMultiplier;
 	public float MaxAccelerationMultiplier;
+
+	public bool MatchTargetSpeedIfFar;
+	public float MatchSpeedDistance;
 }
 
 public struct FollowerComponent

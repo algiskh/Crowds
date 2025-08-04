@@ -21,3 +21,7 @@ MonoBehaviour:
     Clip: {fileID: 8300000, guid: 89c472a189e96a6499bbc3183ed9280e, type: 3}
   - Id: Reload
     Clip: {fileID: 8300000, guid: f7441826056eebe438079bdf61664da2, type: 3}
+  - Id: ar_shot
+    Clip: {fileID: 8300000, guid: 720a9468bba479246ae363e9347ae974, type: 3}
+  - Id: health
+    Clip: {fileID: 8300000, guid: d836dae5beb440648ace695603a70e71, type: 3}

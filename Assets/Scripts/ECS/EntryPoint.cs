@@ -160,6 +160,8 @@ namespace ECS
 			ref var followTarget = ref _world.GetPool<FollowTarget>().Add(cameraFollowerEntity);
 			followTarget = _mainHolder.CameraFollowTarget;
 			followTarget.Target = _player.transform;
+			followTarget.MatchTargetSpeedIfFar = true;
+			followTarget.MatchSpeedDistance = 3f;
 			ref var offset = ref _world.GetPool<FollowerOffset>().Add(cameraFollowerEntity);
 			offset.Value = _mainCamera.transform.position - _player.transform.position;
 

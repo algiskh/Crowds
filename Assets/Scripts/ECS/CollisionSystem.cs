@@ -100,10 +100,8 @@ namespace ECS
 			{
 				ref var mob = ref mobPool.Get(mobEntity);
 				var distance = mob.Value.transform.position.DistanceTo(playerPos);
-				Debug.Log($"mob is in {distance}m");
 				if (distance < mob.Config.HitRadius && mob.Cooldown <= 0)
 				{
-					Debug.Log($"Try to request damage for player");
 					ref var requestDamage = ref world.CreateSimpleEntity<RequestDamageComponent>();
 					requestDamage.TargetEntity = player.Value.Entity;
 					requestDamage.Damage = mob.Config.Damage;
