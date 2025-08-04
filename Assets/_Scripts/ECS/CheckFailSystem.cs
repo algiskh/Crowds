@@ -15,6 +15,9 @@ namespace ECS
 
 			foreach (var entity in endGameFilter)
 			{
+				ref var requestPause = ref world.CreateSimpleEntity<RequestPauseComponent>();
+				requestPause.Source = SignalSource.EndGame;
+
 				ref var requestOpenWindow = ref world.CreateSimpleEntity<RequestOpenWindowComponent>();
 				requestOpenWindow.WindowType = WindowType.FailWindow;
 				StopAllMoves(world, playerComponent);

@@ -21,6 +21,15 @@ namespace ECS
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
+
+			#region Check pause
+			ref var pauseState = ref world.GetAsSingleton<PauseStateComponent>();
+			if (pauseState.IsPaused)
+			{
+				return;
+			}
+			#endregion
+
 			var mainHolder = world.GetAsSingleton<MainHolderComponent>().Value;
 			ref var difficulty = ref world.GetAsSingleton<DifficultyComponent>();
 			ref var interSpawnCoolDown = ref world.GetAsSingleton<InterSpawnCooldown>();
@@ -36,7 +45,6 @@ namespace ECS
 			);
 
 			difficulty.DifficultyTimer -= Time.deltaTime;
-			UnityEngine.Debug.Log($"!!! SpawnCooldown: {difficulty.SpawnCooldown}");
 			// Пример для SpeedMultiplier, если надо делать его, например, от 1 до mainHolder.MaxSpeedMultiplier:
 			// difficulty.SpeedMultiplier = Mathf.Lerp(1f, mainHolder.MaxSpeedMultiplier, timePassed);
 

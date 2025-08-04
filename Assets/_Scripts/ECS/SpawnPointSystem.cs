@@ -9,6 +9,15 @@ namespace ECS
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
+
+			#region Check pause
+			ref var pauseState = ref world.GetAsSingleton<PauseStateComponent>();
+			if (pauseState.IsPaused)
+			{
+				return;
+			}
+			#endregion
+
 			IterateSpawnPoints(world);
 		}
 
@@ -26,14 +35,6 @@ namespace ECS
 
 			var filter = world.Filter<SpawnPoint>().End();
 			var mobCount = world.Filter<MobComponent>().Inc<HealthComponent>().End().GetEntitiesCount();
-
-			// todo: refactor
-			ref var failWindow = ref world.GetAsSingleton<FailWindowComponent>();
-
-			if (failWindow.Value.gameObject.activeSelf)
-			{
-				return;
-			}
 
 			if (interSpawnCoolDown.Value > 0)
 			{

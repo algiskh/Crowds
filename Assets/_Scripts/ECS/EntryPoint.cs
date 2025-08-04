@@ -1,6 +1,7 @@
 using Leopotam.EcsLite;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace ECS
 {
@@ -29,6 +30,7 @@ namespace ECS
 		[SerializeField, Required, BoxGroup("UI")] private WeaponUIView _weaponView;
 		[SerializeField, Required, BoxGroup("UI")] private FailWindow _failWindow;
 
+		[SerializeField] private InputActionAsset _inputActions;
 		// ECS
 		private EcsWorld _world;
 		private EcsSystems _systems;
@@ -76,6 +78,9 @@ namespace ECS
 			navMeshManager.Value = FindFirstObjectByType<NavMeshManager>();
 			ref var fragCount = ref _world.CreateSimpleEntity<FragCountComponent>();
 			fragCount.Value = 0;
+
+			ref var inputActions = ref _world.CreateSimpleEntity<InputActionsComponent>();
+			inputActions.Value = _inputActions;
 
 			// --- UI компоненты ---
 			ref var weaponViewComponent = ref _world.CreateSimpleEntity<WeaponUIViewComponent>();
@@ -194,30 +199,38 @@ namespace ECS
 
 		private void RegisterSystems()
 		{
-			// --- Регистрируем ECS системы ---
 			#region RegisterSystems
 			_systems
 				.Add(new CheckSectorSystem())
 				.Add(new DifficultySystem())
 				.Add(new SpawnPointSystem())
+				// Mob systems
 				.Add(new MobSpawnSystem())
+				// Move and navigation systems
 				.Add(new MobPathfindingSystem())
 				.Add(new MoveSystem())
 				.Add(new FollowSystem())
 				.Add(new LookAtCameraSystem())
 				.Add(new LookAtCursorSystem())
+				// Fire and Reload Systems
+				.Add(new WeaponFireSystem())
+				.Add(new WeaponReloadSystem())
 				.Add(new BulletSystem())
 				.Add(new BulletOverlapSystem())
+				// Collision and Damage Systems
 				.Add(new CollisionSystem())
 				.Add(new DamageSystem())
+				// Other spawning systems
 				.Add(new LootSystem())
-				.Add(new InputSystem())
 				.Add(new EffectsSystem())
 				.Add(new DecalSystem())
+				// Player systems
+				.Add(new InputSystem())
 				.Add(new PlayerSystem())
 				.Add(new PlayerMovementSystem())
 				.Add(new CheckFailSystem())
 				.Add(new UISystem())
+				.Add(new PauseSystem())
 				.Init();
 			#endregion
 		}

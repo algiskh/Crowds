@@ -32,13 +32,13 @@ namespace ECS
 			var borderPool = world.GetPool<BorderComponent>();
 			#endregion
 
-			// todo: refactor
-			ref var failWindow = ref world.GetAsSingleton<FailWindowComponent>();
-
-			if (failWindow.Value.gameObject.activeSelf)
+			#region Check pause
+			ref var pauseState = ref world.GetAsSingleton<PauseStateComponent>();
+			if (pauseState.IsPaused)
 			{
 				return;
 			}
+			#endregion
 
 			#region CreatingCollidersList
 			var filter = world.Filter<ColliderComponent>().End();

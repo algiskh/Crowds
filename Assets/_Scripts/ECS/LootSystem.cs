@@ -34,7 +34,7 @@ namespace ECS
 
 					//Request Effect
 					ref var effectRequest = ref world.CreateSimpleEntity<RequestEffectComponent>();
-					effectRequest.EffectId = "collect";
+					effectRequest.EffectId = loot.LootType == LootType.Health ? "collectHealth" : "collect";
 					effectRequest.Position = loot.Loot.transform.position;
 
 					world.DelEntity(disposedEntity); // delete entity

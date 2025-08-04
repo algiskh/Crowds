@@ -1,0 +1,79 @@
+﻿using Leopotam.EcsLite;
+using UnityEngine;
+
+namespace ECS
+{
+	public class InputSystem : IEcsInitSystem, IEcsRunSystem
+	{
+		public void Init(IEcsSystems systems)
+		{
+			var world = systems.GetWorld();
+			ref var playerInput = ref world.GetAsSingleton<PlayerInputComponent>();
+			ref var inputActions = ref world.GetAsSingleton<InputActionsComponent>();
+
+			inputActions.ActionMap = inputActions.Value.FindActionMap("Player");
+			inputActions.MoveAction = inputActions.ActionMap.FindAction("Move", throwIfNotFound: true);
+			inputActions.FireAction = inputActions.ActionMap.FindAction("Attack", throwIfNotFound: true);
+			inputActions.ReloadAction = inputActions.ActionMap.FindAction("Reload", throwIfNotFound: true);
+		}
+
+		public void Run(IEcsSystems systems)
+		{
+			var world = systems.GetWorld();
+			ref var input = ref world.GetAsSingleton<PlayerInputComponent>();
+
+			#region Check pause
+			ref var pauseState = ref world.GetAsSingleton<PauseStateComponent>();
+			if (pauseState.IsPaused)
+			{
+				input.Move = Vector3.zero;
+				input.IsFiring = false;
+				return;
+			}
+			#endregion
+
+			input.PreviousMove = input.Move;
+
+			ref var inputActions = ref world.GetAsSingleton<InputActionsComponent>();
+			ref var cam = ref world.GetAsSingleton<CameraComponent>().Value;
+
+			// Новое получение инпута
+			Vector2 moveInput = Vector2.zero;
+			if (inputActions.MoveAction != null)
+				moveInput = inputActions.MoveAction.ReadValue<Vector2>();
+
+			bool isFiring = false;
+			if (inputActions.FireAction != null)
+				isFiring = inputActions.FireAction.ReadValue<float>() > 0.5f;
+			if (inputActions.ReloadAction != null && inputActions.ReloadAction.triggered)
+			{
+				ref var requestReload = ref world.CreateSimpleEntity<RequestReloadComponent>();
+			}	
+			// или inputActions.FireAction.triggered; если тебе нужно "нажато в этом фрейме"
+
+			Vector3 moveDir = Vector3.zero;
+
+			if (cam != null)
+			{
+				Vector3 camForward = cam.transform.forward;
+				camForward.y = 0f;
+				camForward.Normalize();
+
+				Vector3 camRight = cam.transform.right;
+				camRight.y = 0f;
+				camRight.Normalize();
+
+				moveDir = camForward * moveInput.y + camRight * moveInput.x;
+				if (moveDir.sqrMagnitude > 1f)
+					moveDir.Normalize();
+			}
+			else
+			{
+				moveDir = new Vector3(moveInput.x, 0f, moveInput.y);
+			}
+
+			input.Move = moveDir;
+			input.IsFiring = isFiring;
+		}
+	}
+}

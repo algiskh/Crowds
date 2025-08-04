@@ -1,12 +1,12 @@
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 #region Singleton_entities
 /// <summary>
 /// Singleton component for holding main configuration data
 /// </summary>
-public struct  MainHolderComponent
+public struct MainHolderComponent
 {
 	public MainHolder Value;
 }
@@ -56,7 +56,7 @@ public struct EffectPoolComponent
 }
 #endregion
 
-public struct  MobComponent
+public struct MobComponent
 {
 	public Mob Value;
 	public MobConfig Config;
@@ -378,4 +378,41 @@ public struct DifficultyComponent
 public struct InterSpawnCooldown
 {
 	public float Value;
+}
+
+public struct PauseStateComponent
+{
+	public bool IsPaused;
+	public SignalSource PreviousSource;
+}
+
+public struct RequestPauseComponent
+{
+	public SignalSource Source;
+}
+
+public struct RequestUnpauseComponent
+{
+	public SignalSource Source;
+}
+
+public struct InputActionsComponent
+{
+	public InputActionAsset Value;
+	public InputActionMap ActionMap;
+	public InputAction MoveAction;
+	public InputAction FireAction;
+	public InputAction ReloadAction;
+}
+
+public struct RequestReloadComponent
+{
+
+}
+
+public struct RequestSpawnBulletComponent
+{
+	public Vector3 Position;
+	public Vector3 Direction;
+	public GunConfig GunConfig;
 }

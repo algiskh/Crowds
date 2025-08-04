@@ -25,3 +25,6 @@ MonoBehaviour:
   - Id: playerHit
     Prefab: {fileID: 7970544682367293265, guid: ca6104c49abb81941a19bc22d2cff9af, type: 3}
     Duration: 1
+  - Id: collectHealth
+    Prefab: {fileID: 7970544682367293265, guid: f049739013666e441a20aac1da51c077, type: 3}
+    Duration: 1
