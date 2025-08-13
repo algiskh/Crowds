@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Fast
   m_EditorClassIdentifier: 
   _id: Fast
-  _health: 100
+  _health: 50
   _speed: 5
   _damage: 10
   _collisionRadius: 1

@@ -53,9 +53,10 @@ namespace ECS
 
 				// Select loot based on chance  
 				var randomValue = UnityEngine.Random.value * Mathf.Clamp(cumulativeChance, 1f, float.MaxValue);
-				UnityEngine.Debug.Log($"Random value is {randomValue}");
+
 				if (randomValue > cumulativeChance)
 				{
+					world.DelEntity(entity);
 					continue;
 				}
 
