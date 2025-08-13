@@ -10,6 +10,7 @@ public class MainHolder : ScriptableObject
 	[SerializeField, BoxGroup("Configs")] private EffectsHolder _effectsHolder;
 	[SerializeField, BoxGroup("Configs")] private DecalsConfigHolder _decalsConfigHolder;
 	[SerializeField, BoxGroup("Configs")] private SpriteHolder _spriteHolder;
+	[SerializeField, BoxGroup("Configs")] private MobConfigHolder _mobConfigHolder;
 
 	[SerializeField,BoxGroup("Prefabs")] private Mob _prefab;
 	[SerializeField, BoxGroup("Prefabs")] private Loot _lootPrefab;
@@ -65,4 +66,5 @@ public class MainHolder : ScriptableObject
 	public int StartAmmo => _startAmmo;
 	public float DifficultyIncreaseTime => _difficultyIncreaseTime;
 	public int ActiveMobLimit => _activeMobLimit;
+	public MobConfigHolder MobConfigHolder => _mobConfigHolder;
 }

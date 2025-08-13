@@ -8,6 +8,8 @@ namespace ECS
 	public class EntryPoint : MonoBehaviour
 	{
 		#region FIELDS
+		[Title("Temporary")]
+		[SerializeField, BoxGroup("Temporary")] private LevelConfig _levelConfig;
 
 		[Title("Основные ссылки")]
 		[SerializeField, Required, BoxGroup("Game References")] private MainHolder _mainHolder;
@@ -29,6 +31,7 @@ namespace ECS
 		[SerializeField, Required, BoxGroup("UI")] private PlayerStats _playerStats;
 		[SerializeField, Required, BoxGroup("UI")] private WeaponUIView _weaponView;
 		[SerializeField, Required, BoxGroup("UI")] private FailWindow _failWindow;
+		[SerializeField, Required, BoxGroup("UI")] private DifficultyTimerView _difficultyTimerView;
 
 		[SerializeField] private InputActionAsset _inputActions;
 		// ECS
@@ -69,6 +72,8 @@ namespace ECS
 		[Button(ButtonSizes.Large), DisableInEditorMode]
 		private void SetupSpawnData()
 		{
+			SetUpLevel();
+
 			// --- Общие сущности приложения ---
 			int appEntity = _world.NewEntity();
 			ref var config = ref _world.GetPool<MainHolderComponent>().Add(appEntity);
@@ -92,10 +97,14 @@ namespace ECS
 			ref var failWindowComponent = ref _world.CreateSimpleEntity<FailWindowComponent>();
 			failWindowComponent.Value = _failWindow;
 
+			ref var difficultyTimerUIComponent = ref _world.CreateSimpleEntity<DifficultyTimerUIComponent>();
+			difficultyTimerUIComponent.Value = _difficultyTimerView;
+
 			// --- Точки спауна ---
-			var spawnPointPool = _world.GetPool<SpawnPoint>();
+			var spawnPointPool = _world.GetPool<SpawnPointComponent>();
 			var spawnTimerPool = _world.GetPool<SpawnTimer>();
-			foreach (var spawnPoint in _spawnPoints)
+			var spawnPoints = FindObjectsByType<SpawnPoint>(FindObjectsSortMode.None);
+			foreach (var spawnPoint in spawnPoints)
 			{
 				int spawnEntity = _world.NewEntity();
 				ref var sp = ref spawnPointPool.Add(spawnEntity);
@@ -195,6 +204,12 @@ namespace ECS
 			var drawer = FindFirstObjectByType<PathGizmoDrawer>();
 			if (drawer != null)
 				drawer.Initialize(_world);
+		}
+
+		private void SetUpLevel()
+		{
+			ref var config = ref _world.CreateSimpleEntity<CurrentLevelConfigComponent>();
+			config.Value = _levelConfig;
 		}
 
 		private void RegisterSystems()

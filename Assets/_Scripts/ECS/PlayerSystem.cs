@@ -30,15 +30,8 @@ namespace ECS
 					ref var requestFireComponent = ref fireRequestPool.Add(fireEntity);
 				}
 			}
-		}
 
-		private void SetRun(ref PlayerComponent player, ref PlayerInputComponent playerInput)
-		{
-			//if (player.State != PlayerState.Run)
-			//{
-			//	player.Value.Animator.SetAnimation("Run");
-			//	player.State = PlayerState.Run;
-			//}
+			
 		}
 	}
 }

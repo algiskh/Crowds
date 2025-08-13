@@ -5,17 +5,13 @@ namespace ECS
 {
 	public class DifficultySystem : IEcsInitSystem, IEcsRunSystem
 	{
-		private float _startTime;
-
 		public void Init(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
-			var mainHolder = world.GetAsSingleton<MainHolderComponent>().Value;
+			var levelConfig = world.GetAsSingleton<CurrentLevelConfigComponent>();
 			ref var difficulty = ref world.CreateSimpleEntity<DifficultyComponent>();
-			difficulty.SpawnCooldown = mainHolder.MaxSpawnCoolDown; // Изначально устанавливаем максимальное значение
-			difficulty.DifficultyTimer = mainHolder.DifficultyIncreaseTime; // Устанавливаем время увеличения сложности
-
-			ref var interSpawnCoolDown = ref world.CreateSimpleEntity<InterSpawnCooldown>();
+			var firstStage = levelConfig.Value.GetFirstStage(true); // TODO: Extend
+			ApplyStage(ref difficulty, firstStage);
 		}
 
 		public void Run(IEcsSystems systems)
@@ -30,25 +26,31 @@ namespace ECS
 			}
 			#endregion
 
-			var mainHolder = world.GetAsSingleton<MainHolderComponent>().Value;
 			ref var difficulty = ref world.GetAsSingleton<DifficultyComponent>();
-			ref var interSpawnCoolDown = ref world.GetAsSingleton<InterSpawnCooldown>();
-
-			// Считаем прогресс от 0 до 1
-			float timePassed = Mathf.Clamp01(difficulty.DifficultyTimer / mainHolder.DifficultyIncreaseTime);
-
-			// Линейная интерполяция от Max к Min
-			difficulty.SpawnCooldown = Mathf.Lerp(
-				mainHolder.MinSpawnCoolDown,   // from
-				mainHolder.MaxSpawnCoolDown,   // to
-				timePassed                     // progress
-			);
+			var levelConfig = world.GetAsSingleton<CurrentLevelConfigComponent>();
 
 			difficulty.DifficultyTimer -= Time.deltaTime;
-			// Пример для SpeedMultiplier, если надо делать его, например, от 1 до mainHolder.MaxSpeedMultiplier:
-			// difficulty.SpeedMultiplier = Mathf.Lerp(1f, mainHolder.MaxSpeedMultiplier, timePassed);
 
-			// difficulty.DifficultyAccelerationTime (можно обновлять или использовать по необходимости)
+			if (difficulty.DifficultyTimer < 0)
+			{
+				var level = difficulty.Stage.DifficultyLevel;
+				var newStage = levelConfig.Value.GetNextStage(level);
+				if (newStage == null)
+				{
+					// No more stages, reset to first stage
+					newStage = levelConfig.Value.GetFirstStage(true);
+				}
+				ApplyStage(ref difficulty, newStage);
+				ref var requestShowDifficulty = ref world.CreateSimpleEntity<RequestShowDifficultyComponent>();
+				requestShowDifficulty.DifficultyLevel = level;
+				requestShowDifficulty.Seconds = difficulty.DifficultyTimer;
+			}
+		}
+
+		private void ApplyStage(ref DifficultyComponent difficulty, DifficultyStage stage)
+		{
+			difficulty.Stage = stage;
+			difficulty.DifficultyTimer = stage.DifficultyTimer;
 		}
 	}
 }

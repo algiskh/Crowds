@@ -15,6 +15,8 @@ namespace ECS
 			ref var reloading = ref world.GetAsSingleton<ReloadingComponent>();
 			ref var player = ref world.GetAsSingleton<PlayerComponent>();
 			ref var failedWindow =  ref world.GetAsSingleton<FailWindowComponent>();
+			ref var difficultyView = ref world.GetAsSingleton<DifficultyTimerUIComponent>();
+			ref var difficulty = ref world.GetAsSingleton<DifficultyComponent>();
 
 			var healthPool = world.GetPool<HealthComponent>();
 			var requestPool = world.GetPool<RequestOpenWindowComponent>();
@@ -79,11 +81,29 @@ namespace ECS
 				playerStats.Value.SetFragCount(fragCount.Value);
 			}
 
+			if (world.TryGetAsSingleton<RequestShowDifficultyComponent>(out var value))
+			{
+				difficultyView.Value.Show(value.DifficultyLevel, difficulty.DifficultyTimer);
+			}
+
+			if (difficulty.Stage.DifficultyLevel != DifficultyLevel.tutorial)
+			{
+				difficultyView.Value.UpdateView(difficulty.DifficultyTimer / difficulty.Stage.DifficultyTimer, difficulty.DifficultyTimer);
+			}
+			else
+			{
+				if (difficultyView.Value.IsActive)
+				{
+					difficultyView.Value.Hide();
+				}
+			}
+
 			world.DeleteAllWith<UpdateWeaponViewRequestComponent>();
 			world.DeleteAllWith<UpdateAmmoViewRequestComponent>();
 			world.DeleteAllWith<RequestOpenWindowComponent>();
 			world.DeleteAllWith<UpdateHealthViewRequestComponent>();
 			world.DeleteAllWith<RequestUpdateFragCountComponent>();
+			world.DeleteAllWith<RequestShowDifficultyComponent>();
 		}
 	}
 }

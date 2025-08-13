@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3734ec2c50bdc2f4b8869a485acd283e, type: 3}
+  m_Name: Level1
+  m_EditorClassIdentifier: 
+  _difficultyStages:
+  - DifficultyLevel: 1
+    DifficultyTimer: 25
+    SpeedMultiplier: 1.2
+    InterSpawnCooldown: 2
+  - DifficultyLevel: 2
+    DifficultyTimer: 60
+    SpeedMultiplier: 2
+    InterSpawnCooldown: 1
+  - DifficultyLevel: 3
+    DifficultyTimer: 60
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.5
+  - DifficultyLevel: 13
+    DifficultyTimer: 0
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.5

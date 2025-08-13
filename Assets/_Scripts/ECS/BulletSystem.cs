@@ -16,6 +16,7 @@ namespace ECS
 			ref var bulletPoolPool = ref world.GetAsSingleton<BulletPoolComponent>();
 			ref var reloading = ref world.GetAsSingleton<ReloadingComponent>();
 			var bulletRequestPool = world.GetPool<RequestSpawnBulletComponent>();
+
 			#endregion
 
 			var delta = Time.deltaTime;
@@ -70,7 +71,14 @@ namespace ECS
 				ref var disposeComponent = ref disposePool.Add(bulletEntity);
 				disposeComponent.IsDisposed = false;
 
-				moveComponent.Direction = bulletRequest.Direction;
+				float accuracy = bulletRequest.GunConfig.Accuracy;
+				float maxAngle = (1f - accuracy) * 90f;
+
+				// Отклонение только в горизонтальной плоскости
+				float deviationAngle = Random.Range(-maxAngle, maxAngle);
+				Vector3 finalDirection = Quaternion.AngleAxis(deviationAngle, Vector3.up) * bulletRequest.Direction.normalized;
+
+				moveComponent.Direction = finalDirection;
 				moveComponent.Speed = bulletRequest.GunConfig.BulletSpeed;
 				moveComponent.Transform = bullet.transform;
 			}

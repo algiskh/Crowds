@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using UnityEngine;
+using Random = System.Random;
 
 public static class Extensions
 {
@@ -80,6 +81,61 @@ public static class Extensions
 		return lastTried;
 	}
 
+	public static T GetRandomByWeight<T>(
+		this IEnumerable<T> source,
+		Func<T, bool> predicate = null,
+		bool throwOnEmpty = true)
+		where T : IWeightable
+	{
+		if (source == null)
+		{
+			if (throwOnEmpty)
+				throw new InvalidOperationException("Source is null.");
+			return default;
+		}
+
+		var list = source as IList<T> ?? source.ToList();
+		if (list.Count == 0)
+		{
+			if (throwOnEmpty)
+				throw new InvalidOperationException("Cannot select a random element from an empty collection.");
+			return default;
+		}
+
+		if (predicate != null)
+			list = list.Where(predicate).ToList();
+
+		if (list.Count == 0)
+		{
+			if (throwOnEmpty)
+				throw new InvalidOperationException("No elements match the predicate.");
+			return default;
+		}
+
+		float totalWeight = list.Sum(e => e.Weight);
+		if (totalWeight <= 0f)
+		{
+			if (throwOnEmpty)
+				throw new InvalidOperationException("Total weight is zero or negative.");
+			return default;
+		}
+
+		var random = new Random();
+		double roll = random.NextDouble() * totalWeight;
+		double cumulative = 0;
+
+		foreach (var element in list)
+		{
+			cumulative += element.Weight;
+			if (roll <= cumulative)
+				return element;
+		}
+
+		// На случай погрешности в double
+		return list[list.Count - 1];
+	}
+
+
 	public static IEnumerable<T> GetRandomUniqueElements<T>(this IEnumerable<T> source, int count, bool throwException = true)
 	{
 		if (source == null)
@@ -107,7 +163,7 @@ public static class Extensions
 			count = list.Count;
 		}
 
-		var random = new System.Random();
+		var random = new Random();
 		for (int i = 0; i < count; i++)
 		{
 			var j = random.Next(i, list.Count);

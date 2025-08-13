@@ -11,6 +11,7 @@ namespace ECS
 			var inputPool = world.GetPool<PlayerInputComponent>();
 			var movementPool = world.GetPool<MoveComponent>();
 			var playerPool = world.GetPool<PlayerComponent>();
+			ref var weapon = ref world.GetAsSingleton<WeaponComponent>();
 
 			var filter = world.Filter<PlayerComponent>().Inc<PlayerInputComponent>().Inc<MoveComponent>().End();
 			foreach (var entity in filter)

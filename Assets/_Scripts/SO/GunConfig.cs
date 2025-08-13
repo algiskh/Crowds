@@ -14,10 +14,6 @@ public class GunConfig : ScriptableObject
 	[LabelText("ID"), PropertyOrder(-9), Delayed]
 	[SerializeField] private string _id;
 
-	[VerticalGroup("Top/Right")]
-	[LabelText("Название оружия"), PropertyOrder(-8)]
-	[SerializeField] private string _gunName;
-
 	[Space]
 	[Title("Стрельба"), GUIColor(1, 0.95f, 0.7f)]
 	[LabelText("Огневая скорость (сек)"), MinValue(0.05f), SuffixLabel("сек", true)]
@@ -53,6 +49,12 @@ public class GunConfig : ScriptableObject
 	[LabelText("Время перезарядки"), MinValue(0f)]
 	[SerializeField] private float _reloadTime = 1f;
 
+	[LabelText("Модификатор скорости"), MinValue(0.1f)]
+	[SerializeField] private float _speedModifier = 1f;
+
+	[LabelText("Точность"), MinValue(0.1f), MaxValue(1.0f)]
+	[SerializeField] private float _accuracy = 0.9f;
+
 	public string Id => _id;
 	public Sprite Preview => _preview;
 	public float BulletSpeed => _bulletSpeed;
@@ -65,11 +67,6 @@ public class GunConfig : ScriptableObject
 	public float BulletRadius => _radius;
 	public BulletCheckType BulletCheckType => _bulletCheckType;
 	public float ReloadTime => _reloadTime;
-
-#if UNITY_EDITOR
-	private void SetDefaultName()
-	{
-		_gunName = _id;
-	}
-#endif
+	public float SpeedModifier => _speedModifier;
+	public float Accuracy => _accuracy;
 }

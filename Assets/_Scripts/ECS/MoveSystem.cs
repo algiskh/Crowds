@@ -1,5 +1,5 @@
 ﻿using Leopotam.EcsLite;
-using System.Runtime.Serialization.Json;
+using System.Linq;
 using UnityEngine;
 
 namespace ECS
@@ -44,7 +44,7 @@ namespace ECS
 
 			targetWaypoint.y = currentPosition.y;
 
-			float moveSpeed = moveComponent.Speed;
+			float moveSpeed = moveComponent.Speed * GetModifier(moveComponent);
 			float step = moveSpeed * Time.deltaTime;
 
 			if (Vector3.Distance(currentPosition, targetWaypoint) < 0.05f)
@@ -78,9 +78,27 @@ namespace ECS
 				return;
 			}
 			//Debug.Log($"MoveDirect: {moveComponent.Direction} Speed: {moveComponent.Speed}");
+
 			var move = moveComponent.Direction;
-			moveComponent.Transform.position += moveComponent.Speed * Time.deltaTime * move;
+			var compositeModifier = GetModifier(moveComponent);
+			moveComponent.Transform.position += moveComponent.Speed * GetModifier(moveComponent) * Time.deltaTime * move;
 		}
 		#endregion
+
+		private float GetModifier(MoveComponent moveComponent)
+		{
+			float compositeModifier = 1f;
+			
+			if (moveComponent.SpeedModifiers == null || moveComponent.SpeedModifiers.Count == 0)
+			{
+				return compositeModifier;
+			}
+
+			foreach (var modifier in moveComponent.SpeedModifiers)
+			{
+				compositeModifier *= modifier.Value;
+			}
+			return compositeModifier;
+		}
 	}
 }

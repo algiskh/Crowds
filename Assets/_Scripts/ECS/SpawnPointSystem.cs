@@ -4,8 +4,15 @@ using UnityEngine;
 
 namespace ECS
 {
-	public class SpawnPointSystem : IEcsRunSystem
+	public class SpawnPointSystem : IEcsInitSystem, IEcsRunSystem
 	{
+		public void Init(IEcsSystems systems)
+		{
+			var world = systems.GetWorld();
+			ref var interspanwCooldown = ref world.CreateSimpleEntity<InterSpawnCooldownComponent>();
+			interspanwCooldown.Value = 0f; 
+		}
+
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
@@ -24,21 +31,24 @@ namespace ECS
 		private void IterateSpawnPoints(EcsWorld world)
 		{
 			var mainHolder = world.GetAsSingleton<MainHolderComponent>().Value;
-			var spawnPointPool = world.GetPool<SpawnPoint>();
+			var spawnPointPool = world.GetPool<SpawnPointComponent>();
 			var player = world.GetAsSingleton<PlayerComponent>().Value;
 			var playerPos = player.transform.position;
 			var manager = world.GetAsSingleton<NavMeshManagerComponent>().Value;
 			ref var difficulty = ref world.GetAsSingleton<DifficultyComponent>();
-			ref var interSpawnCoolDown = ref world.GetAsSingleton<InterSpawnCooldown>();
+			ref var currentLevel = ref world.GetAsSingleton<CurrentLevelConfigComponent>();
+			ref var interspawnCooldown = ref world.GetAsSingleton<InterSpawnCooldownComponent>();
 
-			var spawnRequestPool = world.GetPool<SpawnRequest>();
+			var spawnRequestPool = world.GetPool<MobSpawnRequestComponent>();
 
-			var filter = world.Filter<SpawnPoint>().End();
+			var filter = world.Filter<SpawnPointComponent>().End();
 			var mobCount = world.Filter<MobComponent>().Inc<HealthComponent>().End().GetEntitiesCount();
 
-			if (interSpawnCoolDown.Value > 0)
+			if (interspawnCooldown.Value > 0)
 			{
-				interSpawnCoolDown.Value -= Time.deltaTime;
+				interspawnCooldown.Value -= Time.deltaTime;
+				Debug.Log($"Interspawn cooldown: {interspawnCooldown.Value}");
+				return; // Skip spawning if cooldown is active
 			}
 
 			foreach (var entity in filter)
@@ -46,26 +56,39 @@ namespace ECS
 				ref var spawnPoint = ref spawnPointPool.Get(entity);
 
 
-				if (spawnPoint.Cooldown > 0)
+				if (spawnPoint.Timer > 0 || interspawnCooldown.Value > 0)
 				{
-					spawnPoint.Cooldown -= Time.deltaTime;
+					Debug.Log($"Spawn request: {spawnPoint.Timer}");
+					spawnPoint.Timer -= Time.deltaTime;
 					continue;
 				}
 
-				if (mobCount >= mainHolder.ActiveMobLimit || 
-					playerPos.DistanceTo(spawnPoint.Value.transform.position) > manager.DistanceBetweenSectors
-					|| interSpawnCoolDown.Value > 0)
+				if (mobCount >= mainHolder.ActiveMobLimit
+					|| playerPos.DistanceTo(spawnPoint.Value.transform.position) > manager.DistanceBetweenSectors
+					|| playerPos.DistanceTo(spawnPoint.Value.transform.position) < manager.DistanceBetweenSectors / 4)
 				{
-					continue; // Skip spawning if max mob count is reached
+					continue; // Skip spawning
 				}
 
-				var mobEntity = world.NewEntity();
-				ref var spawnRequest = ref spawnRequestPool.Add(mobEntity);
-				spawnRequest.Prefab = mainHolder.Prefab;
-				spawnRequest.SpawnPoint = spawnPoint.Value;
-				spawnPoint.Cooldown = difficulty.SpawnCooldown;
+				var stage = difficulty.Stage;
+				var level = difficulty.Stage.DifficultyLevel;
 
-				interSpawnCoolDown.Value = difficulty.SpawnCooldown / 2;
+				var spawnConfig = spawnPoint.Value.GetRandomSpawnConfig(level);
+				var overallCooldown = spawnConfig.GetCooldown(level);
+				var mobConfig = mainHolder.MobConfigHolder.GetConfigById(spawnConfig.MobId);
+
+				var spawnRequestEntity = world.NewEntity();
+				ref var spawnRequest = ref spawnRequestPool.Add(spawnRequestEntity);
+				spawnRequest.Config = mobConfig;
+				spawnRequest.SpawnPoint = spawnPoint.Value.transform;
+
+
+				var newTimer = Mathf.Lerp(overallCooldown, overallCooldown / stage.SpeedMultiplier, difficulty.DifficultyTimer / stage.DifficultyTimer);
+				Debug.Log($"Spawn request: overallCooldown {overallCooldown} overallCooldown / difficulty.SpeedMultiplier {overallCooldown / stage.SpeedMultiplier}, " +
+					$"difficulty.DifficultyTimer / difficulty.OverallTime {difficulty.DifficultyTimer / stage.DifficultyTimer}");
+
+				spawnPoint.Timer = newTimer;
+				interspawnCooldown.Value = stage.InterSpawnCooldown;
 			}
 		}
 	}

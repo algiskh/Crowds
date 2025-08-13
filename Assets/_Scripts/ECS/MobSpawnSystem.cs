@@ -10,24 +10,19 @@ namespace ECS
 		{
 			var world = systems.GetWorld();
 
-			// Spawn 1 mob at a time, if cooldown is over
-			var spawnRequestPool = world.GetPool<SpawnRequest>();
+			var spawnRequestPool = world.GetPool<MobSpawnRequestComponent>();
 
-			var currentTime = Time.time;
-
-			var filter = world.Filter<SpawnRequest>()
+			var filter = world.Filter<MobSpawnRequestComponent>()
 				.End();
 			foreach ( var spawnEntity in filter)
 			{
 				ref var spawnRequest = ref spawnRequestPool.Get(spawnEntity);
 				ref var spawnPoints = ref world.GetAsSingleton<SpawnPointsComponent>();
 				ref var mobPool = ref world.GetAsSingleton<MobPoolComponent>();
-				ref var mainConfig = ref world.GetAsSingleton<MainHolderComponent>();
 				ref var playerComponent = ref world.GetAsSingleton<PlayerComponent>();
 
-				var mobConfig = mainConfig.Value.MobConfig; // add more mobconfigs
+				var mobConfig = spawnRequest.Config;
 				var spawnPoint = spawnRequest.SpawnPoint;
-
 
 				Mob mob = SpawnMob(mobPool, mobConfig);
 

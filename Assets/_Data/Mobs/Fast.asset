@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c84db03159d408c49acd4e4d68d680ce, type: 3}
-  m_Name: MobConfig
+  m_Name: Fast
   m_EditorClassIdentifier: 
-  _id: Slow
+  _id: Fast
   _health: 100
-  _speed: 3
+  _speed: 5
   _damage: 10
   _collisionRadius: 1
   _hitCooldown: 0.5
@@ -22,20 +22,12 @@ MonoBehaviour:
   _possibleLoots:
   - LootType: 0
     Id: 
-    Count: 5
-    Chance: 0.3
-  - LootType: 0
-    Id: 
     Count: 10
     Chance: 0.05
-  - LootType: 0
-    Id: 
-    Count: 15
-    Chance: 0.01
   - LootType: 1
     Id: 
     Count: 15
-    Chance: 0.07
+    Chance: 0.1
   - LootType: 2
     Id: SMG
     Count: 1
@@ -43,4 +35,8 @@ MonoBehaviour:
   - LootType: 2
     Id: AR
     Count: 1
-    Chance: 0.015
+    Chance: 0.02
+  - LootType: 2
+    Id: MachineGun
+    Count: 1
+    Chance: 0.005

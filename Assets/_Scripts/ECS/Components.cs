@@ -6,6 +6,12 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// Singleton component for holding main configuration data
 /// </summary>
+/// 
+public struct CurrentLevelConfigComponent
+{
+public LevelConfig Value;
+}
+
 public struct MainHolderComponent
 {
 	public MainHolder Value;
@@ -40,6 +46,7 @@ public struct SpawnPointsComponent
 public struct MobPoolComponent
 {
 	public List<Mob> Value;
+	public Dictionary<string, Stack<Mob>> Pools;
 	public Transform Parent;
 }
 
@@ -68,6 +75,7 @@ public struct MoveComponent
 	public Transform Transform;
 	public Vector3 Direction;
 	public float Speed;
+	public List<SpeedModifier> SpeedModifiers;
 }
 
 public struct MovePath
@@ -114,10 +122,10 @@ public struct SpawnRequestComponent
 	public bool IsBlocked;
 }
 
-public struct SpawnPoint
+public struct SpawnPointComponent
 {
-	public float Cooldown;
-	public Transform Value;
+	public float Timer;
+	public SpawnPoint Value;
 }
 
 public struct SpawnTimer
@@ -125,9 +133,9 @@ public struct SpawnTimer
 	public float LastSpawnTime;
 }
 
-public struct SpawnRequest
+public struct MobSpawnRequestComponent
 {
-	public Mob Prefab;
+	public MobConfig Config;
 	public Transform SpawnPoint;
 }
 #region Player
@@ -344,6 +352,17 @@ public struct WinWindowComponent
 	public WinWindow Value;
 }
 
+public struct DifficultyTimerUIComponent
+{
+	public DifficultyTimerView Value;
+}
+
+public struct RequestShowDifficultyComponent
+{
+	public DifficultyLevel DifficultyLevel;
+	public float Seconds;
+}
+
 public struct UpdateAmmoViewRequestComponent
 {
 }
@@ -371,11 +390,10 @@ public struct FragCountComponent
 public struct DifficultyComponent
 {
 	public float DifficultyTimer;
-	public float SpawnCooldown;
-	public float SpeedMultiplier;
+	public DifficultyStage Stage;
 }
 
-public struct InterSpawnCooldown
+public struct InterSpawnCooldownComponent
 {
 	public float Value;
 }
