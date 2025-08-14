@@ -38,7 +38,7 @@ namespace ECS
 			if (difficulty.DifficultyTimer < 0 && (!difficulty.Stage.HasEndConditions || // check if timer is over
 				(difficulty.Conditions.All(c => c == null || c.IsFulfilled)))) // check if all conditions are fulfilled
 			{
-				FinishStage(world, difficulty, levelConfig);
+				FinishStage(world, ref difficulty, levelConfig);
 			}
 		}
 
@@ -79,7 +79,7 @@ namespace ECS
 			}
 		}
 
-		private void FinishStage(EcsWorld world, DifficultyComponent difficulty, CurrentLevelConfigComponent currentLevel)
+		private void FinishStage(EcsWorld world, ref DifficultyComponent difficulty, CurrentLevelConfigComponent currentLevel)
 		{
 			var level = difficulty.Stage.DifficultyLevel;
 			var conditionsPool = world.GetPool<SmartConditionComponent>();
@@ -99,11 +99,10 @@ namespace ECS
 			}
 
 			var newStage = currentLevel.Value.GetNextStage(level);
-			if (newStage == null)
-			{
-				// No more stages, reset to first stage
-				newStage = currentLevel.Value.GetFirstStage(true);
-			}
+
+			// No more stages, reset to first stage
+			newStage ??= currentLevel.Value.GetFirstStage(true);
+
 			ApplyStage(world, ref difficulty, newStage);
 		}
 		#endregion
