@@ -47,7 +47,6 @@ namespace ECS
 			if (interspawnCooldown.Value > 0)
 			{
 				interspawnCooldown.Value -= Time.deltaTime;
-				Debug.Log($"Interspawn cooldown: {interspawnCooldown.Value}");
 				return; // Skip spawning if cooldown is active
 			}
 
@@ -58,7 +57,6 @@ namespace ECS
 
 				if (spawnPoint.Timer > 0 || interspawnCooldown.Value > 0)
 				{
-					Debug.Log($"Spawn request: {spawnPoint.Timer}");
 					spawnPoint.Timer -= Time.deltaTime;
 					continue;
 				}

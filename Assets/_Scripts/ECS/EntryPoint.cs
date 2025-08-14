@@ -244,6 +244,7 @@ namespace ECS
 				.Add(new PlayerSystem())
 				.Add(new PlayerMovementSystem())
 				.Add(new CheckFailSystem())
+				.Add(new SmartConditionSystem())
 				.Add(new UISystem())
 				.Add(new PauseSystem())
 				.Init();

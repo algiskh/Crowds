@@ -35,7 +35,6 @@ namespace ECS
 
 			if (reloading.ReloadTime > 0)
 			{
-				UnityEngine.Debug.Log($"Reloading: {(weapon.GunConfig.ReloadTime - reloading.ReloadTime) / 1}");
 				weaponView.Value.ShowReloading((weapon.GunConfig.ReloadTime - reloading.ReloadTime) / 1);
 			}
 
@@ -84,14 +83,19 @@ namespace ECS
 			if (world.TryGetAsSingleton<RequestShowDifficultyComponent>(out var value))
 			{
 				difficultyView.Value.Show(value.DifficultyLevel, difficulty.DifficultyTimer);
+			}else if(world.TryGetAsSingleton<RequestHideDifficultyComponent>(out _) && difficultyView.Value.IsActive)
+			{
+					difficultyView.Value.Hide();
 			}
 
-			if (difficulty.Stage.DifficultyLevel != DifficultyLevel.tutorial)
+			if (difficulty.Stage.ShowTimer)
 			{
+				UnityEngine.Debug.Log($"{nameof(UISystem)}: difficulty.Stage {difficulty.Stage.DifficultyLevel}");
 				difficultyView.Value.UpdateView(difficulty.DifficultyTimer / difficulty.Stage.DifficultyTimer, difficulty.DifficultyTimer);
 			}
 			else
 			{
+				UnityEngine.Debug.Log($"{nameof(UISystem)}: difficulty.Stage {difficulty.Stage.DifficultyLevel}");
 				if (difficultyView.Value.IsActive)
 				{
 					difficultyView.Value.Hide();
@@ -104,6 +108,7 @@ namespace ECS
 			world.DeleteAllWith<UpdateHealthViewRequestComponent>();
 			world.DeleteAllWith<RequestUpdateFragCountComponent>();
 			world.DeleteAllWith<RequestShowDifficultyComponent>();
+			world.DeleteAllWith<RequestHideDifficultyComponent>();
 		}
 	}
 }

@@ -17,15 +17,24 @@ MonoBehaviour:
     DifficultyTimer: 25
     SpeedMultiplier: 1.2
     InterSpawnCooldown: 2
+    EndConditions:
+    - {fileID: 11400000, guid: 8f4a20064d66c084d954fa1a351ef77f, type: 2}
+    ShowTimer: 0
   - DifficultyLevel: 2
     DifficultyTimer: 60
     SpeedMultiplier: 2
     InterSpawnCooldown: 1
+    EndConditions: []
+    ShowTimer: 1
   - DifficultyLevel: 3
     DifficultyTimer: 60
     SpeedMultiplier: 1
     InterSpawnCooldown: 0.5
+    EndConditions: []
+    ShowTimer: 1
   - DifficultyLevel: 13
     DifficultyTimer: 0
     SpeedMultiplier: 1
     InterSpawnCooldown: 0.5
+    EndConditions: []
+    ShowTimer: 1

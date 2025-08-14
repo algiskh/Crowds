@@ -363,6 +363,10 @@ public struct RequestShowDifficultyComponent
 	public float Seconds;
 }
 
+public struct RequestHideDifficultyComponent
+{
+}
+
 public struct UpdateAmmoViewRequestComponent
 {
 }
@@ -390,6 +394,7 @@ public struct FragCountComponent
 public struct DifficultyComponent
 {
 	public float DifficultyTimer;
+	public ISmartCondition[] Conditions;
 	public DifficultyStage Stage;
 }
 
@@ -433,4 +438,9 @@ public struct RequestSpawnBulletComponent
 	public Vector3 Position;
 	public Vector3 Direction;
 	public GunConfig GunConfig;
+}
+
+public struct SmartConditionComponent
+{
+	public ISmartCondition Value;
 }

@@ -18,6 +18,8 @@ public class DifficultyTimerView : MonoBehaviour
 
 	public void Show(DifficultyLevel level, float seconds)
 	{
+		Debug.Log($"{nameof(DifficultyTimerView)}: Show level {level}, seconds {seconds}");
+		_image.fillAmount = 1;
 		_image.enabled = true;
 		_timerText.enabled = true;
 		_levelText.text = level.ToString().ToUpperInvariant();
@@ -26,12 +28,18 @@ public class DifficultyTimerView : MonoBehaviour
 
 	public void Hide()
 	{
+		Debug.Log($"{nameof(DifficultyTimerView)}: Hide");
 		_image.enabled = false;
 		_timerText.enabled = false;
 	}
 
 	private void ShowSeconds(float seconds)
 	{
+		if (seconds < 0)
+		{
+			_timerText.text = "00:00:00";
+			return;
+		}
 		var timeSpan = System.TimeSpan.FromSeconds(seconds);
 		_timerText.text = timeSpan.ToString(@"hh\:mm\:ss");
 	}

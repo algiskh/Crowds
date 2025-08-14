@@ -1,4 +1,7 @@
 ﻿using Leopotam.EcsLite;
+using Sirenix.OdinInspector.Editor.GettingStarted;
+using System.Linq;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.LightTransport;
 
@@ -32,30 +35,77 @@ namespace ECS
 
 			difficulty.DifficultyTimer -= Time.deltaTime;
 
-			if (difficulty.DifficultyTimer < 0)
+			if (difficulty.DifficultyTimer < 0 && (!difficulty.Stage.HasEndConditions || // check if timer is over
+				(difficulty.Conditions.All(c => c == null || c.IsFulfilled)))) // check if all conditions are fulfilled
 			{
-				var level = difficulty.Stage.DifficultyLevel;
-				var newStage = levelConfig.Value.GetNextStage(level);
-				if (newStage == null)
-				{
-					// No more stages, reset to first stage
-					newStage = levelConfig.Value.GetFirstStage(true);
-				}
-				ApplyStage(world, ref difficulty, newStage);
-				ref var requestShowDifficulty = ref world.CreateSimpleEntity<RequestShowDifficultyComponent>();
-				requestShowDifficulty.DifficultyLevel = level;
-				requestShowDifficulty.Seconds = difficulty.DifficultyTimer;
+				FinishStage(world, difficulty, levelConfig);
 			}
 		}
 
+		#region Handling stages
 		private void ApplyStage(EcsWorld world, ref DifficultyComponent difficulty, DifficultyStage stage)
 		{
 			difficulty.Stage = stage;
 			difficulty.DifficultyTimer = stage.DifficultyTimer;
 
-			ref var requestShowDifficulty = ref world.CreateSimpleEntity<RequestShowDifficultyComponent>();
-			requestShowDifficulty.DifficultyLevel = stage.DifficultyLevel;
-			requestShowDifficulty.Seconds = difficulty.DifficultyTimer;
+			if (stage.ShowTimer)
+			{
+				ref var requestShowDifficulty = ref world.CreateSimpleEntity<RequestShowDifficultyComponent>();
+				requestShowDifficulty.DifficultyLevel = difficulty.Stage.DifficultyLevel;
+				requestShowDifficulty.Seconds = difficulty.DifficultyTimer;
+			}
+			else
+			{
+				ref var requestHideDifficulty = ref world.CreateSimpleEntity<RequestHideDifficultyComponent>();
+			}
+
+			if (stage.EndConditions == null || stage.EndConditions.Length == 0)
+				return;
+
+			difficulty.Conditions = new ISmartCondition[stage.EndConditions.Length];
+
+			for (int i = 0; i < stage.EndConditions.Length; i++)
+			{
+				var condition = stage.EndConditions[i];
+
+				if (condition != null)
+				{
+					ref var conditionEntity = ref world.CreateSimpleEntity<SmartConditionComponent>();
+					var newCondition = condition.GetCopyUntyped();
+					newCondition.Initialize(world);
+					conditionEntity.Value = newCondition;
+					difficulty.Conditions[i] = newCondition;
+				}
+			}
 		}
+
+		private void FinishStage(EcsWorld world, DifficultyComponent difficulty, CurrentLevelConfigComponent currentLevel)
+		{
+			var level = difficulty.Stage.DifficultyLevel;
+			var conditionsPool = world.GetPool<SmartConditionComponent>();
+			foreach (var condition in difficulty.Conditions)
+			{
+				condition?.Dispose();
+			}
+			var filter = world.Filter<SmartConditionComponent>().End();
+			foreach (var entity in filter)
+			{
+				var smartCondition = conditionsPool.Get(entity);
+
+				if (difficulty.Conditions.Contains(smartCondition.Value))
+				{
+					conditionsPool.Del(entity);
+				}
+			}
+
+			var newStage = currentLevel.Value.GetNextStage(level);
+			if (newStage == null)
+			{
+				// No more stages, reset to first stage
+				newStage = currentLevel.Value.GetFirstStage(true);
+			}
+			ApplyStage(world, ref difficulty, newStage);
+		}
+		#endregion
 	}
 }

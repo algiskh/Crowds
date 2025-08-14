@@ -1,6 +1,5 @@
 using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
-using Sirenix.Utilities.Editor;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,6 +13,10 @@ public class DifficultyStage
 	public float SpeedMultiplier = 1f;
 	[MinValue(0.05f)]
 	public float InterSpawnCooldown = 0.5f; // Obligatory cooldown between mob spawns
+	public SmartConditionWrapper[] EndConditions; // Conditions to end stage, if null will end when timer is over
+	public bool ShowTimer = true;
+
+	public bool HasEndConditions => EndConditions != null && EndConditions.Length > 0;
 }
 
 [CreateAssetMenu(fileName = "LevelConfig", menuName = "Scriptable Objects/LevelConfig")]
