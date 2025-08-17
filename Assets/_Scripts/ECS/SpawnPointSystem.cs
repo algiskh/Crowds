@@ -82,8 +82,6 @@ namespace ECS
 
 
 				var newTimer = Mathf.Lerp(overallCooldown, overallCooldown / stage.SpeedMultiplier, difficulty.DifficultyTimer / stage.DifficultyTimer);
-				Debug.Log($"Spawn request: overallCooldown {overallCooldown} overallCooldown / difficulty.SpeedMultiplier {overallCooldown / stage.SpeedMultiplier}, " +
-					$"difficulty.DifficultyTimer / difficulty.OverallTime {difficulty.DifficultyTimer / stage.DifficultyTimer}");
 
 				spawnPoint.Timer = newTimer;
 				interspawnCooldown.Value = stage.InterSpawnCooldown;

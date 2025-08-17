@@ -26,10 +26,11 @@ namespace ECS
 				reloading.ReloadTime -= Time.deltaTime;
 				if (reloading.ReloadTime <= 0 )
 				{
+					var ammountBeforeReload = muzzle.CurrentMagazineCount;
 					var ammoToLoadCount = muzzle.AmmoCount >= capacity ? capacity : muzzle.AmmoCount;
 
 					muzzle.CurrentMagazineCount = ammoToLoadCount;
-					muzzle.AmmoCount -= muzzle.CurrentMagazineCount;
+					muzzle.AmmoCount -= ammoToLoadCount - ammountBeforeReload;
 					reloading.ReloadTime = 0;
 				}
 				ref var changeAmmoTextRequest = ref world.CreateSimpleEntity<UpdateAmmoViewRequestComponent>();
