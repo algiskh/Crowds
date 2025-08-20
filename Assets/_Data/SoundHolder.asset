@@ -25,3 +25,9 @@ MonoBehaviour:
     Clip: {fileID: 8300000, guid: 720a9468bba479246ae363e9347ae974, type: 3}
   - Id: health
     Clip: {fileID: 8300000, guid: d836dae5beb440648ace695603a70e71, type: 3}
+  - Id: shotgun_fire
+    Clip: {fileID: 8300000, guid: cd8261c604090d248ae2b1ecdbabb31d, type: 3}
+  - Id: shotgun_clock
+    Clip: {fileID: 8300000, guid: 48525c1aeef27b447a2a8d84c3185323, type: 3}
+  - Id: shotgun_reload
+    Clip: {fileID: 8300000, guid: 290ed0221e861d84f9666ab8743b344c, type: 3}

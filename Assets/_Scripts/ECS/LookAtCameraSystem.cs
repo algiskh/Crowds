@@ -23,7 +23,7 @@ namespace ECS
 			foreach (var entity in world.Filter<LookerAtCamera>().End())
 			{
 				ref var comp = ref lookAtCameraPool.Get(entity);
-				if (comp.Transform == null) continue;
+				if (comp.Transform == null || !comp.Transform.gameObject.activeSelf) continue;
 
 				if (comp.FlatBillboard)
 				{

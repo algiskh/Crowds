@@ -167,6 +167,7 @@ public struct WeaponComponent
 public struct ReloadingComponent
 {
 	public float ReloadTime;
+	public float ShutteringTime;
 }
 
 public struct RequestFireComponent
@@ -443,4 +444,9 @@ public struct RequestSpawnBulletComponent
 public struct SmartConditionComponent
 {
 	public ISmartCondition Value;
+}
+
+public struct AimVisualizerComponent
+{
+	public AimVisualizer Value;
 }

@@ -33,9 +33,9 @@ namespace ECS
 				world.DelEntity(requestEntity);
 			}
 
-			if (reloading.ReloadTime > 0)
+			if (reloading.ReloadTime > 0 || reloading.ShutteringTime > 0)
 			{
-				weaponView.Value.ShowReloading((weapon.GunConfig.ReloadTime - reloading.ReloadTime) / 1);
+				weaponView.Value.ShowReloading(1 - ((reloading.ReloadTime + reloading.ShutteringTime) / (weapon.GunConfig.ReloadTime + weapon.GunConfig.ShutterTime)));
 			}
 
 			var ammoRequestFilter = world.Filter<UpdateAmmoViewRequestComponent>()

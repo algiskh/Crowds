@@ -20,8 +20,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: BloodMaterial
-  m_Shader: {fileID: -6465566751694194690, guid: 8f738b992d299eb4bb2c3be5b95714bc, type: 3}
+  m_Name: Aim
+  m_Shader: {fileID: -6465566751694194690, guid: f6863089ea0aca44f8136ea1cac6088d, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -37,7 +37,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _SampleTexture2D_80e5c69eedb94d439b24a9216fecd0a5_Texture_1_Texture2D:
-        m_Texture: {fileID: 2800000, guid: 88a9bffa7895bdc4cb72121814345ecb, type: 3}
+        m_Texture: {fileID: 2800000, guid: 92e32f8601f101c42811acfb2a6ecf7d, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:

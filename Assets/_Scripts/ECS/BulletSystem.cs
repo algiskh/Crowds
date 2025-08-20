@@ -45,45 +45,60 @@ namespace ECS
 			{
 				var bulletRequest = bulletRequestPool.Get(entity);
 
-				Bullet bullet;
-				if (bulletPoolPool.Value != null &&
-					bulletPoolPool.Value.Count > 0)
+				for (var i = 0; i < bulletRequest.GunConfig.ProjectilesNumber; i++)
 				{
-					bullet = bulletPoolPool.Value.Pop();
+					SpawnBullet(world, ref bulletPoolPool, bulletPool, movePool, disposePool, bulletRequest);
 				}
-				else
-				{
-					bullet = Object.Instantiate(
-						bulletRequest.GunConfig.BulletPrefab,
-						bulletPoolPool.Parent);
-				}
-
-				bullet.transform.position = bulletRequest.Position;
-				bullet.gameObject.SetActive(true);
-
-				var bulletEntity = world.NewEntity();
-				ref var bulletComponent = ref bulletPool.Add(bulletEntity);
-				bulletComponent.Bullet = bullet;
-				bulletComponent.Damage = bulletRequest.GunConfig.BulletDamage;
-				bulletComponent.LifeTime = bulletRequest.GunConfig.BulletLifeTime;
-				bulletComponent.CheckType = bulletRequest.GunConfig.BulletCheckType;
-				ref var moveComponent = ref movePool.Add(bulletEntity);
-				ref var disposeComponent = ref disposePool.Add(bulletEntity);
-				disposeComponent.IsDisposed = false;
-
-				float accuracy = bulletRequest.GunConfig.Accuracy;
-				float maxAngle = (1f - accuracy) * 90f;
-
-				// Отклонение только в горизонтальной плоскости
-				float deviationAngle = Random.Range(-maxAngle, maxAngle);
-				Vector3 finalDirection = Quaternion.AngleAxis(deviationAngle, Vector3.up) * bulletRequest.Direction.normalized;
-
-				moveComponent.Direction = finalDirection;
-				moveComponent.Speed = bulletRequest.GunConfig.BulletSpeed;
-				moveComponent.Transform = bullet.transform;
 			}
 
 			world.DeleteAllWith<RequestSpawnBulletComponent>();
+		}
+
+		private void SpawnBullet(
+			EcsWorld world, 
+			ref BulletPoolComponent bulletPoolPool, 
+			EcsPool<BulletComponent> bulletPool, 
+			EcsPool<MoveComponent> movePool,
+			EcsPool<DisposableComponent> disposePool,
+			RequestSpawnBulletComponent bulletRequest
+			)
+		{
+			Bullet bullet;
+			if (bulletPoolPool.Value != null &&
+				bulletPoolPool.Value.Count > 0)
+			{
+				bullet = bulletPoolPool.Value.Pop();
+			}
+			else
+			{
+				bullet = Object.Instantiate(
+					bulletRequest.GunConfig.BulletPrefab,
+					bulletPoolPool.Parent);
+			}
+
+			bullet.transform.position = bulletRequest.Position;
+			bullet.gameObject.SetActive(true);
+
+			var bulletEntity = world.NewEntity();
+			ref var bulletComponent = ref bulletPool.Add(bulletEntity);
+			bulletComponent.Bullet = bullet;
+			bulletComponent.Damage = bulletRequest.GunConfig.BulletDamage;
+			bulletComponent.LifeTime = bulletRequest.GunConfig.BulletLifeTime;
+			bulletComponent.CheckType = bulletRequest.GunConfig.BulletCheckType;
+			ref var moveComponent = ref movePool.Add(bulletEntity);
+			ref var disposeComponent = ref disposePool.Add(bulletEntity);
+			disposeComponent.IsDisposed = false;
+
+			float accuracy = bulletRequest.GunConfig.Accuracy;
+			float maxAngle = (1f - accuracy) * 90f;
+
+			// Отклонение только в горизонтальной плоскости
+			float deviationAngle = Random.Range(-maxAngle, maxAngle);
+			Vector3 finalDirection = Quaternion.AngleAxis(deviationAngle, Vector3.up) * bulletRequest.Direction.normalized;
+
+			moveComponent.Direction = finalDirection;
+			moveComponent.Speed = bulletRequest.GunConfig.BulletSpeed;
+			moveComponent.Transform = bullet.transform;
 		}
 
 	}

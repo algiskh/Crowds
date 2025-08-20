@@ -17,6 +17,6 @@ MonoBehaviour:
     _size: 1
     _lifetime: 60
     _materials:
-    - {fileID: 2100000, guid: 1bd105422537135418f420adbc96b465, type: 2}
+    - {fileID: -876546973899608171, guid: 14e2030124be1ab44a90adc1865b4dd7, type: 3}
     - {fileID: 2100000, guid: 2f6447d260ab70b47a03c76dea57c66e, type: 2}
   _prefab: {fileID: 7792998123683358362, guid: 7ec4d157cae863b47ab829237cf1ea70, type: 3}

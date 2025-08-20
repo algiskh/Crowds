@@ -25,6 +25,12 @@ public class GunConfig : ScriptableObject
 	[LabelText("ID звука выстрела")]
 	[SerializeField] private string _fireSoundId;
 
+	[LabelText("ID звука перезарядки")]
+	[SerializeField] private string _reloadSoundId;
+
+	[LabelText("ID звука конца перезарядки")]
+	[SerializeField] private string _reloadEndSoundId;
+
 	[Space]
 	[Title("Параметры пули"), GUIColor(0.95f, 1, 0.95f)]
 	[LabelText("Префаб пули")]
@@ -33,6 +39,9 @@ public class GunConfig : ScriptableObject
 
 	[LabelText("Тип проверки попадания")]
 	[SerializeField] private BulletCheckType _bulletCheckType;
+
+	[LabelText("Количество снарядов"), MinValue(1)]
+	[SerializeField] private int _projectilesNumber = 1;
 
 	[LabelText("Скорость пули"), MinValue(0.1f)]
 	[SerializeField] private float _bulletSpeed = 30f;
@@ -49,11 +58,18 @@ public class GunConfig : ScriptableObject
 	[LabelText("Время перезарядки"), MinValue(0f)]
 	[SerializeField] private float _reloadTime = 1f;
 
+	[LabelText("Время взведения затвора"), MinValue(0f)]
+	[SerializeField] private float _shutterTime = 0.1f;
+
 	[LabelText("Модификатор скорости"), MinValue(0.1f)]
 	[SerializeField] private float _speedModifier = 1f;
 
 	[LabelText("Точность"), MinValue(0.1f), MaxValue(1.0f)]
 	[SerializeField] private float _accuracy = 0.9f;
+
+
+	[LabelText("Одиночная зарядка")]
+	[SerializeField] private bool _singleLoad;
 
 	public string Id => _id;
 	public Sprite Preview => _preview;
@@ -63,10 +79,16 @@ public class GunConfig : ScriptableObject
 	public float FireCoolDown => _fireRate;
 	public int MagazineCapacity => _magazineCapacity;
 	public string FireSoundId => _fireSoundId;
+	public string ReloadSoundId => _reloadSoundId;
+	public string ReloadEndSoundId => _reloadEndSoundId;
 	public Bullet BulletPrefab => _bulletPrefab;
 	public float BulletRadius => _radius;
 	public BulletCheckType BulletCheckType => _bulletCheckType;
 	public float ReloadTime => _reloadTime;
+	public float ShutterTime => _shutterTime;
 	public float SpeedModifier => _speedModifier;
 	public float Accuracy => _accuracy;
+	public int ProjectilesNumber => _projectilesNumber;
+
+	public bool SingleLoad => _singleLoad;
 }

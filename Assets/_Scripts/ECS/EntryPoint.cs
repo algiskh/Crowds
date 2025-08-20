@@ -165,6 +165,10 @@ namespace ECS
 			healthComponent.CurrentHealth = healthComponent.MaxHealth;
 			_playerStats.SetHealthValue(healthComponent.CurrentHealth);
 
+			var aimVisualizer = FindFirstObjectByType<AimVisualizer>();
+			ref var aimVisualizerComponent = ref _world.CreateSimpleEntity<AimVisualizerComponent>();
+			aimVisualizerComponent.Value = aimVisualizer;
+
 			// --- Камера ---
 			int cameraFollowerEntity = _world.NewEntity();
 			ref var follower = ref _world.GetPool<FollowerComponent>().Add(cameraFollowerEntity);
@@ -245,6 +249,7 @@ namespace ECS
 				.Add(new PlayerMovementSystem())
 				.Add(new CheckFailSystem())
 				.Add(new SmartConditionSystem())
+				.Add(new AimVisualizerSystem())
 				.Add(new UISystem())
 				.Add(new PauseSystem())
 				.Init();

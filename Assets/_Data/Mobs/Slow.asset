@@ -44,3 +44,7 @@ MonoBehaviour:
     Id: AR
     Count: 1
     Chance: 0.015
+  - LootType: 2
+    Id: Shotgun
+    Count: 1
+    Chance: 1
