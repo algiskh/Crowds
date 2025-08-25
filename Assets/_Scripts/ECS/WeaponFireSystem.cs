@@ -17,10 +17,6 @@ namespace ECS
 			var soundHolder = world.GetAsSingleton<SoundHolderComponent>();
 			#endregion
 
-
-			var capacity = weapon.GunConfig.MagazineCapacity;
-
-
 			var isCoolDownPassed = weapon.CoolDown <= 0;
 
 			// Handle fire requests
@@ -29,7 +25,6 @@ namespace ECS
 
 			if (reloading.ReloadTime > 0 || reloading.ShutteringTime > 0)
 			{
-				Debug.Log($"Reloading... {reloading.ReloadTime}");
 				if (weapon.GunConfig.SingleLoad && weapon.CurrentMagazineCount > 0)
 				{
 					IterateCooldown(ref weapon);
@@ -42,7 +37,6 @@ namespace ECS
 				// Try to start reloading 
 				if (hasRequest && weapon.CurrentMagazineCount == 0 && weapon.AmmoCount > 0)
 				{
-					UnityEngine.Debug.Log("[DEBUG_FLAG] Start reloading...");
 					ref var requestReload = ref world.CreateSimpleEntity<RequestReloadComponent>();
 				}
 				weapon.IsFiring = false;

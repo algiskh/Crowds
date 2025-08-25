@@ -115,6 +115,7 @@ namespace ECS
 
 		private void StartShuttering(EcsWorld world, ref WeaponComponent weapon, ref ReloadingComponent reloading, SoundHolderComponent soundHolder)
 		{
+			Debug.Log($"Start shuttering weapon {weapon.GunConfig.Id}");
 			if (weapon.GunConfig.ShutterTime == 0)
 				return;
 

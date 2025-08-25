@@ -1,4 +1,6 @@
 ﻿using Leopotam.EcsLite;
+using NUnit.Framework;
+using System.Collections.Generic;
 using UnityEngine;
 namespace ECS
 {
@@ -14,6 +16,7 @@ namespace ECS
 			var mobPool = world.GetPool<MobComponent>();
 			var healthPool = world.GetPool<HealthComponent>();
 			var playerPool = world.GetPool<PlayerComponent>();
+			List<int> entitiesWithLoot = new();
 
 			#region Handling DamageRequests
 			var filter = world.Filter<RequestDamageComponent>().End();
@@ -34,7 +37,6 @@ namespace ECS
 				// Apply damage to health
 				healthComponent.CurrentHealth -= requestDamageComponent.Damage;
 
-
 				if (isPlayer)
 				{
 					ref var requestUIHealthUpdate = ref world.CreateSimpleEntity<UpdateHealthViewRequestComponent>();
@@ -51,11 +53,13 @@ namespace ECS
 						.ApplyValue(healthComponent.CurrentHealth);
 
 					//Request for loot
-					if (healthComponent.CurrentHealth <= 0)
+					if (healthComponent.CurrentHealth <= 0 && !entitiesWithLoot.Contains(target))
 					{
+						entitiesWithLoot.Add(target);
 						ref var mobLoot = ref world.CreateSimpleEntity<RequestLootSpawn>();
 						++fragCount.Value;
 						ref var uiRequest = ref world.CreateSimpleEntity<RequestUpdateFragCountComponent>();
+						mobLoot.SourceEntity = target;
 						mobLoot.PossibleLoots = mob.Config.PossibleLoots;
 						mobLoot.Position = mob.Value.transform.position;
 					}

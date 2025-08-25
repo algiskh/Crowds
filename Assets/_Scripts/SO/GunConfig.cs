@@ -67,9 +67,11 @@ public class GunConfig : ScriptableObject
 	[LabelText("Точность"), MinValue(0.1f), MaxValue(1.0f)]
 	[SerializeField] private float _accuracy = 0.9f;
 
-
 	[LabelText("Одиночная зарядка")]
 	[SerializeField] private bool _singleLoad;
+
+	[LabelText("Стрельба без кулдауна")]
+	[SerializeField] private bool _fireOnDemand;
 
 	public string Id => _id;
 	public Sprite Preview => _preview;
@@ -89,6 +91,6 @@ public class GunConfig : ScriptableObject
 	public float SpeedModifier => _speedModifier;
 	public float Accuracy => _accuracy;
 	public int ProjectilesNumber => _projectilesNumber;
-
 	public bool SingleLoad => _singleLoad;
+	public bool FireOnDemand => _fireOnDemand;
 }

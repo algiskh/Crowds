@@ -37,19 +37,20 @@ namespace ECS
 			ref var inputActions = ref world.GetAsSingleton<InputActionsComponent>();
 			ref var cam = ref world.GetAsSingleton<CameraComponent>().Value;
 
-			// Новое получение инпута
 			Vector2 moveInput = Vector2.zero;
 			if (inputActions.MoveAction != null)
 				moveInput = inputActions.MoveAction.ReadValue<Vector2>();
 
 			bool isFiring = false;
 			if (inputActions.FireAction != null)
+			{
 				isFiring = inputActions.FireAction.ReadValue<float>() > 0.5f;
+			}
+
 			if (inputActions.ReloadAction != null && inputActions.ReloadAction.triggered)
 			{
 				ref var requestReload = ref world.CreateSimpleEntity<RequestReloadComponent>();
-			}	
-			// или inputActions.FireAction.triggered; если тебе нужно "нажато в этом фрейме"
+			}
 
 			Vector3 moveDir = Vector3.zero;
 

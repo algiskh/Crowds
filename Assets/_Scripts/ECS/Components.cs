@@ -192,6 +192,7 @@ public struct BulletOverlapComponent
 
 public struct RequestLootSpawn
 {
+	public int SourceEntity;
 	public MobConfig.PossibleLoot[] PossibleLoots;
 	public Vector3 Position;
 }

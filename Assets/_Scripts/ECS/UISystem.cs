@@ -72,7 +72,6 @@ namespace ECS
 			{
 				var health = healthPool.Get(player.Value.Entity);
 				playerStats.Value.SetHealthValue(health.CurrentHealth);
-				UnityEngine.Debug.Log($"Change health to {health.CurrentHealth}");
 			}
 
 			if (fragCountUpdateFilter.GetEntitiesCount() > 0)

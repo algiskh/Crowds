@@ -40,3 +40,7 @@ MonoBehaviour:
     Id: MachineGun
     Count: 1
     Chance: 0.005
+  - LootType: 2
+    Id: SawedOff
+    Count: 1
+    Chance: 1
