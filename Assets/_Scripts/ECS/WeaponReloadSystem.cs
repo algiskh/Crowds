@@ -52,7 +52,7 @@ namespace ECS
 				{
 					if (weapon.GunConfig.SingleLoad)
 					{
-						ReloadSingleAmmo(world, ref weapon, ref reloading, capacity , hasFiringRequest);
+						ReloadSingleAmmo(world, ref weapon, ref reloading, capacity , hasFiringRequest, soundHolder);
 					}
 					else
 					{
@@ -80,7 +80,7 @@ namespace ECS
 			}
 		}
 
-		private void ReloadSingleAmmo(EcsWorld world, ref WeaponComponent weapon, ref ReloadingComponent reloading, int capacity, bool hasFireRequest)
+		private void ReloadSingleAmmo(EcsWorld world, ref WeaponComponent weapon, ref ReloadingComponent reloading, int capacity, bool hasFireRequest, SoundHolderComponent soundHolder)
 		{
 			if (weapon.CurrentMagazineCount < capacity && weapon.AmmoCount > 0)
 			{
@@ -94,7 +94,11 @@ namespace ECS
 				return;
 			}
 
-			// if weapon.CurrentMagazineCount < capacity and no request for fire create additional request for reload  
+			if (weapon.CurrentMagazineCount >= capacity || weapon.AmmoCount <= 0 || hasFireRequest)
+			{
+				StartShuttering(world, ref weapon, ref reloading, soundHolder);
+			}
+			else
 			if (weapon.CurrentMagazineCount < capacity && !hasFireRequest)
 			{
 				ref var additionalReloadRequest = ref world.CreateSimpleEntity<RequestReloadComponent>();
@@ -116,9 +120,6 @@ namespace ECS
 		private void StartShuttering(EcsWorld world, ref WeaponComponent weapon, ref ReloadingComponent reloading, SoundHolderComponent soundHolder)
 		{
 			Debug.Log($"Start shuttering weapon {weapon.GunConfig.Id}");
-			if (weapon.GunConfig.ShutterTime == 0)
-				return;
-
 			var sound = soundHolder.Value.GetClip(weapon.GunConfig.ReloadEndSoundId);
 			if (sound != null)
 			{

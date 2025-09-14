@@ -15,7 +15,7 @@ public class LeaderboardDemo : MonoBehaviour
 {
 	// ===== Server =====
 	[TitleGroup("Server")]
-	[LabelText("Base URL")][SerializeField] private string baseUrl = "http://185.162.11.233:8000";
+	[LabelText("Base URL")][SerializeField] private string baseUrl = "http://185.162.11.233:8001"; // 127.0.0.1
 	[TitleGroup("Server")]
 	[LabelText("API Token")][SerializeField] private string apiToken = "SUPER_SECRET_TOKEN";
 

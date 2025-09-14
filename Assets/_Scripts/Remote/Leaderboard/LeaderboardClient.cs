@@ -16,7 +16,7 @@ public static class LeaderboardOrder
 
 public sealed class LeaderboardClient
 {
-	private readonly string _baseUrl;   // e.g. http://185.162.11.233:8000
+	private readonly string _baseUrl;   // e.g. http://185.162.11.233:8001
 	private string _apiToken;           // X-Auth-Token
 
 	/// <summary>Network timeout for each request.</summary>
