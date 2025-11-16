@@ -17,13 +17,18 @@ MonoBehaviour:
   _fireRate: 0.25
   _magazineCapacity: 50
   _fireSoundId: ar_shot
+  _reloadSoundId: 
+  _reloadEndSoundId: 
   _bulletPrefab: {fileID: 3834319163352093731, guid: 4ccad587412ec194e812f98752fa1afb, type: 3}
   _bulletCheckType: 0
   _projectilesNumber: 1
-  _bulletSpeed: 40
+  _bulletSpeed: 60
   _bulletDamage: 150
   _bulletLifeTime: 3
   _radius: 0.1
   _reloadTime: 4
+  _shutterTime: 0.1
   _speedModifier: 0.7
   _accuracy: 0.9
+  _singleLoad: 0
+  _fireOnDemand: 0

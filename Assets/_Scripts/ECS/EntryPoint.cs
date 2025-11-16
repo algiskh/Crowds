@@ -231,6 +231,8 @@ namespace ECS
 				.Add(new FollowSystem())
 				.Add(new LookAtCameraSystem())
 				.Add(new LookAtCursorSystem())
+				
+				.Add(new AnimationSystem())
 				// Fire and Reload Systems
 				.Add(new WeaponFireSystem())
 				.Add(new WeaponReloadSystem())

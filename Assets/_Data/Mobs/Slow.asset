@@ -47,4 +47,4 @@ MonoBehaviour:
   - LootType: 2
     Id: Shotgun
     Count: 1
-    Chance: 1
+    Chance: 0.02

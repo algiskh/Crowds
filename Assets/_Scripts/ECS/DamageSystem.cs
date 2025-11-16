@@ -86,6 +86,8 @@ namespace ECS
 					//mobComponent.Value.SimpleAnimator.Stop();
 					mobComponent.Value.gameObject.SetActive(false);
 
+
+
 					//Request Effect
 					ref var effectRequest = ref world.CreateSimpleEntity<RequestEffectComponent>();
 					effectRequest.EffectId = "zombie_dead";

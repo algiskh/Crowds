@@ -64,6 +64,19 @@ namespace ECS
 
 			Vector3 dir = (targetWaypoint - currentPosition).normalized;
 			moveComponent.Direction = dir;
+
+			// === ДОБАВЛЯЕМ ВОТ ЗДЕСЬ ===
+			if (dir != Vector3.zero)
+			{
+				Quaternion targetRotation = Quaternion.LookRotation(dir);
+				transform.rotation = Quaternion.Slerp(
+					transform.rotation,
+					targetRotation,
+					moveComponent.Speed * Time.deltaTime
+				);
+			}
+			// ===========================
+
 			transform.position += dir * step;
 		}
 

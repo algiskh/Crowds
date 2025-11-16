@@ -6,9 +6,12 @@ public class Mob: MonoBehaviour
 {
 	[SerializeField] private ValueBar _valueBar;
 	[SerializeField] private Collider _collider;
+	[SerializeField] private SimpleAnimator _animator;
 	public Vector2 Position => transform.position;
 	public IValueBar ValueBar => _valueBar;
 	public Collider Collider => _collider;
+	public SimpleAnimator Animator => _animator;
+
 
 	private NavMeshAgent _agent;
 
