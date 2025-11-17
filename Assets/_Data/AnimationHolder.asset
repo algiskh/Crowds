@@ -21,3 +21,11 @@ MonoBehaviour:
       Animation: {fileID: -203655887218126122, guid: 91dab1ededea2df4ea67da24f725e73f, type: 3}
     - Id: fall
       Animation: {fileID: 0}
+  - Id: Mob2
+    AnimationWrapper:
+    - Id: idle
+      Animation: {fileID: -203655887218126122, guid: 292f6ae3ab8eb754ead3f862fe3188d4, type: 3}
+    - Id: run
+      Animation: {fileID: -203655887218126122, guid: 55bf48575b09a6246a53fe5e7db0051d, type: 3}
+    - Id: fall
+      Animation: {fileID: 0}

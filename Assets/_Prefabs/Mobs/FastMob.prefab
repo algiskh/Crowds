@@ -146,8 +146,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5689457051142550505}
   - component: {fileID: 4635986969134950211}
-  - component: {fileID: 8702875503701655654}
   - component: {fileID: 8641291612382326793}
+  - component: {fileID: 1861544181333846958}
   m_Layer: 3
   m_Name: FastMob
   m_TagString: Untagged
@@ -187,23 +187,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _valueBar: {fileID: 7461023444188557637}
   _collider: {fileID: 4358559445545799627}
-  _animator: {fileID: 0}
---- !u!114 &8702875503701655654
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3683111880471000716}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eee9ce9dc587fa148b4326eb7ff824b3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _holder: {fileID: 11400000, guid: dd8c30c3841dddf4fbb37ce8e84e3200, type: 2}
-  _animationPackName: Mob1
-  _animation: {fileID: 7760573094304627823}
-  _defaultAnimationName: idle
+  _animator: {fileID: 5307036566689230726}
 --- !u!195 &8641291612382326793
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -226,6 +210,28 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!95 &1861544181333846958
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3683111880471000716}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &4628887756555838070
 GameObject:
   m_ObjectHideFlags: 0
@@ -581,7 +587,10 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 292f6ae3ab8eb754ead3f862fe3188d4, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7760573094304627823}
+      addedObject: {fileID: 3991849340757679039}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 292f6ae3ab8eb754ead3f862fe3188d4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5307036566689230726}
   m_SourcePrefab: {fileID: 100100000, guid: 292f6ae3ab8eb754ead3f862fe3188d4, type: 3}
 --- !u!4 &1630352992057590538 stripped
 Transform:
@@ -593,19 +602,39 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 292f6ae3ab8eb754ead3f862fe3188d4, type: 3}
   m_PrefabInstance: {fileID: 1236963869753861345}
   m_PrefabAsset: {fileID: 0}
---- !u!111 &7760573094304627823
-Animation:
+--- !u!95 &3991849340757679039
+Animator:
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2156095865363028400}
   m_Enabled: 1
-  serializedVersion: 4
-  m_Animation: {fileID: -203655887218126122, guid: 91dab1ededea2df4ea67da24f725e73f, type: 3}
-  m_Animations: []
-  m_WrapMode: 0
-  m_PlayAutomatically: 1
-  m_AnimatePhysics: 0
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: b2e0f8302bf8ce541a004b89750537c4, type: 2}
+  m_CullingMode: 0
   m_UpdateMode: 0
-  m_CullingType: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &5307036566689230726
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2156095865363028400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eee9ce9dc587fa148b4326eb7ff824b3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SimpleAnimator
+  _animator: {fileID: 3991849340757679039}
+  _defaultAnimationName: idle

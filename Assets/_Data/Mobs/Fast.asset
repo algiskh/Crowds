@@ -18,7 +18,7 @@ MonoBehaviour:
   _damage: 10
   _collisionRadius: 1
   _hitCooldown: 0.5
-  _prefab: {fileID: 4635986969134950211, guid: d3e264603209c9c4d9bc3e4eecaa0243, type: 3}
+  _prefab: {fileID: 4635986969134950211, guid: bc278afd50f0a934d887fa70147ae12e, type: 3}
   _possibleLoots:
   - LootType: 0
     Id: 

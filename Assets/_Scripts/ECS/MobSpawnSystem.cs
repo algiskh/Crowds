@@ -71,8 +71,7 @@ namespace ECS
 		private Mob SpawnMob(MobPoolComponent mobPool, MobConfig mobConfig)
 		{
 			Mob mob;
-			if (mobPool.Value != null &&
-				mobPool.Value.Count > 0 &&
+			if (mobPool.Value.Count > 0 &&
 				mobPool.Value.Any(b => b.Id.Equals(mobConfig.Id)))
 			{
 				mob = mobPool.Value.First(mob => mob.Id.Equals(mobConfig.Id));
