@@ -33,7 +33,9 @@ namespace ECS
 		[SerializeField, Required, BoxGroup("UI")] private FailWindow _failWindow;
 		[SerializeField, Required, BoxGroup("UI")] private DifficultyTimerView _difficultyTimerView;
 
-		[SerializeField] private InputActionAsset _inputActions;
+		[Title("Input")]
+		[SerializeField, Required, BoxGroup("Input")] private InputActionReference _aimAction;
+		[SerializeField, Required, BoxGroup("Input")] private InputActionAsset _inputActions;
 		// ECS
 		private EcsWorld _world;
 		private EcsSystems _systems;
@@ -153,17 +155,22 @@ namespace ECS
 			lootPool.Parent = _lootParent;
 
 			// --- Игрок ---
+
 			int playerEntity = _world.NewEntity();
 			ref var playerComponent = ref _world.GetPool<PlayerComponent>().Add(playerEntity);
 			playerComponent.Value = _player;
 			_player.Initialize(playerEntity);
 			ref var playerMovement = ref _world.GetPool<MoveComponent>().Add(playerEntity);
 			playerMovement.Speed = _mainHolder.PlayerConfig.Speed;
-			ref var playerInput = ref _world.GetPool<PlayerInputComponent>().Add(playerEntity);
 			ref var healthComponent = ref _world.GetPool<HealthComponent>().Add(playerEntity);
 			healthComponent.MaxHealth = _mainHolder.PlayerConfig.MaxHealth;
 			healthComponent.CurrentHealth = healthComponent.MaxHealth;
 			_playerStats.SetHealthValue(healthComponent.CurrentHealth);
+
+			// --- Input
+			ref var playerInput = ref _world.GetPool<PlayerInputComponent>().Add(playerEntity);
+			ref var aimInput = ref _world.GetPool<AimInputComponent>().Add(playerEntity);
+			aimInput.AimAction = _aimAction;
 
 			var aimVisualizer = FindFirstObjectByType<AimVisualizer>();
 			ref var aimVisualizerComponent = ref _world.CreateSimpleEntity<AimVisualizerComponent>();

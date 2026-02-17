@@ -451,3 +451,15 @@ public struct AimVisualizerComponent
 {
 	public AimVisualizer Value;
 }
+
+public struct VirtualAimCursorComponent
+{
+	public Vector2 ScreenPosition;
+}
+
+public struct AimInputComponent
+{
+	public Vector2 Value;      // mouse position OR stick vector
+	public InputActionReference AimAction; // input Action from new input system
+	public bool IsGamepad;
+}

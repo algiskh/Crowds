@@ -1,16 +1,10 @@
 using System;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 
 [Serializable]
 public class MobSpawnConfig : IWeightable
 {
-	[Serializable] public class SpawnPreset
-	{
-		public DifficultyLevel DifficultyLevel;
-		public float Cooldown;
-	}
 
 	[SerializeField] private string _mobId;
 	[SerializeField] private float _weight = 1f;

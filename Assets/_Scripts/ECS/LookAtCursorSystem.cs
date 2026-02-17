@@ -1,62 +1,83 @@
 using Leopotam.EcsLite;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace ECS
 {
-	public class LookAtCursorSystem : IEcsRunSystem
+	public sealed class LookAtCursorSystem : IEcsRunSystem
 	{
+		private const float StickDeadZoneSqr = 0.01f;
+
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
-			var lookAtCursorPool = world.GetPool<LookAtCursor>();
-			var cameraPool = world.GetPool<CameraComponent>();
 
 			ref var camera = ref world.GetAsSingleton<CameraComponent>().Value;
+			ref var cursor = ref world.GetAsSingleton<VirtualAimCursorComponent>();
+
+			var lookPool = world.GetPool<LookAtCursor>();
+
+			Vector2 screenPos = cursor.ScreenPosition;
 
 			foreach (var entity in world.Filter<LookAtCursor>().End())
 			{
-				ref var comp = ref lookAtCursorPool.Get(entity);
-				if (comp.Transform == null) continue;
+				ref var comp = ref lookPool.Get(entity);
 
-				Vector3 lookTargetWorld = Vector3.zero;
+				if (comp.Transform == null)
+					continue;
 
-				// Пример для 3D — луч из курсора в плоскость
+				Vector3 lookTargetWorld;
+
 				if (comp.Mode3D)
 				{
-					Ray ray = camera.ScreenPointToRay(Input.mousePosition);
-					// В какую плоскость смотреть? Например, Y = player.position.y
-					var plane = new Plane(Vector3.up, comp.Transform.position);
-					if (plane.Raycast(ray, out float dist))
-					{
-						lookTargetWorld = ray.GetPoint(dist);
-					}
-					else
-					{
+					Ray ray = camera.ScreenPointToRay(screenPos);
+
+					Plane plane = new Plane(
+						Vector3.up,
+						comp.Transform.position);
+
+					if (!plane.Raycast(ray, out float distance))
 						continue;
-					}
+
+					lookTargetWorld = ray.GetPoint(distance);
 				}
 				else
 				{
-					// 2D: Просто берем worldPoint под мышкой (z нужен как у трансформа)
-					lookTargetWorld = camera.ScreenToWorldPoint(
-						new Vector3(Input.mousePosition.x, Input.mousePosition.y, camera.WorldToScreenPoint(comp.Transform.position).z)
-					);
+					Vector3 objectScreenPos =
+						camera.WorldToScreenPoint(comp.Transform.position);
+
+					lookTargetWorld =
+						camera.ScreenToWorldPoint(
+							new Vector3(
+								screenPos.x,
+								screenPos.y,
+								objectScreenPos.z));
 				}
 
-				// --- Поворот ---
-				Vector3 lookDir = (lookTargetWorld - comp.Transform.position).normalized;
-				Quaternion rot;
+				Vector3 lookDir =
+					lookTargetWorld - comp.Transform.position;
+
+				if (lookDir.sqrMagnitude < 0.000001f)
+					continue;
+
+				lookDir.Normalize();
+
 				if (comp.Mode3D)
 				{
-					rot = Quaternion.LookRotation(lookDir, Vector3.up);
+					comp.Transform.rotation =
+						Quaternion.LookRotation(
+							lookDir,
+							Vector3.up);
 				}
 				else
 				{
-					// 2D: только по z-оси (например, top-down)
-					float angle = Mathf.Atan2(lookDir.x, lookDir.y) * Mathf.Rad2Deg;
-					rot = Quaternion.Euler(0, 0, -angle);
+					float angle =
+						Mathf.Atan2(lookDir.x, lookDir.y) *
+						Mathf.Rad2Deg;
+
+					comp.Transform.rotation =
+						Quaternion.Euler(0f, 0f, -angle);
 				}
-				comp.Transform.rotation = rot;
 			}
 		}
 	}
