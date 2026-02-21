@@ -455,6 +455,7 @@ public struct AimVisualizerComponent
 public struct VirtualAimCursorComponent
 {
 	public Vector2 ScreenPosition;
+	public Vector2 PrevPosition;
 }
 
 public struct AimInputComponent

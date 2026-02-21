@@ -32,14 +32,14 @@ public sealed class FragsCondition : SmartCondition<FragsCondition>
 		Debug.Log($"{nameof(FragsCondition)}: Iterate");
 		foreach (var entity in filter)
 		{
-				AddFrag();
+				TryAddFrag();
 		}
 
 		if (!IsFulfilled && _current >= _targetFrags)
 			IsFulfilled = true;
 	}
 
-	private void AddFrag()
+	private void TryAddFrag()
 	{
 		if (IsFulfilled)
 			return;
