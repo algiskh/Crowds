@@ -1,8 +1,10 @@
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
+using System;
 using UnityEngine;
 
-public abstract class SmartConditionWrapper : ScriptableObject
+[Serializable]
+public abstract class SmartConditionWrapper : SerializedScriptableObject
 {
 	public abstract ISmartCondition GetCopyUntyped();
 }

@@ -12,6 +12,54 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3734ec2c50bdc2f4b8869a485acd283e, type: 3}
   m_Name: Level1
   m_EditorClassIdentifier: 
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: _AdditionalLootConfigs
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[AdditionalLootConfig, Assembly-CSharp]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 1|AdditionalLootConfig, Assembly-CSharp
+    - Name: AdditionalLoot
+      Entry: 7
+      Data: 2|System.Collections.Generic.Dictionary`2[[SmartConditionWrapper, Assembly-CSharp],[PossibleLoot[],
+        Assembly-CSharp]], mscorlib
+    - Name: comparer
+      Entry: 7
+      Data: 3|System.Collections.Generic.ObjectEqualityComparer`1[[SmartConditionWrapper,
+        Assembly-CSharp]], mscorlib
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   _difficultyStages:
   - DifficultyLevel: 1
     DifficultyTimer: 25

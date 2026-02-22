@@ -1,5 +1,6 @@
 using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
+using Sirenix.Serialization;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -19,13 +20,23 @@ public class DifficultyStage
 	public bool HasEndConditions => EndConditions != null && EndConditions.Length > 0;
 }
 
+[Serializable]
+public class AdditionalLootConfig
+{
+	[OdinSerialize]
+	public Dictionary<SmartConditionWrapper, PossibleLoot[]> AdditionalLoot = new();
+}
+
 [CreateAssetMenu(fileName = "LevelConfig", menuName = "Scriptable Objects/LevelConfig")]
-public class LevelConfig : ScriptableObject
+public class LevelConfig : SerializedScriptableObject
 {
 	[SerializeField,
 	 ValidateInput(nameof(ValidateStages), "Уровни сложности должны быть по возрастанию"),
 	 OnCollectionChanged(nameof(OnStagesChanged))]
 	private List<DifficultyStage> _difficultyStages = new();
+
+	[OdinSerialize]
+	private List<AdditionalLootConfig> _AdditionalLootConfigs = new();
 
 	public DifficultyStage GetFirstStage(bool showTutorial = false)
 	{
@@ -61,6 +72,11 @@ public class LevelConfig : ScriptableObject
 			}
 		}
 		return null; // не найден
+	}
+
+	public IEnumerable<AdditionalLootConfig> GetAdditionalLootConfigs()
+	{
+		return _AdditionalLootConfigs;
 	}
 
 #if UNITY_EDITOR

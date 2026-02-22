@@ -1,5 +1,7 @@
 using Leopotam.EcsLite;
 using Sirenix.OdinInspector;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -27,6 +29,8 @@ namespace ECS
 		[Title("Точки спауна мобов")]
 		[SerializeField, Required, ListDrawerSettings, BoxGroup("Spawn Points")]
 		private Transform[] _spawnPoints;
+		[Title("Точки спауна доп лута"), SerializeField]
+		private Transform[] _additionalLootPoints;
 		[Title("UI")]
 		[SerializeField, Required, BoxGroup("UI")] private PlayerStats _playerStats;
 		[SerializeField, Required, BoxGroup("UI")] private WeaponUIView _weaponView;
@@ -215,6 +219,23 @@ namespace ECS
 			var drawer = FindFirstObjectByType<PathGizmoDrawer>();
 			if (drawer != null)
 				drawer.Initialize(_world);
+
+			var additionalSpawnTransforms = GameObject.FindGameObjectsWithTag("AdditionalSpawn")
+			   .Select(go => go.transform);
+
+			Dictionary<Transform, Loot> dictionary = new();
+
+			foreach (var spawn in additionalSpawnTransforms)
+			{
+				dictionary.Add(spawn, null);
+			}
+
+			// -- additional loot --
+			var additionalLootSpawn = new AdditionalLootSpawnComponent
+			{
+				LootPoints = dictionary,
+				LootConfigs = _levelConfig.GetAdditionalLootConfigs()
+			};
 		}
 
 		private void SetUpLevel()
@@ -230,6 +251,7 @@ namespace ECS
 				.Add(new CheckSectorSystem())
 				.Add(new DifficultySystem())
 				.Add(new SpawnPointSystem())
+				.Add(new AdditionalLootSpawnSystem())
 				// Mob systems
 				.Add(new MobSpawnSystem())
 				// Move and navigation systems

@@ -5,14 +5,6 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "MobConfig", menuName = "Scriptable Objects/MobConfig", order = 1)]
 public class MobConfig: ScriptableObject
 {
-	[Serializable]
-	public class PossibleLoot
-	{
-		public LootType LootType;
-		public string Id; // Need for weapons
-		public int Count;
-		public float Chance;
-	}
 
 	[SerializeField] private string _id;
 	[SerializeField] private float _health;

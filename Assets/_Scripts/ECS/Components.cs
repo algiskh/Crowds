@@ -193,7 +193,7 @@ public struct BulletOverlapComponent
 public struct RequestLootSpawn
 {
 	public int SourceEntity;
-	public MobConfig.PossibleLoot[] PossibleLoots;
+	public PossibleLoot[] PossibleLoots;
 	public Vector3 Position;
 }
 
@@ -463,4 +463,17 @@ public struct AimInputComponent
 	public Vector2 Value;      // mouse position OR stick vector
 	public InputActionReference AimAction; // input Action from new input system
 	public bool IsGamepad;
+}
+
+public struct AdditionalLootSpawnComponent
+{
+	public Dictionary<Transform, Loot> LootPoints;
+	public IEnumerable<AdditionalLootConfig> LootConfigs;
+}
+
+public struct AdditionalLootObserverComponent
+{
+	public ISmartCondition Condition;
+	public PossibleLoot[] PossibleLoot;
+	public bool IsFulfilled;
 }

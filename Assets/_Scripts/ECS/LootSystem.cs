@@ -60,7 +60,7 @@ namespace ECS
 					continue;
 				}
 
-				MobConfig.PossibleLoot selectedLoot = null;
+				PossibleLoot selectedLoot = null;
 
 				for (int i = possibleLoots.Length - 1; i >= 0; i--)
 				{

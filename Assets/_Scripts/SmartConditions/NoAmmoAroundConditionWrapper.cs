@@ -2,21 +2,15 @@ using System;
 using ECS;
 using Leopotam.EcsLite;
 using UnityEngine;
-using UnityEngine.LightTransport;
 
-
-[CreateAssetMenu(fileName = "FragsConditionWrapper", menuName = "Scriptable Objects/Smart Conditions/Frags Condition")]
+[CreateAssetMenu(fileName = "NoAmmoAroundConditionWrapper", menuName = "Scriptable Objects/Smart Conditions/No Ammo Around Condition")]
 public class NoAmmoAroundConditionWrapper : SmartConditionWrapper<NoAmmoAroundCondition>
 {
 }
 
-
 [Serializable]
 public sealed class NoAmmoAroundCondition : SmartCondition<NoAmmoAroundCondition>
 {
-	[SerializeField] private int _targetFrags = 10;
-
-
 	[NonSerialized] private int _current;
 
 	public override void Initialize(EcsWorld world)
@@ -51,13 +45,8 @@ public sealed class NoAmmoAroundCondition : SmartCondition<NoAmmoAroundCondition
 		}
 	}
 
-	public override void Dispose()
-	{
-	}
-
 	public override NoAmmoAroundCondition CloneTyped()
 	{
-		// Быстрый и предсказуемый клон "только конфигов"
 		return new NoAmmoAroundCondition();
 	}
 }
