@@ -467,7 +467,7 @@ public struct AimInputComponent
 
 public struct AdditionalLootSpawnComponent
 {
-	public Dictionary<Transform, Loot> LootPoints;
+	public Dictionary<Transform, int> LootPoints; // lootComponent entity as a key
 	public IEnumerable<AdditionalLootConfig> LootConfigs;
 }
 
@@ -475,5 +475,12 @@ public struct AdditionalLootObserverComponent
 {
 	public ISmartCondition Condition;
 	public PossibleLoot[] PossibleLoot;
-	public bool IsFulfilled;
+	public SpawnProcess Process;
+	public Transform ProcessingPoint;
+}
+
+public struct LootSpawnedEventComponent
+{
+	public Loot Loot;
+	public int SourceEntity;	
 }

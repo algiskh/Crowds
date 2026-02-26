@@ -223,19 +223,17 @@ namespace ECS
 			var additionalSpawnTransforms = GameObject.FindGameObjectsWithTag("AdditionalSpawn")
 			   .Select(go => go.transform);
 
-			Dictionary<Transform, Loot> dictionary = new();
+			Dictionary<Transform, int> dictionary = new();
 
 			foreach (var spawn in additionalSpawnTransforms)
 			{
-				dictionary.Add(spawn, null);
+				dictionary.Add(spawn, -1);
 			}
 
 			// -- additional loot --
-			var additionalLootSpawn = new AdditionalLootSpawnComponent
-			{
-				LootPoints = dictionary,
-				LootConfigs = _levelConfig.GetAdditionalLootConfigs()
-			};
+			ref var additionalLootSpawnComponent = ref _world.CreateSimpleEntity<AdditionalLootSpawnComponent>();
+			additionalLootSpawnComponent.LootPoints = dictionary;
+			additionalLootSpawnComponent.LootConfigs = _levelConfig.GetAdditionalLootConfigs();
 		}
 
 		private void SetUpLevel()

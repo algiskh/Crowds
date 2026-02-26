@@ -121,6 +121,10 @@ namespace ECS
 
 					collisionComponent.CollisionType = CollisionType.Loot;
 					//collisionComponent.Radius = mainHolder.Value.DefaultCollisionRadius;
+
+					ref var finishEvent = ref world.CreateSimpleEntity<LootSpawnedEventComponent>();
+					finishEvent.Loot = loot;
+					finishEvent.SourceEntity = requestLootSpawn.SourceEntity;
 				}
 				world.DelEntity(entity); // delete request entity
 			}
