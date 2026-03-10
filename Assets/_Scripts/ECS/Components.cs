@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -195,6 +196,7 @@ public struct RequestLootSpawn
 	public int SourceEntity;
 	public PossibleLoot[] PossibleLoots;
 	public Vector3 Position;
+	public RequestSpawnSource Source;
 }
 
 public struct LootComponent
@@ -465,10 +467,12 @@ public struct AimInputComponent
 	public bool IsGamepad;
 }
 
-public struct AdditionalLootSpawnComponent
+public struct AdditionalLootSpawnHolderComponent
 {
-	public Dictionary<Transform, int> LootPoints; // lootComponent entity as a key
+	public Dictionary<Transform, int> ActivePoints; // lootComponent entity as a key
 	public IEnumerable<AdditionalLootConfig> LootConfigs;
+	public List<Transform> LootPointsPool;
+	public float CooldownMax;
 }
 
 public struct AdditionalLootObserverComponent
@@ -477,10 +481,13 @@ public struct AdditionalLootObserverComponent
 	public PossibleLoot[] PossibleLoot;
 	public SpawnProcess Process;
 	public Transform ProcessingPoint;
+	public Dictionary<int, int> ProcessingRequests;
+	public float Cooldown;
 }
 
 public struct LootSpawnedEventComponent
 {
-	public Loot Loot;
-	public int SourceEntity;	
+	public RequestSpawnSource Source;
+	public int SourceEntity;  // entity that requested loot spawn
+	public int LootEntity;    // lootComponent entity
 }

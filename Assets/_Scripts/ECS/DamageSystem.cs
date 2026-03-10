@@ -60,6 +60,7 @@ namespace ECS
 						++fragCount.Value;
 						ref var uiRequest = ref world.CreateSimpleEntity<RequestUpdateFragCountComponent>();
 						mobLoot.SourceEntity = target;
+						mobLoot.Source = RequestSpawnSource.Mob;
 						mobLoot.PossibleLoots = mob.Config.PossibleLoots;
 						mobLoot.Position = mob.Value.transform.position;
 					}

@@ -1,8 +1,8 @@
 using ECS;
 using Leopotam.EcsLite;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
-
 
 public class AdditionalLootSpawnSystem : IEcsInitSystem, IEcsRunSystem
 {
@@ -10,7 +10,7 @@ public class AdditionalLootSpawnSystem : IEcsInitSystem, IEcsRunSystem
 	{
 		var world = systems.GetWorld();
 
-		ref var additionalLootSpawn = ref world.GetAsSingleton<AdditionalLootSpawnComponent>();
+		ref var additionalLootSpawn = ref world.GetAsSingleton<AdditionalLootSpawnHolderComponent>();
 
 		foreach (var additionalLoot in additionalLootSpawn.LootConfigs)
 		{
@@ -19,9 +19,11 @@ public class AdditionalLootSpawnSystem : IEcsInitSystem, IEcsRunSystem
 				var condition = kvp.Key.GetCopyUntyped();
 				condition.Initialize(world);
 
-				ref var lootConfigEcs = ref world.CreateSimpleEntity<AdditionalLootObserverComponent>();
-				lootConfigEcs.Condition = condition;
-				lootConfigEcs.PossibleLoot = kvp.Value;
+				ref var observer = ref world.CreateSimpleEntity<AdditionalLootObserverComponent>();
+				observer.Condition = condition;
+				observer.PossibleLoot = kvp.Value;
+				observer.Process = SpawnProcess.Idle;
+				observer.ProcessingRequests = new();
 
 				ref var smartCondition = ref world.CreateSimpleEntity<SmartConditionComponent>();
 				smartCondition.Value = condition;
@@ -32,91 +34,96 @@ public class AdditionalLootSpawnSystem : IEcsInitSystem, IEcsRunSystem
 	public void Run(IEcsSystems systems)
 	{
 		var world = systems.GetWorld();
-		var conditionsPool = world.GetPool<AdditionalLootObserverComponent>();
 		var lootSpawnedEventsPool = world.GetPool<LootSpawnedEventComponent>();
 		var lootPool = world.GetPool<LootComponent>();
-		ref var additionalLootSpawn = ref world.GetAsSingleton<AdditionalLootSpawnComponent>();
+		ref var holder = ref world.GetAsSingleton<AdditionalLootSpawnHolderComponent>();
+		ref var observer = ref world.GetAsSingleton<AdditionalLootObserverComponent>();
 
-		Dictionary<int, int> entityToObserver = new Dictionary<int, int>();
-
-		var lootSpawnedFilter = world.Filter<LootSpawnedEventComponent>().End();
-		foreach (var entity in lootSpawnedFilter)
+		if (observer.Cooldown > 0f)
 		{
-			ref var lootSpawnedEvent = ref lootSpawnedEventsPool.Get(entity);
-
-			entityToObserver.Add(entity, lootSpawnedEvent.SourceEntity);
+			observer.Cooldown -= Time.deltaTime;
+			return;
 		}
 
-
-		var filter = world.Filter<AdditionalLootObserverComponent>().End();
-		foreach (var entity in filter)
+		var eventFilter = world.Filter<LootSpawnedEventComponent>().End(); // обрабатываем ивенты о спавне лута
+		foreach (var entity in eventFilter)
 		{
-			ref var observer = ref conditionsPool.Get(entity);
-
-			//clear points that are not occupied by loot
-			foreach (var kvp in additionalLootSpawn.LootPoints)
+			var lootSpawnedEvent = lootSpawnedEventsPool.Get(entity);
+			if (lootSpawnedEvent.Source == RequestSpawnSource.AdditionalSpawn
+				&& !observer.ProcessingRequests.ContainsKey(entity))
 			{
-				if (kvp.Value != -1 && !lootPool.Has(kvp.Value))
-				{
-					additionalLootSpawn.LootPoints[kvp.Key] = -1; // point is free
-				}
-			}
-
-				if (observer.Process == SpawnProcess.Requesting)
-			{
-				foreach (var kvp in entityToObserver)
-				{
-					if (kvp.Value == entity)
-					{
-						observer.Process = SpawnProcess.Spawning;
-
-						if (additionalLootSpawn.LootPoints.ContainsKey(observer.ProcessingPoint))
-						{
-							additionalLootSpawn.LootPoints[observer.ProcessingPoint] = kvp.Key; // ToDO вставлять entity lootComponent
-							observer.Process = SpawnProcess.Idle;
-							world.DelEntity(kvp.Key);
-						}
-						break;
-					}
-				}
-
-				continue; // уже запрашиваем спавн, ждем результата
-			}
-
-			if (observer.Process is SpawnProcess.Idle && observer.Condition.IsFulfilled)
-			{
-				if (TryGetFreeLootPoint(additionalLootSpawn.LootPoints, lootPool, out var point))
-				{
-					ref var request = ref world.CreateSimpleEntity<RequestLootSpawn>();
-					request.Position = point.position;
-					request.PossibleLoots = observer.PossibleLoot;
-					request.SourceEntity = entity;
-					observer.ProcessingPoint = point;
-					observer.Process = SpawnProcess.Requesting;
-				}
+				observer.ProcessingRequests.Add(entity, lootSpawnedEvent.LootEntity);
+				Debug.Log($"{nameof(AdditionalLootSpawnSystem)}: Added processing request for loot entity {lootSpawnedEvent.LootEntity}");
 			}
 		}
+		Debug.Log($"{nameof(AdditionalLootSpawnSystem)}: processing requests {observer.ProcessingRequests.Count}");
+
+		//clear points that are not occupied by loot
+		foreach (var kvp in holder.ActivePoints)
+		{
+			if (!lootPool.Has(kvp.Value))
+			{
+				holder.LootPointsPool.Add(kvp.Key);
+			}
+		}
+		foreach (var point in holder.LootPointsPool)
+		{
+			if (holder.ActivePoints.ContainsKey(point))
+				holder.ActivePoints.Remove(point);
+		}
+
+		if (observer.Process == SpawnProcess.Requesting)
+		{
+			Debug.Log($"{nameof(AdditionalLootSpawnSystem)}: Processing requests {observer.ProcessingRequests.Count}. Active points {holder.ActivePoints.Count}. Free points {holder.LootPointsPool.Count}");
+			
+			if (holder.LootPointsPool.Contains(observer.ProcessingPoint) && observer.ProcessingRequests.Count > 0)
+			{
+				var kvp = observer.ProcessingRequests.First();
+				world.DelEntity(kvp.Key); // delete event entity;
+				holder.LootPointsPool.Remove(observer.ProcessingPoint);
+				holder.ActivePoints.Add(observer.ProcessingPoint, kvp.Value);
+				observer.ProcessingPoint = null;
+				TryStartCooldown(ref observer, ref holder);
+				observer.ProcessingRequests.Remove(kvp.Key);
+
+				observer.Process = observer.ProcessingRequests.Count > 0 ? SpawnProcess.Requesting : SpawnProcess.Idle;
+			}
+		}
+		else if (observer.Condition.IsFulfilled 
+			&& TryGetFreeLootPoint(holder.LootPointsPool, lootPool, out var point))
+			{
+			ref var request = ref world.CreateSimpleEntity<RequestLootSpawn>();
+			request.Position = point.position;
+			request.PossibleLoots = observer.PossibleLoot;
+			request.Source = RequestSpawnSource.AdditionalSpawn;
+			observer.ProcessingPoint = point;
+			observer.Process = SpawnProcess.Requesting;
+		}
+
+		Debug.Log($"{nameof(AdditionalLootSpawnSystem)}: Process = {observer.Process}, Condition = {observer.Condition.IsFulfilled}");
+		Debug.Log($"{nameof(AdditionalLootSpawnSystem)}: Free points count = {holder.ActivePoints.Count(kvp => kvp.Value == -1)}");
 	}
 
-	private bool TryGetFreeLootPoint(Dictionary<Transform, int> lootPoints, EcsPool<LootComponent> lootPool, out Transform point)
+	private bool TryGetFreeLootPoint(IEnumerable<Transform> lootPoints, EcsPool<LootComponent> lootPool, out Transform point)
 	{
+		//can be extended with additional logic (i.e. looking for optimal distance)
 		point = null;
-		foreach (var kvp in lootPoints)
+		foreach (var lootPoint in lootPoints)
 		{
-			if (kvp.Value == -1) // point is free
+			if (lootPoint != null) // point is free
 			{
-				point = kvp.Key;
-				return true;
-			}
-
-			var loot = lootPool.Get(kvp.Value);
-
-			if (loot.Loot == null || !loot.Loot.gameObject.activeSelf)
-			{
-				point = kvp.Key;
+				point = lootPoint;
 				return true;
 			}
 		}
 		return false;
+	}
+
+	private void TryStartCooldown(ref AdditionalLootObserverComponent observer, ref AdditionalLootSpawnHolderComponent holder)
+	{
+		if (holder.CooldownMax > 0)
+		{
+			observer.Cooldown = holder.CooldownMax;
+		}
 	}
 }

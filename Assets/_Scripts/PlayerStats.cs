@@ -1,3 +1,4 @@
+using LightSide;
 using Scene.UI;
 using TMPro;
 using UnityEngine;
@@ -7,7 +8,7 @@ public class PlayerStats : MonoBehaviour
 	[SerializeField] private ValueBar _healthbar;
 	[SerializeField] private ValueBar _shieldbar;
 	[SerializeField] private ValueBar _speedbar;
-	[SerializeField] private TMP_Text _killsText;
+	[SerializeField] private UniText _killsText;
 
 	private void Awake()
 	{
@@ -25,7 +26,7 @@ public class PlayerStats : MonoBehaviour
 	{
 		if (_killsText != null)
 		{
-			_killsText.text = $"Kills: {count}";
+			_killsText.Text = $"Kills: {count}";
 		}
 	}
 
@@ -43,6 +44,6 @@ public class PlayerStats : MonoBehaviour
 
 	public void SetFragCount(int count)
 	{
-		_killsText.text = $"Kills: {count}";
+		_killsText.Text = $"Kills: {count}";
 	}
 }

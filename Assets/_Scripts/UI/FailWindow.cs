@@ -1,3 +1,4 @@
+using LightSide;
 using System;
 using TMPro;
 using UnityEngine;
@@ -9,7 +10,7 @@ public class FailWindow : MonoBehaviour
 	[SerializeField] private Button _restartButton;
 	[SerializeField] private Button _quitButton;
 	[SerializeField] private Canvas _canvas;
-	[SerializeField] private TMP_Text _scoreText;
+	[SerializeField] private UniText _scoreText;
 	public void Awake()
 	{
 		_quitButton.onClick.AddListener(OnPressQuit);
@@ -31,6 +32,6 @@ public class FailWindow : MonoBehaviour
 		gameObject.SetActive(true);
 		_canvas.enabled = true;
 		_scoreText.gameObject.SetActive(score > 0);
-		_scoreText.text = $"Total: {score} kills";
+		_scoreText.Text = $"Total: {score} kills";
 	}
 }

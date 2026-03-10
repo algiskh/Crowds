@@ -224,15 +224,12 @@ namespace ECS
 			   .Select(go => go.transform);
 
 			Dictionary<Transform, int> dictionary = new();
-
-			foreach (var spawn in additionalSpawnTransforms)
-			{
-				dictionary.Add(spawn, -1);
-			}
+			List<Transform> lootPointsPool = new(additionalSpawnTransforms);
 
 			// -- additional loot --
-			ref var additionalLootSpawnComponent = ref _world.CreateSimpleEntity<AdditionalLootSpawnComponent>();
-			additionalLootSpawnComponent.LootPoints = dictionary;
+			ref var additionalLootSpawnComponent = ref _world.CreateSimpleEntity<AdditionalLootSpawnHolderComponent>();
+			additionalLootSpawnComponent.ActivePoints = dictionary;
+			additionalLootSpawnComponent.LootPointsPool = lootPointsPool;
 			additionalLootSpawnComponent.LootConfigs = _levelConfig.GetAdditionalLootConfigs();
 		}
 

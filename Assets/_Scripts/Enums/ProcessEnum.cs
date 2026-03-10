@@ -4,6 +4,6 @@ public enum SpawnProcess
 {
 	Idle,
 	Requesting,
-	Spawning,
+	WaitingFreePoint,
 	Finished
 }

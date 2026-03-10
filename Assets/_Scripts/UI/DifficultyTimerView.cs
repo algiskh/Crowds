@@ -1,3 +1,4 @@
+using LightSide;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,8 +6,8 @@ using UnityEngine.UI;
 public class DifficultyTimerView : MonoBehaviour
 {
 	[SerializeField] private Image _image;
-	[SerializeField] private TMP_Text _timerText;
-	[SerializeField] private TMP_Text _levelText;
+	[SerializeField] private UniText _timerText;
+	[SerializeField] private UniText _levelText;
 
 	public bool IsActive => _image.enabled;
 
@@ -22,7 +23,7 @@ public class DifficultyTimerView : MonoBehaviour
 		_image.fillAmount = 1;
 		_image.enabled = true;
 		_timerText.enabled = true;
-		_levelText.text = level.ToString().ToUpperInvariant();
+		_levelText.Text = level.ToString().ToUpperInvariant();
 		ShowSeconds(seconds);
 	}
 
@@ -37,10 +38,10 @@ public class DifficultyTimerView : MonoBehaviour
 	{
 		if (seconds < 0)
 		{
-			_timerText.text = "00:00:00";
+			_timerText.Text = "00:00:00";
 			return;
 		}
 		var timeSpan = System.TimeSpan.FromSeconds(seconds);
-		_timerText.text = timeSpan.ToString(@"hh\:mm\:ss");
+		_timerText.Text = timeSpan.ToString(@"hh\:mm\:ss");
 	}
 }

@@ -35,7 +35,7 @@ public sealed class NoAmmoAroundCondition : SmartCondition<NoAmmoAroundCondition
 			}
 		}
 
-		if (_world.TryGetAsSingleton(out WeaponComponent weapon) && weapon.AmmoCount == 0 && hasAmmoLoot)
+		if (_world.TryGetAsSingleton(out WeaponComponent weapon) && weapon.AmmoCount == 0 && !hasAmmoLoot)
 		{
 			IsFulfilled = true;
 		}

@@ -250,6 +250,16 @@
       },
       "url": "https://packages.unity.com"
     },
+    "media.lightside.unitext": {
+      "version": "https://github.com/LightSideMeowshop/unitext.git#1.0.0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0",
+        "com.unity.modules.ui": "1.0.0"
+      },
+      "hash": "3fa6b21c5e1ce7ec702c664e82da88441dfa4d68"
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,
