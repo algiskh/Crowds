@@ -260,6 +260,7 @@ namespace ECS
 				// Fire and Reload Systems
 				.Add(new WeaponFireSystem())
 				.Add(new WeaponReloadSystem())
+				.Add(new MeleeSpawnSystem())
 				.Add(new BulletSystem())
 				.Add(new BulletOverlapSystem())
 				// Collision and Damage Systems

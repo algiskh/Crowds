@@ -76,7 +76,7 @@ public struct MoveComponent
 	public Transform Transform;
 	public Vector3 Direction;
 	public float Speed;
-	public List<SpeedModifier> SpeedModifiers;
+	public List<Modifier> SpeedModifiers;
 }
 
 public struct MovePath
@@ -182,6 +182,7 @@ public struct BulletComponent
 	public float LifeTime;
 	public float Radius;
 	public BulletCheckType CheckType;
+	public Modifier[] Modifiers; 
 }
 
 public struct BulletOverlapComponent
