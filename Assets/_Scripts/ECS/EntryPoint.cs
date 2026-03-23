@@ -185,6 +185,7 @@ namespace ECS
 			ref var follower = ref _world.GetPool<FollowerComponent>().Add(cameraFollowerEntity);
 			follower.Value = _mainCamera.transform;
 			ref var movement = ref _world.GetPool<MoveComponent>().Add(cameraFollowerEntity);
+			ref var modifiers = ref _world.GetPool<ModifierOwnerComponent>().Add(cameraFollowerEntity);
 			movement.Speed = _mainHolder.CameraSpeed;
 			ref var followTarget = ref _world.GetPool<FollowTarget>().Add(cameraFollowerEntity);
 			followTarget = _mainHolder.CameraFollowTarget;
@@ -255,8 +256,10 @@ namespace ECS
 				.Add(new FollowSystem())
 				.Add(new LookAtCameraSystem())
 				.Add(new LookAtCursorSystem())
-				
+			
 				.Add(new AnimationSystem())
+				.Add(new ModifiersSystem())
+
 				// Fire and Reload Systems
 				.Add(new WeaponFireSystem())
 				.Add(new WeaponReloadSystem())

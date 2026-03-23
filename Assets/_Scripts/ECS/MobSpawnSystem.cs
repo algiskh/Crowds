@@ -31,6 +31,7 @@ namespace ECS
 
 				var mobComponentPool = world.GetPool<MobComponent>();
 				var moveComponentPool = world.GetPool<MoveComponent>();
+				var modifierComponentPool = world.GetPool<ModifierOwnerComponent>();
 				var healthComponentPool = world.GetPool<HealthComponent>();
 				var colliderComponentPool = world.GetPool<ColliderComponent>();
 				var pathRecalculationPool = world.GetPool<PathRecalculation>();
@@ -38,6 +39,7 @@ namespace ECS
 
 				ref var mobComponent = ref mobComponentPool.Add(mobEntity);
 				ref var moveComponent = ref moveComponentPool.Add(mobEntity);
+				ref var modifierComponent = ref modifierComponentPool.Add(mobEntity);
 				ref var healthComponent = ref healthComponentPool.Add(mobEntity);
 				ref var colliderComponent = ref colliderComponentPool.Add(mobEntity);
 				ref var pathRecalculationComponent = ref pathRecalculationPool.Add(mobEntity);

@@ -13,6 +13,7 @@ namespace ECS
 			var bulletPool = world.GetPool<BulletComponent>();
 			var movePool = world.GetPool<MoveComponent>();
 			var disposePool = world.GetPool<DisposableComponent>();
+			var modifierPool = world.GetPool<ModifierOwnerComponent>();
 			ref var bulletPoolPool = ref world.GetAsSingleton<BulletPoolComponent>();
 			ref var reloading = ref world.GetAsSingleton<ReloadingComponent>();
 			var bulletRequestPool = world.GetPool<RequestSpawnBulletComponent>();
@@ -47,7 +48,7 @@ namespace ECS
 
 				for (var i = 0; i < bulletRequest.GunConfig.ProjectilesNumber; i++)
 				{
-					SpawnBullet(world, ref bulletPoolPool, bulletPool, movePool, disposePool, bulletRequest);
+					SpawnBullet(world, ref bulletPoolPool, bulletPool, movePool, disposePool, modifierPool, bulletRequest);
 				}
 			}
 
@@ -60,6 +61,7 @@ namespace ECS
 			EcsPool<BulletComponent> bulletPool, 
 			EcsPool<MoveComponent> movePool,
 			EcsPool<DisposableComponent> disposePool,
+			EcsPool<ModifierOwnerComponent> modifierPool,
 			RequestSpawnBulletComponent bulletRequest
 			)
 		{
@@ -87,6 +89,7 @@ namespace ECS
 			bulletComponent.CheckType = bulletRequest.GunConfig.BulletCheckType;
 			ref var moveComponent = ref movePool.Add(bulletEntity);
 			ref var disposeComponent = ref disposePool.Add(bulletEntity);
+			ref var modifierComponent = ref modifierPool.Add(bulletEntity);
 			disposeComponent.IsDisposed = false;
 
 			float accuracy = bulletRequest.GunConfig.Accuracy;

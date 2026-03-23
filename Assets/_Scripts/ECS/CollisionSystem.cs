@@ -60,7 +60,7 @@ namespace ECS
 			}
 			#endregion
 
-			var bulletFilter = world.Filter<BulletComponent>().Inc<MoveComponent>().Inc<BulletOverlapComponent>().Inc<DisposableComponent>().End();
+			var bulletFilter = world.Filter<BulletComponent>().Inc<MoveComponent>().Inc<ModifierOwnerComponent>().Inc<BulletOverlapComponent>().Inc<DisposableComponent>().End();
 
 			foreach (var bulletEntity in bulletFilter)
 			{

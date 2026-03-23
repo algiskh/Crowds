@@ -1,6 +1,7 @@
 ﻿using Leopotam.EcsLite;
 using System.Linq;
 using UnityEngine;
+using static UnityEngine.UI.GridLayoutGroup;
 
 namespace ECS
 {
@@ -11,18 +12,20 @@ namespace ECS
 			var world = systems.GetWorld();
 			var movePool = world.GetPool<MoveComponent>();
 			var pathPool = world.GetPool<MovePath>();
+			var modifierOwnerPool = world.GetPool<ModifierOwnerComponent>();
 
-			foreach (var entity in world.Filter<MoveComponent>().End())
+			foreach (var entity in world.Filter<MoveComponent>().Inc<ModifierOwnerComponent>().End())
 			{
 				ref var moveComponent = ref movePool.Get(entity);
+				ref var modifierOwnerComponent = ref modifierOwnerPool.Get(entity);
 
 				if (pathPool.Has(entity))
 				{
-					MoveByPath(pathPool, entity, moveComponent);
+					MoveByPath(pathPool, entity, moveComponent, modifierOwnerComponent);
 				}
 				else
 				{
-					MoveDirect(moveComponent);
+					MoveDirect(world, moveComponent, modifierOwnerComponent);
 				}
 			}
 		}
@@ -31,7 +34,7 @@ namespace ECS
 		/// <summary>
 		/// Move agent by path if it exists
 		/// </summary>
-		private void MoveByPath(EcsPool<MovePath> pathPool, int entity, MoveComponent moveComponent)
+		private void MoveByPath(EcsPool<MovePath> pathPool, int entity, MoveComponent moveComponent, ModifierOwnerComponent modifierOwnerComponent)
 		{
 			ref var movePath = ref pathPool.Get(entity);
 
@@ -44,7 +47,9 @@ namespace ECS
 
 			targetWaypoint.y = currentPosition.y;
 
-			float moveSpeed = moveComponent.Speed * GetModifier(moveComponent);
+			var compositeModifier = modifierOwnerComponent.GetModifier<SpeedModifier>();
+
+			float moveSpeed = moveComponent.Speed * compositeModifier;
 			float step = moveSpeed * Time.deltaTime;
 
 			if (Vector3.Distance(currentPosition, targetWaypoint) < 0.05f)
@@ -65,7 +70,6 @@ namespace ECS
 			Vector3 dir = (targetWaypoint - currentPosition).normalized;
 			moveComponent.Direction = dir;
 
-			// === ДОБАВЛЯЕМ ВОТ ЗДЕСЬ ===
 			if (dir != Vector3.zero)
 			{
 				Quaternion targetRotation = Quaternion.LookRotation(dir);
@@ -75,7 +79,6 @@ namespace ECS
 					moveComponent.Speed * Time.deltaTime
 				);
 			}
-			// ===========================
 
 			transform.position += dir * step;
 		}
@@ -83,7 +86,7 @@ namespace ECS
 		/// <summary>
 		/// Move agent directly in the direction specified in MoveComponent
 		/// </summary>
-		private void MoveDirect(MoveComponent moveComponent)
+		private void MoveDirect(EcsWorld world, MoveComponent moveComponent, ModifierOwnerComponent modifierOwner)
 		{
 			if (moveComponent.Transform == null)
 			{
@@ -93,25 +96,10 @@ namespace ECS
 			//Debug.Log($"MoveDirect: {moveComponent.Direction} Speed: {moveComponent.Speed}");
 
 			var move = moveComponent.Direction;
-			var compositeModifier = GetModifier(moveComponent);
-			moveComponent.Transform.position += moveComponent.Speed * GetModifier(moveComponent) * Time.deltaTime * move;
+
+			var compositeModifier = modifierOwner.GetModifier<SpeedModifier>();
+			moveComponent.Transform.position += moveComponent.Speed * compositeModifier * Time.deltaTime * move;
 		}
 		#endregion
-
-		private float GetModifier(MoveComponent moveComponent)
-		{
-			float compositeModifier = 1f;
-			
-			if (moveComponent.SpeedModifiers == null || moveComponent.SpeedModifiers.Count == 0)
-			{
-				return compositeModifier;
-			}
-
-			foreach (var modifier in moveComponent.SpeedModifiers)
-			{
-				compositeModifier *= modifier.Value;
-			}
-			return compositeModifier;
-		}
 	}
 }

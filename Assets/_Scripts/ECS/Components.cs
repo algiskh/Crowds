@@ -76,7 +76,7 @@ public struct MoveComponent
 	public Transform Transform;
 	public Vector3 Direction;
 	public float Speed;
-	public List<Modifier> SpeedModifiers;
+	public IEnumerable<Modifier> SpeedModifiers;
 }
 
 public struct MovePath
@@ -491,4 +491,17 @@ public struct LootSpawnedEventComponent
 	public RequestSpawnSource Source;
 	public int SourceEntity;  // entity that requested loot spawn
 	public int LootEntity;    // lootComponent entity
+}
+
+public struct ModifierOwnerComponent
+{
+	public int Entity;
+	public List<Modifier> Modifiers;
+	public bool ReadyToRemove;
+}
+
+public struct ApplyModifierResponseComponent
+{
+	public int TargetEntity;
+	public Modifier Modifier;
 }
