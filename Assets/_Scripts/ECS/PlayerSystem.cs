@@ -29,6 +29,16 @@ namespace ECS
 					var fireEntity = world.NewEntity();
 					ref var requestFireComponent = ref fireRequestPool.Add(fireEntity);
 				}
+
+				if (playerInput.IsMeleeing)
+				{
+					playerInput.MeleeCooldown = player.Value.MeleeConfig.Cooldown;
+					Debug.Log($"Try to melee");
+					var meleeEntity = world.NewEntity();
+					ref var requestMeleeComponent = ref world.GetPool<RequestMeleeComponent>().Add(meleeEntity);
+					requestMeleeComponent.Config = player.Value.MeleeConfig;
+					requestMeleeComponent.Delay = player.Value.MeleeConfig.Delay;
+				}
 			}
 
 			

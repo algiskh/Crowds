@@ -44,3 +44,4 @@ MonoBehaviour:
     Id: MachineGun
     Count: 1
     Chance: 0.005
+  _targetType: 1

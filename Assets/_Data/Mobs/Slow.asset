@@ -48,3 +48,4 @@ MonoBehaviour:
     Id: Shotgun
     Count: 1
     Chance: 0.02
+  _targetType: 1

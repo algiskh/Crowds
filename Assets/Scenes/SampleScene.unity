@@ -4045,6 +4045,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _animator: {fileID: 880825473}
   _weapon: {fileID: 1703664871}
+  _meleeConfig: {fileID: 11400000, guid: 83695ea1f30b4e64da15a908ae74c77e, type: 2}
   _currentSector: {fileID: 0}
 --- !u!95 &880825476
 Animator:
@@ -5018,7 +5019,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00001985871}
+  m_AnchoredPosition: {x: 0, y: 0.0007599423}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1182216098

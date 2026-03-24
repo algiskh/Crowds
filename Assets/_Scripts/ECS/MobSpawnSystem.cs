@@ -57,6 +57,7 @@ namespace ECS
 				moveComponent.Transform = mob.transform;
 				healthComponent.CurrentHealth = mobConfig.Health;
 				healthComponent.MaxHealth = mobConfig.Health;
+				healthComponent.TargetType = mobConfig.TargetType;
 				colliderComponent.CollisionType = CollisionType.Mob;
 				colliderComponent.Value = mob.Collider;
 				looker.Transform = mob.ValueBar.Transform;

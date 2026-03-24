@@ -14,6 +14,7 @@ namespace ECS
 			inputActions.ActionMap = inputActions.Value.FindActionMap("Player");
 			inputActions.MoveAction = inputActions.ActionMap.FindAction("Move", throwIfNotFound: true);
 			inputActions.FireAction = inputActions.ActionMap.FindAction("Attack", throwIfNotFound: true);
+			inputActions.MeleeAction = inputActions.ActionMap.FindAction("Melee", throwIfNotFound: true);
 			inputActions.ReloadAction = inputActions.ActionMap.FindAction("Reload", throwIfNotFound: true);
 		}
 
@@ -51,6 +52,26 @@ namespace ECS
 			{
 				ref var requestReload = ref world.CreateSimpleEntity<RequestReloadComponent>();
 			}
+
+			if (inputActions.MeleeAction != null && inputActions.MeleeAction.triggered)
+			{
+				if (input.MeleeCooldown > 0)
+				{
+					input.IsMeleeing = false;
+				}
+				else
+				{
+					input.IsMeleeing = true;
+				}
+			}
+
+			if (input.MeleeCooldown > 0)
+			{
+				input.MeleeCooldown -= Time.deltaTime;
+				if (input.MeleeCooldown < 0)
+					input.MeleeCooldown = 0;
+			}
+
 
 			Vector3 moveDir = Vector3.zero;
 

@@ -95,6 +95,7 @@ public struct HealthComponent
 {
 	public float CurrentHealth;
 	public float MaxHealth;
+	public TargetType TargetType;
 }
 
 public struct RequestDamageComponent
@@ -152,6 +153,8 @@ public struct PlayerInputComponent
 	public Vector3 Move;
 	public Vector3 PreviousMove;
 	public bool IsFiring;
+	public bool IsMeleeing;
+	public float MeleeCooldown;
 }
 
 public struct WeaponComponent
@@ -430,6 +433,7 @@ public struct InputActionsComponent
 	public InputActionMap ActionMap;
 	public InputAction MoveAction;
 	public InputAction FireAction;
+	public InputAction MeleeAction;
 	public InputAction ReloadAction;
 }
 
@@ -504,4 +508,11 @@ public struct ApplyModifierResponseComponent
 {
 	public int TargetEntity;
 	public Modifier Modifier;
+}
+
+public struct RequestMeleeComponent
+{
+	public Vector3 Position;
+	public float Delay;
+	public MeleeConfig Config;
 }
