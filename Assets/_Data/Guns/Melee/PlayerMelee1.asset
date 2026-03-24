@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MeleeConfig
   _damage: 25
   _range: 1
-  _radius: 1
+  _radius: 2
   _targetType: 5
   _delay: 0.1
   _cooldown: 1

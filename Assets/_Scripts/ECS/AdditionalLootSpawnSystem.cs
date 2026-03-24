@@ -56,7 +56,6 @@ public class AdditionalLootSpawnSystem : IEcsInitSystem, IEcsRunSystem
 				Debug.Log($"{nameof(AdditionalLootSpawnSystem)}: Added processing request for loot entity {lootSpawnedEvent.LootEntity}");
 			}
 		}
-		Debug.Log($"{nameof(AdditionalLootSpawnSystem)}: processing requests {observer.ProcessingRequests.Count}");
 
 		//clear points that are not occupied by loot
 		foreach (var kvp in holder.ActivePoints)
@@ -74,8 +73,6 @@ public class AdditionalLootSpawnSystem : IEcsInitSystem, IEcsRunSystem
 
 		if (observer.Process == SpawnProcess.Requesting)
 		{
-			Debug.Log($"{nameof(AdditionalLootSpawnSystem)}: Processing requests {observer.ProcessingRequests.Count}. Active points {holder.ActivePoints.Count}. Free points {holder.LootPointsPool.Count}");
-			
 			if (holder.LootPointsPool.Contains(observer.ProcessingPoint) && observer.ProcessingRequests.Count > 0)
 			{
 				var kvp = observer.ProcessingRequests.First();

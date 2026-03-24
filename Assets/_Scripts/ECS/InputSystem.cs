@@ -53,15 +53,16 @@ namespace ECS
 				ref var requestReload = ref world.CreateSimpleEntity<RequestReloadComponent>();
 			}
 
+			bool isMeleeing = false;
 			if (inputActions.MeleeAction != null && inputActions.MeleeAction.triggered)
 			{
 				if (input.MeleeCooldown > 0)
 				{
-					input.IsMeleeing = false;
+					isMeleeing = false;
 				}
 				else
 				{
-					input.IsMeleeing = true;
+					isMeleeing = true;
 				}
 			}
 
@@ -96,6 +97,7 @@ namespace ECS
 
 			input.Move = moveDir;
 			input.IsFiring = isFiring;
+			input.IsMeleeing = isMeleeing;
 		}
 	}
 }

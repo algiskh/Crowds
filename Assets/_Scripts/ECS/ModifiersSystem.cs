@@ -16,6 +16,9 @@ namespace ECS
 			{
 				ref var modifierOwner = ref modifierPool.Get(entity);
 
+				if (modifierOwner.Modifiers == null || modifierOwner.Modifiers.Count == 0)
+					continue;
+
 				foreach (var modifier in modifierOwner.Modifiers)
 				{
 					modifier.Lifetime -= Time.deltaTime;

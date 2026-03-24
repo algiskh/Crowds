@@ -45,7 +45,7 @@ namespace ECS
 				ref var pathRecalculationComponent = ref pathRecalculationPool.Add(mobEntity);
 				ref var looker = ref lookerPool.Add(mobEntity);
 
-
+				modifierComponent.Modifiers = new();
 				mobComponent.Value = mob;
 				mobComponent.Config = mobConfig;
 				mobComponent.Cooldown = 0;

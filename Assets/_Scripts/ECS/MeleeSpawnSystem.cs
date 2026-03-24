@@ -27,17 +27,24 @@ namespace ECS
 					continue;
 				}
 
+
+				ref var effectRequest = ref world.CreateSimpleEntity<RequestEffectComponent>();
+				effectRequest.EffectId = "collect";
+				effectRequest.Position = spawnRequest.Position;
+
 				var healthFilter = world.Filter<HealthComponent>().End();
 				foreach (var targetEntity in healthFilter)
 				{
 					ref var health = ref healthPool.Get(targetEntity);
 
+					if (spawnRequest.Config.TargetType.ContainsFlags(health.TargetType))
+					{
+						continue;
+					}
+
 					if (IsInRadius(targetEntity, moveComponentPool, spawnRequest))
 					{
-						if (spawnRequest.Config.TargetType != health.TargetType)
-						{
-							continue;
-						}
+						Debug.Log($"Melee: DO damage to {targetEntity}");
 
 						damageRequestPool.Add(world.NewEntity()) = new RequestDamageComponent
 						{
@@ -45,16 +52,17 @@ namespace ECS
 							Damage = spawnRequest.Config.Damage
 						};
 
-
 						if (modifierPool.Has(targetEntity))
 						{
 							ref var modifier = ref modifierPool.Get(targetEntity);
-							modifierPool.Add(targetEntity) = modifier;
+							foreach (var meleeEffect in spawnRequest.Config.GetAllModifiersAsCopies())
+							{
+								modifier.Modifiers.Add(meleeEffect);
+							}
 						}
-
 					}
-					meleeSpawnPool.Del(entity);
 				}
+				meleeSpawnPool.Del(entity);
 			}
 		}
 
@@ -63,7 +71,10 @@ namespace ECS
 			if (moveComponentPool.Has(targetEntity))
 			{
 				ref var moveComponent = ref moveComponentPool.Get(targetEntity);
+
 				var distance = (moveComponent.Transform.position - meleeRequest.Position).magnitude;
+
+				Debug.Log($"Melee: Distance is {distance}. Radius is {meleeRequest.Config.Radius}");
 
 				if (distance <= meleeRequest.Config.Radius)
 				{

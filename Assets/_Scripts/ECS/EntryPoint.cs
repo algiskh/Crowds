@@ -166,10 +166,13 @@ namespace ECS
 			_player.Initialize(playerEntity);
 			ref var playerMovement = ref _world.GetPool<MoveComponent>().Add(playerEntity);
 			playerMovement.Speed = _mainHolder.PlayerConfig.Speed;
+			playerMovement.Transform = _player.transform;
 			ref var healthComponent = ref _world.GetPool<HealthComponent>().Add(playerEntity);
 			healthComponent.MaxHealth = _mainHolder.PlayerConfig.MaxHealth;
 			healthComponent.CurrentHealth = healthComponent.MaxHealth;
 			_playerStats.SetHealthValue(healthComponent.CurrentHealth);
+
+			ref var playerModifiers = ref _world.GetPool<ModifierOwnerComponent>().Add(playerEntity);
 
 			// --- Input
 			ref var playerInput = ref _world.GetPool<PlayerInputComponent>().Add(playerEntity);
@@ -186,6 +189,9 @@ namespace ECS
 			follower.Value = _mainCamera.transform;
 			ref var movement = ref _world.GetPool<MoveComponent>().Add(cameraFollowerEntity);
 			ref var modifiers = ref _world.GetPool<ModifierOwnerComponent>().Add(cameraFollowerEntity);
+
+			modifiers.Modifiers = new();
+
 			movement.Speed = _mainHolder.CameraSpeed;
 			ref var followTarget = ref _world.GetPool<FollowTarget>().Add(cameraFollowerEntity);
 			followTarget = _mainHolder.CameraFollowTarget;

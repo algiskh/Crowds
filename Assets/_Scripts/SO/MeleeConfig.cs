@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "MeleeConfig", menuName = "Scriptable Objects/MeleeConfig")]
@@ -20,4 +22,15 @@ public class MeleeConfig : ScriptableObject
 
 	public float Delay => _delay;
 	public float Cooldown => _cooldown;
+
+	public IEnumerable<Modifier> GetAllModifiersAsCopies()
+	{
+		foreach (var modifier in _modifiers)
+		{
+			if (modifier != null)
+			{
+				yield return modifier.Clone<Modifier>();
+			}
+		}
+	}
 }
