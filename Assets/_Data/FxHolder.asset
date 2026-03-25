@@ -28,3 +28,6 @@ MonoBehaviour:
   - Id: collectHealth
     Prefab: {fileID: 7970544682367293265, guid: f049739013666e441a20aac1da51c077, type: 3}
     Duration: 1
+  - Id: melee1
+    Prefab: {fileID: 7970544682367293265, guid: c91dc444c76d55b4693e6cb9f0a1177b, type: 3}
+    Duration: 1

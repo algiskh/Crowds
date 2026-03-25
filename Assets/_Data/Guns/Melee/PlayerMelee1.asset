@@ -12,9 +12,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be074fa73c7d7a94496be00bebbb3a44, type: 3}
   m_Name: PlayerMelee1
   m_EditorClassIdentifier: Assembly-CSharp::MeleeConfig
+  _id: melee1
   _damage: 25
   _range: 1
   _radius: 2
+  _modifiers: []
   _targetType: 5
-  _delay: 0.1
+  _delay: 0.2
   _cooldown: 1
+  _debuffs:
+  - rid: 2646365630254809158
+  references:
+    version: 2
+    RefIds:
+    - rid: 2646365630254809158
+      type: {class: SpeedModifier, ns: , asm: Assembly-CSharp}
+      data:
+        Id: meleeSlower
+        ReadyToDelete: 0
+        Source: 6
+        Value: 0.25
+        Lifetime: 0.25

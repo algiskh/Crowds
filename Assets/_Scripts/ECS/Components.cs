@@ -512,6 +512,7 @@ public struct ApplyModifierResponseComponent
 
 public struct RequestMeleeComponent
 {
+	public int SourceEntity;
 	public Vector3 Position;
 	public float Delay;
 	public MeleeConfig Config;

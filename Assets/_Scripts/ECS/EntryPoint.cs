@@ -173,7 +173,7 @@ namespace ECS
 			_playerStats.SetHealthValue(healthComponent.CurrentHealth);
 
 			ref var playerModifiers = ref _world.GetPool<ModifierOwnerComponent>().Add(playerEntity);
-
+			playerModifiers.Modifiers = new();
 			// --- Input
 			ref var playerInput = ref _world.GetPool<PlayerInputComponent>().Add(playerEntity);
 			ref var aimInput = ref _world.GetPool<AimInputComponent>().Add(playerEntity);

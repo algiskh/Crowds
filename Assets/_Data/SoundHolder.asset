@@ -31,3 +31,5 @@ MonoBehaviour:
     Clip: {fileID: 8300000, guid: 48525c1aeef27b447a2a8d84c3185323, type: 3}
   - Id: shotgun_reload
     Clip: {fileID: 8300000, guid: 290ed0221e861d84f9666ab8743b344c, type: 3}
+  - Id: melee1
+    Clip: {fileID: 8300000, guid: ba218f580d4c32040b5968d22998f859, type: 3}

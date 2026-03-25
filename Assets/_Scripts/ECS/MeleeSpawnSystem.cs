@@ -1,4 +1,6 @@
 ﻿using Leopotam.EcsLite;
+using System;
+using System.Linq;
 using UnityEngine;
 
 namespace ECS
@@ -29,8 +31,10 @@ namespace ECS
 
 
 				ref var effectRequest = ref world.CreateSimpleEntity<RequestEffectComponent>();
-				effectRequest.EffectId = "collect";
+				effectRequest.EffectId = spawnRequest.Config.Id;
 				effectRequest.Position = spawnRequest.Position;
+
+				TryApplyDebuffs(modifierPool, spawnRequest);
 
 				var healthFilter = world.Filter<HealthComponent>().End();
 				foreach (var targetEntity in healthFilter)
@@ -63,6 +67,27 @@ namespace ECS
 					}
 				}
 				meleeSpawnPool.Del(entity);
+			}
+		}
+
+		private void TryApplyDebuffs(EcsPool<ModifierOwnerComponent> modifierPool, RequestMeleeComponent spawnRequest)
+		{
+
+			var debuffs = spawnRequest.Config.GetAllModifiersAsCopies(true);
+
+			if (debuffs != null && debuffs.Count() > 0)
+			{
+				var hasEntity = modifierPool.Has(spawnRequest.SourceEntity);
+
+				if (!hasEntity)
+				{
+					Debug.LogAssertion($"No modifier owner component on source entity {spawnRequest.SourceEntity}, but melee config has modifiers to apply! Adding component.");
+					return;
+				}
+
+				var targetComp = modifierPool.Get(spawnRequest.SourceEntity);
+
+				targetComp.Modifiers.AddRange(debuffs);
 			}
 		}
 

@@ -37,7 +37,7 @@ namespace ECS
 					var meleeEntity = world.NewEntity();
 					ref var requestMeleeComponent = ref world.GetPool<RequestMeleeComponent>().Add(meleeEntity);
 					requestMeleeComponent.Position = player.Value.transform.GetForwardPosition(player.Value.MeleeConfig.Range);
-
+					requestMeleeComponent.SourceEntity = entity;
 					if (player.Value.MeleeConfig == null)
 					{
 						Debug.LogError($"Player {entity} has no melee config assigned!");
