@@ -73,6 +73,12 @@ public class GunConfig : ScriptableObject
 	[LabelText("Стрельба без кулдауна")]
 	[SerializeField] private bool _fireOnDemand;
 
+	[LabelText("Дебаффы при стрельбе")]
+	[SerializeField] private Modifier[] _shotDebuffs;
+
+	[LabelText("Дебаффы при перезарядке")]
+	[SerializeField] private Modifier[] _reloadDebuffs;
+
 	public string Id => _id;
 	public Sprite Preview => _preview;
 	public float BulletSpeed => _bulletSpeed;
@@ -93,4 +99,6 @@ public class GunConfig : ScriptableObject
 	public int ProjectilesNumber => _projectilesNumber;
 	public bool SingleLoad => _singleLoad;
 	public bool FireOnDemand => _fireOnDemand;
+	public Modifier[] ShotDebuffs => _shotDebuffs;
+	public Modifier[] ReloadDebuffs => _reloadDebuffs;
 }

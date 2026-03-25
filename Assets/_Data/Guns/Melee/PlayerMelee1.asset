@@ -28,7 +28,7 @@ MonoBehaviour:
     - rid: 2646365630254809158
       type: {class: SpeedModifier, ns: , asm: Assembly-CSharp}
       data:
-        Id: meleeSlower
+        Id: MeleeSpeedDebuff
         ReadyToDelete: 0
         Source: 6
         Value: 0.25
