@@ -37,7 +37,7 @@ namespace ECS
 				{
 					ref var health = ref healthPool.Get(targetEntity);
 
-					if (spawnRequest.Config.TargetType.ContainsFlags(health.TargetType))
+					if (!spawnRequest.Config.TargetType.ContainsFlags(health.TargetType))
 					{
 						continue;
 					}

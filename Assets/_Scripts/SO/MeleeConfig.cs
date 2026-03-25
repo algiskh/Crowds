@@ -25,6 +25,11 @@ public class MeleeConfig : ScriptableObject
 
 	public IEnumerable<Modifier> GetAllModifiersAsCopies()
 	{
+		if (_modifiers == null)
+		{
+			yield break;
+		}
+
 		foreach (var modifier in _modifiers)
 		{
 			if (modifier != null)
