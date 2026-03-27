@@ -97,8 +97,7 @@ public static class Extensions
 		var list = source as IList<T> ?? source.ToList();
 		if (list.Count == 0)
 		{
-			if (throwOnEmpty)
-				throw new InvalidOperationException("Cannot select a random element from an empty collection.");
+			Debug.Log("Cannot select a random element from an empty collection.");
 			return default;
 		}
 

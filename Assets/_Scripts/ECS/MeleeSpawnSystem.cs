@@ -33,6 +33,7 @@ namespace ECS
 				ref var effectRequest = ref world.CreateSimpleEntity<RequestEffectComponent>();
 				effectRequest.EffectId = spawnRequest.Config.Id;
 				effectRequest.Position = spawnRequest.Position;
+				effectRequest.Rotation = spawnRequest.Rotation;
 
 				TryApplyDebuffs(modifierPool, spawnRequest);
 

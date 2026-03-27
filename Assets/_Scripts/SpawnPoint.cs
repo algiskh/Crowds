@@ -33,9 +33,11 @@ public class SpawnPoint : MonoBehaviour
 
 	public MobSpawnConfig[] SpawnConfigs => _spawnConfigs;
 
-	public MobSpawnConfig GetRandomSpawnConfig(DifficultyLevel level)
+	public bool TryGetRandomSpawnConfig(DifficultyLevel level, out MobSpawnConfig config)
 	{
+		config = null;
 		var configs = _spawnConfigs.Where(config => config.SpawnPresets.Any(preset => preset.DifficultyLevel == level));
-		return configs.GetRandomByWeight();
+		config = configs.GetRandomByWeight();
+		return config != null;
 	}
 }

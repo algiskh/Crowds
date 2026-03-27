@@ -71,20 +71,29 @@ namespace ECS
 				var stage = difficulty.Stage;
 				var level = difficulty.Stage.DifficultyLevel;
 
-				var spawnConfig = spawnPoint.Value.GetRandomSpawnConfig(level);
-				var overallCooldown = spawnConfig.GetCooldown(level);
-				var mobConfig = mainHolder.MobConfigHolder.GetConfigById(spawnConfig.MobId);
+				if (spawnPoint.Value.TryGetRandomSpawnConfig(level, out var spawnConfig))
+				{
 
-				var spawnRequestEntity = world.NewEntity();
-				ref var spawnRequest = ref spawnRequestPool.Add(spawnRequestEntity);
-				spawnRequest.Config = mobConfig;
-				spawnRequest.SpawnPoint = spawnPoint.Value.transform;
+					if (spawnConfig == default)
+					{
+						Debug.LogAssertion($"Spawn point {spawnPoint.Value.name} has no spawn config for level {level}!");
+						continue;
+					}
+
+					var overallCooldown = spawnConfig.GetCooldown(level);
+					var mobConfig = mainHolder.MobConfigHolder.GetConfigById(spawnConfig.MobId);
+
+					var spawnRequestEntity = world.NewEntity();
+					ref var spawnRequest = ref spawnRequestPool.Add(spawnRequestEntity);
+					spawnRequest.Config = mobConfig;
+					spawnRequest.SpawnPoint = spawnPoint.Value.transform;
 
 
-				var newTimer = Mathf.Lerp(overallCooldown, overallCooldown / stage.SpeedMultiplier, difficulty.DifficultyTimer / stage.DifficultyTimer);
+					var newTimer = Mathf.Lerp(overallCooldown, overallCooldown / stage.SpeedMultiplier, difficulty.DifficultyTimer / stage.DifficultyTimer);
 
-				spawnPoint.Timer = newTimer;
-				interspawnCooldown.Value = stage.InterSpawnCooldown;
+					spawnPoint.Timer = newTimer;
+					interspawnCooldown.Value = stage.InterSpawnCooldown;
+				}
 			}
 		}
 	}

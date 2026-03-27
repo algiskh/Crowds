@@ -51,7 +51,9 @@ namespace ECS
 					continue;
 				}
 
-				var effect = SpawnEffect(effectMainPool, wrapper);
+				var effect = SpawnEffect(effectMainPool, wrapper, request.Rotation);
+
+				Debug.Log($"Rotation is {request.Rotation}");
 
 				effect.transform.position = request.Position;
 
@@ -71,7 +73,7 @@ namespace ECS
 		/// <summary>
 		/// Spawn new mob or take used mob from pool
 		/// </summary>
-		private SceneEffect SpawnEffect(EffectPoolComponent pool, FxWrapper config)
+		private SceneEffect SpawnEffect(EffectPoolComponent pool, FxWrapper config, float rotation)
 		{
 			SceneEffect effect;
 			if (pool.Value != null &&
@@ -88,6 +90,7 @@ namespace ECS
 					pool.Parent);
 				effect.Initialize(config.Id);
 			}
+			effect.transform.eulerAngles = new Vector3(0, rotation, 0);
 			return effect;
 		}
 	}

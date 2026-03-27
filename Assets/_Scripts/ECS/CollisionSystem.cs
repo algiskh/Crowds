@@ -77,7 +77,7 @@ namespace ECS
 						ref var damage = ref world.CreateSimpleEntity<RequestDamageComponent>();
 						damage.TargetEntity = mobKvp.Key;
 						damage.Damage = bulletComponent.Damage;
-
+						//add modifiers
 						ref var move = ref movePool.Get(bulletEntity);
 
 						ref var bloodDecal = ref world.CreateSimpleEntity<RequestDecalComponent>();

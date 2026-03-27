@@ -15,6 +15,7 @@ public class MobConfig: ScriptableObject
 	[SerializeField] private Mob _prefab;
 	[SerializeField] private PossibleLoot[] _possibleLoots;
 	[SerializeField] private TargetType _targetType;
+	[SerializeField] private Modifier[] _attackModifiers;
 	public string Id => _id;
 	public float Health => _health;
 	public float Speed => _speed;
@@ -24,4 +25,5 @@ public class MobConfig: ScriptableObject
 	public float HitCooldown => _hitCooldown;
 	public float Damage => _damage;
 	public TargetType TargetType => _targetType;
+	public Modifier[] AttackModifiers => _attackModifiers;
 }

@@ -239,6 +239,7 @@ public struct RequestEffectComponent
 {
 	public string EffectId;
 	public Vector3 Position;
+	public float Rotation;
 }
 
 public struct EndGameComponent
@@ -516,4 +517,5 @@ public struct RequestMeleeComponent
 	public Vector3 Position;
 	public float Delay;
 	public MeleeConfig Config;
+	public float Rotation;
 }
