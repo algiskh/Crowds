@@ -2,6 +2,7 @@
 using Sirenix.OdinInspector;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
@@ -107,12 +108,14 @@ public class DamageModifier : Modifier, IIteratableModifier
 	public bool TryIterate(float deltaTime, out float value)
 	{
 		value = 0;
-		if (_iterationTimer > Interval)
+		if (_iterationTimer <= 0)
 		{
-			_iterationTimer -= Interval;
+			UnityEngine.Debug.Log($"Iterate {Id} modifier with value == {value}");
+			_iterationTimer += Interval;
 			value = Value;
 			return true;
 		}
+		_iterationTimer -= deltaTime;
 		return false;
 	}
 }

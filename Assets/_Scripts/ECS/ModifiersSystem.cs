@@ -53,7 +53,7 @@ namespace ECS
 					{
 						modifiersToRemove.Add(modifierOwner, modifier);
 					}
-					else if (modifier is IIteratableModifier iterable)
+					if (modifier is IIteratableModifier iterable)
 					{
 						IterateModifier(world, iterable, entity, deltaTime);
 					}
@@ -75,8 +75,10 @@ namespace ECS
 
 		private void IterateModifier(EcsWorld world, IIteratableModifier modifier, int targetEntity, float deltaTime)
 		{
+			Debug.Log($"Trying to iterate modifier on entity {targetEntity}");
 			if (modifier.TryIterate(deltaTime, out var value))
 			{
+				Debug.Log($"Iterating modifier on entity {targetEntity} with value {value}");
 				if (modifier is DamageModifier)
 				{
 					world.GetPool<RequestDamageComponent>().Add(targetEntity) = new RequestDamageComponent

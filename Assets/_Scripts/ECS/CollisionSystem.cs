@@ -105,14 +105,19 @@ namespace ECS
 					ref var requestDamage = ref world.CreateSimpleEntity<RequestDamageComponent>();
 					requestDamage.TargetEntity = player.Value.Entity;
 					requestDamage.Damage = mob.Config.Damage;
-					if (mob.Config.AttackModifiers != null)
+					if (mob.Config.AttackModifiers != null && mob.Config.AttackModifiers.Length > 0) 
 					{
+						Debug.Log($"Add modifiers for {requestDamage.TargetEntity}");
 						var list = new List<Modifier>();
 						foreach (var modifier in mob.Config.AttackModifiers)
 						{
 							if (modifier is DamageModifier dotModifier)
 							{
-								if (Random.value < dotModifier.Chance)
+								var chance = dotModifier.Chance;
+								var random = Random.value;
+								
+								Debug.Log($"Modifier is damagemodifier. Chance: {chance}, random: {random}");
+								if (random > chance)
 								{
 									continue;
 								}
