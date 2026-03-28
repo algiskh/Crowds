@@ -105,6 +105,24 @@ namespace ECS
 					ref var requestDamage = ref world.CreateSimpleEntity<RequestDamageComponent>();
 					requestDamage.TargetEntity = player.Value.Entity;
 					requestDamage.Damage = mob.Config.Damage;
+					if (mob.Config.AttackModifiers != null)
+					{
+						var list = new List<Modifier>();
+						foreach (var modifier in mob.Config.AttackModifiers)
+						{
+							if (modifier is DamageModifier dotModifier)
+							{
+								if (Random.value < dotModifier.Chance)
+								{
+									continue;
+								}
+							}
+
+							var copy = modifier.Clone<Modifier>();
+							list.Add(copy);
+						}
+						requestDamage.DamageModifiers = list;
+					}
 
 					mob.Cooldown = mob.Config.HitCooldown;
 

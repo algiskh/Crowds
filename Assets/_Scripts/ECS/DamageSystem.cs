@@ -66,6 +66,20 @@ namespace ECS
 					}
 
 				}
+
+				if (requestDamageComponent.DamageModifiers != null)
+				{
+					var tryapplyModifierPool = world.GetPool<TryApplyModifierComponent>();
+					foreach (var modifier in requestDamageComponent.DamageModifiers)
+					{
+						tryapplyModifierPool.Add(world.NewEntity()) = new TryApplyModifierComponent
+						{
+							TargetEntity = target,
+							Modifier = modifier
+						};
+					}
+				}
+
 				requestDamagePool.Del(requestEntity);
 			}
 			#endregion
@@ -97,10 +111,6 @@ namespace ECS
 					world.DelEntity(mobEntity);
 				}
 			}
-			#endregion
-
-			#region Handling player health
-
 			#endregion
 		}
 	}

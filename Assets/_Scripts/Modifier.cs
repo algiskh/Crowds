@@ -7,8 +7,8 @@ using System.Reflection;
 
 public static class ModifierConstants
 {
-	public static string SpeedMeleeDebuff = "SpeedMeleeDebuff";
-	public static string SpeedMeleeDamageDebuff = "SpeedMeleeDamageDebuff";
+	public static string SpeedMeleeAttackerDebuff = "SpeedMeleeAttackerDebuff";
+	public static string SpeedMeleeRecieverDebuff = "SpeedMeleeRecieverDebuff";
 	public static string SpeedLowHealthDebuff = "SpeedLowHealthDebuff";
 	public static string SpeedShotDebuff = "SpeedShotDebuff";
 	public static string SpeedReloadDebuff = "SpeedReloadDebuff";
@@ -16,6 +16,7 @@ public static class ModifierConstants
 	public static string DamageMeleeBleeding = "DamageMeleeBleeding";
 	public static string DamageMeleeBurning = "DamageMeleeBurning";
 	public static string DamageShotBleeding = "DamageShotBleeding";
+	public static string DamagePoisoning = "DamagePoisoning";
 
 	public static string HealthBleeding = "HealthBleeding";
 	public static string HealthPoisoning = "HealthPoisoning";
@@ -30,12 +31,16 @@ public static class ModifierConstants
 	public static string ShieldPhysical = "ShieldPhysical";
 }
 
+public interface IIteratableModifier
+{
+	public bool TryIterate(float deltaTime, out float value);
+}
+
 [Serializable]
 public abstract class Modifier
 {
 	[ValueDropdown(nameof(GetModifierIds))]
 	public string Id;
-	public bool ReadyToDelete;
 	public BuffSource Source;
 	public float Value;
 	public float Lifetime;
@@ -82,14 +87,34 @@ public class SpeedModifier : Modifier
 [Serializable]
 public class HealthModifier : Modifier
 {
+	public float Interval;
 	public HealthModifierType Type;
 }
 
 [Serializable]
-public class DamageModifier : Modifier
+public class DamageModifier : Modifier, IIteratableModifier
 {
+	public float Interval;
 	public DamageType Type;
 	public float Chance; // Chance to apply this modifier on hit, from 0 to 1
+	private float _iterationTimer;
+
+	public DamageModifier()
+	{
+		_iterationTimer = 0;
+	}
+
+	public bool TryIterate(float deltaTime, out float value)
+	{
+		value = 0;
+		if (_iterationTimer > Interval)
+		{
+			_iterationTimer -= Interval;
+			value = Value;
+			return true;
+		}
+		return false;
+	}
 }
 
 [Serializable]

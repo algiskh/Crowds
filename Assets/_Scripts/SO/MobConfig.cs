@@ -1,4 +1,5 @@
 ﻿
+using Sirenix.Serialization;
 using System;
 using UnityEngine;
 
@@ -15,7 +16,7 @@ public class MobConfig: ScriptableObject
 	[SerializeField] private Mob _prefab;
 	[SerializeField] private PossibleLoot[] _possibleLoots;
 	[SerializeField] private TargetType _targetType;
-	[SerializeField] private Modifier[] _attackModifiers;
+	[SerializeReference, OdinSerialize] private Modifier[] _attackModifiers;
 	public string Id => _id;
 	public float Health => _health;
 	public float Speed => _speed;

@@ -102,6 +102,7 @@ public struct RequestDamageComponent
 {
 	public float Damage;
 	public int TargetEntity;
+	public IEnumerable<Modifier> DamageModifiers;
 }
 
 public struct ColliderComponent
@@ -503,6 +504,12 @@ public struct ModifierOwnerComponent
 	public int Entity;
 	public List<Modifier> Modifiers;
 	public bool ReadyToRemove;
+}
+
+public struct TryApplyModifierComponent
+{
+	public int TargetEntity;
+	public Modifier Modifier;
 }
 
 public struct ApplyModifierResponseComponent
