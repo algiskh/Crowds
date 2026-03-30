@@ -45,6 +45,8 @@ MonoBehaviour:
         Source: 5
         Value: 15
         Lifetime: 2
+        HasEffect: 1
+        EffectId: toxicDamage
         Interval: 0.5
         Type: 3
         Chance: 1

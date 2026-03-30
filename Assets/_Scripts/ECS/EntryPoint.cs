@@ -175,6 +175,7 @@ namespace ECS
 			ref var playerModifiers = ref _world.GetPool<ModifierOwnerComponent>().Add(playerEntity);
 			playerModifiers.Entity = playerEntity;
 			playerModifiers.Modifiers = new();
+			playerModifiers.Transform = _player.transform;
 			// --- Input
 			ref var playerInput = ref _world.GetPool<PlayerInputComponent>().Add(playerEntity);
 			ref var aimInput = ref _world.GetPool<AimInputComponent>().Add(playerEntity);
@@ -191,6 +192,7 @@ namespace ECS
 			ref var movement = ref _world.GetPool<MoveComponent>().Add(cameraFollowerEntity);
 			ref var modifiers = ref _world.GetPool<ModifierOwnerComponent>().Add(cameraFollowerEntity);
 			modifiers.Entity = cameraFollowerEntity;
+			modifiers.Transform = _mainCamera.transform;
 			modifiers.Modifiers = new();
 
 			movement.Speed = _mainHolder.CameraSpeed;

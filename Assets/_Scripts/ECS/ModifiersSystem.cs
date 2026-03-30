@@ -10,9 +10,9 @@ namespace ECS
 		{
 			var world = systems.GetWorld();
 			var modifierPool = world.GetPool<ModifierOwnerComponent>();
-
+			var effectsHolder = world.GetAsSingleton<EffectsHolderComponent>();
 			var tryApplyModifierPool = world.GetPool<TryApplyModifierComponent>();
-
+			var requestEffectPool = world.GetPool<RequestEffectComponent>();
 			var tryApplyFilter = world.Filter<TryApplyModifierComponent>().End();
 
 			foreach (var entity in tryApplyFilter)
@@ -30,6 +30,19 @@ namespace ECS
 					modifierOwner.Modifiers = new List<Modifier>();
 				}
 				modifierOwner.Modifiers.Add(request.Modifier);
+
+				if (request.Modifier.HasEffect)
+				{
+					var effectConfig = effectsHolder.Value.GetEffect(request.Modifier.EffectId);
+					if (effectConfig != null)
+					{
+						requestEffectPool.Add(world.NewEntity()) = new RequestEffectComponent
+						{
+							EffectId = request.Modifier.EffectId,
+							Parent = modifierOwner.Transform
+						};
+					}
+				}
 				Debug.Log($"Applied modifier {request.Modifier.Id} to entity {request.TargetEntity}");
 				world.DelEntity(entity);
 			}

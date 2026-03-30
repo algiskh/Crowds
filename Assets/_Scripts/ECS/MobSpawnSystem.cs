@@ -46,6 +46,7 @@ namespace ECS
 				ref var looker = ref lookerPool.Add(mobEntity);
 
 				modifierComponent.Entity = mobEntity;
+				modifierComponent.Transform = mob.transform;
 				modifierComponent.Modifiers = new();
 				mobComponent.Value = mob;
 				mobComponent.Config = mobConfig;

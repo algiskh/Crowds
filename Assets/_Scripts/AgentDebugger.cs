@@ -27,7 +27,7 @@ public class AgentDebugger : MonoBehaviour
 
 			if (_agent.isOnOffMeshLink)
 			{
-				Debug.Log("🔥 AGENT IS ON OFFMESH LINK");
+				Debug.Log("AGENT IS ON OFFMESH LINK");
 				var data = _agent.currentOffMeshLinkData;
 				Debug.DrawLine(data.startPos, data.endPos, Color.red, 1f);
 
@@ -38,7 +38,7 @@ public class AgentDebugger : MonoBehaviour
 		}
 		else
 		{
-			Debug.Log("⚠️ Агент не имеет пути.");
+			Debug.Log("Агент не имеет пути.");
 		}
 	}
 }

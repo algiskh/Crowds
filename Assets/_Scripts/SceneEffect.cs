@@ -24,6 +24,11 @@ public class SceneEffect : MonoBehaviour
 		}
 	}
 
+	public void SetParent(Transform parent)
+	{
+		transform.SetParent(parent);
+	}
+
 	public void Hide()
 	{
 		gameObject.SetActive(false);

@@ -45,6 +45,9 @@ public abstract class Modifier
 	public BuffSource Source;
 	public float Value;
 	public float Lifetime;
+	public bool HasEffect;
+	[ShowIf(nameof(HasEffect), true), ValueDropdown(nameof(GetFxIds))]
+	public string EffectId;
 
 	public T Clone<T>() where T : Modifier
 	{
@@ -76,6 +79,19 @@ public abstract class Modifier
 			.GetFields(BindingFlags.Public | BindingFlags.Static)
 			.Where(f => f.FieldType == typeof(string) && f.Name.Contains(prefix))
 			.Select(f => (string)f.GetValue(null));
+	}
+
+	private IEnumerable<string> GetFxIds()
+	{
+		var holder = EffectsHolder.Instance;
+
+		if (holder == null)
+			yield break;
+
+		foreach (var fx in holder.GetAll())
+		{
+			yield return fx.Id;
+		}
 	}
 }
 

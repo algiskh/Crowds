@@ -234,6 +234,9 @@ public struct EffectComponent
 {
 	public SceneEffect Effect;
 	public float LifeTime;
+	// if effect is associated with modifier
+	public int ModifierEntity;
+	public DamageType DamageType;
 }
 
 public struct RequestEffectComponent
@@ -241,6 +244,9 @@ public struct RequestEffectComponent
 	public string EffectId;
 	public Vector3 Position;
 	public float Rotation;
+	// if effect is associated with modifier
+	public Transform Parent;
+	public DamageType DamageType;
 }
 
 public struct EndGameComponent
@@ -502,6 +508,7 @@ public struct LootSpawnedEventComponent
 public struct ModifierOwnerComponent
 {
 	public int Entity;
+	public Transform Transform;
 	public List<Modifier> Modifiers;
 	public bool ReadyToRemove;
 }

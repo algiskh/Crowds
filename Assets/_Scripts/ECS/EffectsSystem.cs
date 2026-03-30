@@ -13,12 +13,27 @@ namespace ECS
 			ref var effectMainPool = ref world.GetAsSingleton<EffectPoolComponent>();
 			var effectPool = world.GetPool<EffectComponent>();
 			var requetEffectsPool = world.GetPool<RequestEffectComponent>();
+			var modifiersPool = world.GetPool<ModifierOwnerComponent>();
+			var moveComponentPool = world.GetPool<MoveComponent>();
+
 			var filter = world.Filter<EffectComponent>().End();
 
 			#region IteratingEffects
 			foreach (var entity in filter)
 			{
 				ref var fx = ref effectPool.Get(entity);
+
+				if (fx.LifeTime <= 0 && fx.ModifierEntity != 0)
+				{
+					if (fx.DamageType != DamageType.Unknown && modifiersPool.Has(fx.ModifierEntity))
+					{
+						ref var modifierOwner = ref modifiersPool.Get(fx.ModifierEntity);
+						if (!modifierOwner.HasModifierWithDamageType(fx.DamageType))
+						{
+							fx.ModifierEntity = 0;
+						}
+					}
+				}
 				fx.LifeTime -= Time.deltaTime;
 			}
 			#endregion
@@ -28,10 +43,9 @@ namespace ECS
 			{
 				ref var fx = ref effectPool.Get(entity);
 
-				if (fx.LifeTime <= 0)
+				if (fx.LifeTime <= 0 && fx.ModifierEntity <= 0)
 				{
-					fx.Effect.Hide();
-					effectMainPool.Value.Add(fx.Effect);
+					effectMainPool.Pool(fx.Effect);
 					world.DelEntity(entity);
 				}
 			}
@@ -64,6 +78,14 @@ namespace ECS
 					ref var effectComponent = ref effectPool.Add(newEntity);
 					effectComponent.Effect = effect;
 					effectComponent.LifeTime = wrapper.Duration;
+
+					// Set modifier entity and damage type if they are specified in the request
+					if (request.Parent != null)
+					{
+						effect.transform.position = request.Parent.position;
+						effectComponent.Effect.SetParent(request.Parent);
+						effectComponent.DamageType = request.DamageType;
+					}
 				}
 				world.DelEntity(entity);
 			}
