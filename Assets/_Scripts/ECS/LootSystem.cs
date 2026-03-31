@@ -4,8 +4,36 @@ using UnityEngine;
 
 namespace ECS
 {
-	public class LootSystem : IEcsRunSystem
+	public class LootSystem : IEcsInitSystem, IEcsRunSystem
 	{
+		public void Init(IEcsSystems systems)
+		{
+			var world = systems.GetWorld();
+			var lootPool = world.GetPool<RequestLootSpawn>();
+			var mapLootPool = world.GetAsSingleton<MapLootPoolComponent>();
+
+			foreach (var loot in mapLootPool.Value)
+			{
+				var lootEntity = world.NewEntity();
+				ref var request = ref lootPool.Add(lootEntity);
+				request.Position = loot.transform.position;
+				request.SourceEntity = -1;
+				request.PossibleLoots = new[]
+				{
+					new PossibleLoot
+					{
+						LootType = loot.LootComponent.LootType,
+						Count = loot.LootComponent.Count,
+						Id = loot.LootComponent.Id,
+						Chance = 1f
+					}
+				};
+				request.Source = RequestSpawnSource.MapLoot;
+
+				loot.gameObject.SetActive(false);
+			}
+		}
+
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
@@ -49,30 +77,37 @@ namespace ECS
 				ref var requestLootSpawn = ref requestLootSpawnPool.Get(entity);
 
 				var possibleLoots = requestLootSpawn.PossibleLoots;
-				var cumulativeChance = possibleLoots.Sum(b => b.Chance);
-
-				// Select loot based on chance  
-				var randomValue = UnityEngine.Random.value * Mathf.Clamp(cumulativeChance, 1f, float.MaxValue);
-
-				if (randomValue > cumulativeChance)
-				{
-					world.DelEntity(entity);
-					continue;
-				}
-
 				PossibleLoot selectedLoot = null;
 
-				for (int i = possibleLoots.Length - 1; i >= 0; i--)
+				if (possibleLoots.Length > 1)
 				{
-					if (i > 0)
+					var cumulativeChance = possibleLoots.Sum(b => b.Chance);
+
+					// Select loot based on chance  
+					var randomValue = Random.value * Mathf.Clamp(cumulativeChance, 1f, float.MaxValue);
+
+					if (randomValue > cumulativeChance)
 					{
-						cumulativeChance -= possibleLoots[i].Chance;
-						selectedLoot = possibleLoots[i];
-						if (randomValue > cumulativeChance)
+						world.DelEntity(entity);
+						continue;
+					}
+
+					for (int i = possibleLoots.Length - 1; i >= 0; i--)
+					{
+						if (i > 0)
 						{
-							break;
+							cumulativeChance -= possibleLoots[i].Chance;
+							selectedLoot = possibleLoots[i];
+							if (randomValue > cumulativeChance)
+							{
+								break;
+							}
 						}
 					}
+				}
+				else
+				{
+					selectedLoot = possibleLoots[0];
 				}
 				//var selectedLoot = possibleLoots.FirstOrDefault(b => randomValue <= b.Chance);
 

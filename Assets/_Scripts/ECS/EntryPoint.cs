@@ -158,7 +158,22 @@ namespace ECS
 			lootPool.Value = new();
 			lootPool.Parent = _lootParent;
 
-			// --- Игрок ---
+			ref var mapLootPool = ref _world.CreateSimpleEntity<MapLootPoolComponent>();
+			mapLootPool.Value = new List<MapLoot>();
+
+			var mapLoots = FindObjectsByType<MapLoot>(FindObjectsSortMode.None);
+
+			if (mapLoots != null && mapLoots.Length > 0)
+			{
+				
+				foreach (var mapLoot in mapLoots)
+				{
+					Debug.Log($"mapLoot Add loot {mapLoot.name}");
+					mapLootPool.Value.Add(mapLoot);
+				}
+			}
+
+				// --- Игрок ---
 
 			int playerEntity = _world.NewEntity();
 			ref var playerComponent = ref _world.GetPool<PlayerComponent>().Add(playerEntity);

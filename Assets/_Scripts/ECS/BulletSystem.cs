@@ -87,6 +87,7 @@ namespace ECS
 			bulletComponent.Damage = bulletRequest.GunConfig.BulletDamage;
 			bulletComponent.LifeTime = bulletRequest.GunConfig.BulletLifeTime;
 			bulletComponent.CheckType = bulletRequest.GunConfig.BulletCheckType;
+			bulletComponent.PiercedTargets = default;
 			ref var moveComponent = ref movePool.Add(bulletEntity);
 			ref var disposeComponent = ref disposePool.Add(bulletEntity);
 			ref var modifierComponent = ref modifierPool.Add(bulletEntity);

@@ -4,5 +4,6 @@ public enum RequestSpawnSource
 {
     Mob,
     AdditionalSpawn,
-    Quest
+    Quest,
+    MapLoot
 }

@@ -43,7 +43,7 @@ MonoBehaviour:
       data:
         Id: DamagePoisoning
         Source: 5
-        Value: 15
+        Value: 3
         Lifetime: 2
         HasEffect: 1
         EffectId: toxicDamage

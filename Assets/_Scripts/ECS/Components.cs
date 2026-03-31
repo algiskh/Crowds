@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -186,7 +188,8 @@ public struct BulletComponent
 	public float LifeTime;
 	public float Radius;
 	public BulletCheckType CheckType;
-	public Modifier[] Modifiers; 
+	public Modifier[] Modifiers;
+	public FixedList32Bytes<int> PiercedTargets;
 }
 
 public struct BulletOverlapComponent
@@ -204,6 +207,7 @@ public struct RequestLootSpawn
 	public RequestSpawnSource Source;
 }
 
+[Serializable]
 public struct LootComponent
 {
 	public Loot Loot;
@@ -211,6 +215,12 @@ public struct LootComponent
 	public string Id;
 	public float Radius;
 	public int Count;
+}
+
+// For loot placed at map at the start of the level
+public struct MapLootPoolComponent
+{
+	public List<MapLoot> Value;
 }
 
 public struct LootPoolComponent
@@ -237,6 +247,7 @@ public struct EffectComponent
 	// if effect is associated with modifier
 	public int ModifierEntity;
 	public DamageType DamageType;
+	public bool IsChild;
 }
 
 public struct RequestEffectComponent
@@ -247,6 +258,7 @@ public struct RequestEffectComponent
 	// if effect is associated with modifier
 	public Transform Parent;
 	public DamageType DamageType;
+	public int ModifierEntity;
 }
 
 public struct EndGameComponent

@@ -12,6 +12,7 @@ public class FxWrapper
 	public bool HasDuration = false;
 	[ShowIf(nameof(HasDuration), true)]
 	public float Duration;
+	public bool IsChild;
 }
 
 [CreateAssetMenu(fileName = "FxHolder", menuName = "Scriptable Objects/FxHolder")]

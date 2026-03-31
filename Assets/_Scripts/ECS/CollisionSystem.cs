@@ -64,15 +64,25 @@ namespace ECS
 
 			foreach (var bulletEntity in bulletFilter)
 			{
-				ref var bullet = ref bulletPool.Get(bulletEntity);
-				var transform = bullet.Bullet.transform;
+				ref var bulletComponent = ref bulletPool.Get(bulletEntity);
+				var transform = bulletComponent.Bullet.transform;
 				ref var overlap = ref bulletOverlapPool.Get(bulletEntity);
 				ref var disposed = ref disposedPool.Get(bulletEntity);
 				foreach (var mobKvp in mobDict) {
 					if (overlap.colliders.Any(b => b == mobKvp.Value))
 					{
-						ref var bulletComponent = ref bulletPool.Get(bulletEntity);
-						disposed.IsDisposed = true;
+						if (bulletComponent.Bullet.MaxPierceCount > 1 && bulletComponent.PiercedTargets.Length < bulletComponent.Bullet.MaxPierceCount - 1)
+						{
+							if (bulletComponent.PiercedTargets.ContainsFixed(mobKvp.Key))
+							{
+								continue;
+							}
+							bulletComponent.PiercedTargets.Add(mobKvp.Key);
+						}
+						else
+						{
+							disposed.IsDisposed = true;
+						}
 
 						ref var damage = ref world.CreateSimpleEntity<RequestDamageComponent>();
 						damage.TargetEntity = mobKvp.Key;

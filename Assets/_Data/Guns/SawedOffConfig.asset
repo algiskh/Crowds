@@ -19,7 +19,7 @@ MonoBehaviour:
   _fireSoundId: shotgun_fire
   _reloadSoundId: shotgun_reload
   _reloadEndSoundId: 
-  _bulletPrefab: {fileID: 3834319163352093731, guid: 4ccad587412ec194e812f98752fa1afb, type: 3}
+  _bulletPrefab: {fileID: 3834319163352093731, guid: 9e2f0c5933c5bbd458e3c6b546641dae, type: 3}
   _bulletCheckType: 0
   _projectilesNumber: 20
   _bulletSpeed: 45
@@ -31,3 +31,4 @@ MonoBehaviour:
   _speedModifier: 0.99
   _accuracy: 0.6
   _singleLoad: 0
+  _fireOnDemand: 0

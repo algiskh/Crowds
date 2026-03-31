@@ -28,6 +28,13 @@ namespace ECS
 					if (fx.DamageType != DamageType.Unknown && modifiersPool.Has(fx.ModifierEntity))
 					{
 						ref var modifierOwner = ref modifiersPool.Get(fx.ModifierEntity);
+
+						if (!fx.IsChild)
+						{
+							Debug.Log($"Resetting position {fx.Effect.Id} from entity {fx.ModifierEntity}");
+							fx.Effect.transform.position = modifierOwner.Transform.position;
+						}
+
 						if (!modifierOwner.HasModifierWithDamageType(fx.DamageType))
 						{
 							fx.ModifierEntity = 0;
@@ -61,18 +68,17 @@ namespace ECS
 
 				if (wrapper == null)
 				{
-					Debug.Log($"Couldn't find effect {request.EffectId} in EffectsHolder.");
+					Debug.Log($"Setting effect: Couldn't find effect {request.EffectId} in EffectsHolder.");
 					continue;
 				}
 
 				var effect = SpawnEffect(effectMainPool, wrapper, request.Rotation);
 
-				Debug.Log($"Rotation is {request.Rotation}");
-
-				effect.transform.position = request.Position;
+				Debug.Log($"Setting effect: Rotation is {request.Rotation}");
 
 				if (effect != null)
 				{
+					Debug.Log($"Setting effect: trying to apply effect {effect.Id}");
 					effect.Show();
 					var newEntity = world.NewEntity();
 					ref var effectComponent = ref effectPool.Add(newEntity);
@@ -82,9 +88,19 @@ namespace ECS
 					// Set modifier entity and damage type if they are specified in the request
 					if (request.Parent != null)
 					{
+						Debug.Log($"Setting effect: parent to {request.Parent.name}");
 						effect.transform.position = request.Parent.position;
-						effectComponent.Effect.SetParent(request.Parent);
+						effectComponent.IsChild = wrapper.IsChild;
+						if (wrapper.IsChild)
+						{
+							effectComponent.Effect.SetParent(request.Parent);
+						}
 						effectComponent.DamageType = request.DamageType;
+						effectComponent.ModifierEntity = request.ModifierEntity;
+					}
+					else
+					{
+						effect.transform.position = request.Position;
 					}
 				}
 				world.DelEntity(entity);

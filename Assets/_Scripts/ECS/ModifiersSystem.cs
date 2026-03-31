@@ -36,10 +36,13 @@ namespace ECS
 					var effectConfig = effectsHolder.Value.GetEffect(request.Modifier.EffectId);
 					if (effectConfig != null)
 					{
+						Debug.Log($"Setting effect: Try to apply effect {request.Modifier.EffectId}");
 						requestEffectPool.Add(world.NewEntity()) = new RequestEffectComponent
 						{
 							EffectId = request.Modifier.EffectId,
-							Parent = modifierOwner.Transform
+							Parent = modifierOwner.Transform,
+							DamageType = request.Modifier is DamageModifier damageModifier ? damageModifier.Type : DamageType.Unknown,
+							ModifierEntity = request.TargetEntity
 						};
 					}
 				}

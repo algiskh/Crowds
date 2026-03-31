@@ -1,4 +1,5 @@
 using System;
+using Unity.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -58,5 +59,15 @@ public static class Utils
 			return false;
 
 		return (aValue & bValue) == bValue;
+	}
+
+	public static bool ContainsFixed(this FixedList32Bytes<int> list, int value)
+	{
+		for (int i = 0; i < list.Length; i++)
+		{
+			if (list[i] == value)
+				return true;
+		}
+		return false;
 	}
 }
