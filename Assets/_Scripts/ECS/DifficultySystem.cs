@@ -100,9 +100,19 @@ namespace ECS
 
 			var newStage = currentLevel.Value.GetNextStage(level);
 
-			// No more stages, reset to first stage
-			newStage ??= currentLevel.Value.GetFirstStage(true);
-
+			if (newStage == null)
+			{
+				// No more stages, reset to first stage
+				newStage ??= currentLevel.Value.GetFirstStage(true);
+			}
+			else
+			if (newStage.DifficultyLevel == DifficultyLevel.finish)
+			{
+				// Reached the end of the difficulty stages, trigger win condition
+				ref var endGameComponent = ref world.CreateSimpleEntity<EndGameComponent>();
+				endGameComponent.isWin = true;
+				// Optionally, you can also trigger any end-game logic here
+			}
 			ApplyStage(world, ref difficulty, newStage);
 		}
 		#endregion

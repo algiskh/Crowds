@@ -35,6 +35,7 @@ namespace ECS
 		[SerializeField, Required, BoxGroup("UI")] private PlayerStats _playerStats;
 		[SerializeField, Required, BoxGroup("UI")] private WeaponUIView _weaponView;
 		[SerializeField, Required, BoxGroup("UI")] private FailWindow _failWindow;
+		[SerializeField, Required, BoxGroup("UI")] private WinWindow _winWindow;
 		[SerializeField, Required, BoxGroup("UI")] private DifficultyTimerView _difficultyTimerView;
 
 		[Title("Input")]
@@ -102,6 +103,9 @@ namespace ECS
 
 			ref var failWindowComponent = ref _world.CreateSimpleEntity<FailWindowComponent>();
 			failWindowComponent.Value = _failWindow;
+
+			ref var winWindowComponent = ref _world.CreateSimpleEntity<WinWindowComponent>();
+			winWindowComponent.Value = _winWindow;
 
 			ref var difficultyTimerUIComponent = ref _world.CreateSimpleEntity<DifficultyTimerUIComponent>();
 			difficultyTimerUIComponent.Value = _difficultyTimerView;
@@ -301,7 +305,7 @@ namespace ECS
 				.Add(new InputSystem())
 				.Add(new PlayerSystem())
 				.Add(new PlayerMovementSystem())
-				.Add(new CheckFailSystem())
+				.Add(new CheckEndSystem())
 				.Add(new SmartConditionSystem())
 				.Add(new AimVisualizerSystem())
 				.Add(new UISystem())

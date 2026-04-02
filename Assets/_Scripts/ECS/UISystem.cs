@@ -14,7 +14,6 @@ namespace ECS
 			ref var playerStats = ref world.GetAsSingleton<PlayerStatsComponent>();
 			ref var reloading = ref world.GetAsSingleton<ReloadingComponent>();
 			ref var player = ref world.GetAsSingleton<PlayerComponent>();
-			ref var failedWindow =  ref world.GetAsSingleton<FailWindowComponent>();
 			ref var difficultyView = ref world.GetAsSingleton<DifficultyTimerUIComponent>();
 			ref var difficulty = ref world.GetAsSingleton<DifficultyComponent>();
 
@@ -29,6 +28,10 @@ namespace ECS
 				{
 					ref var failWindow = ref world.GetAsSingleton<FailWindowComponent>();
 					failWindow.Value.Show(fragCount.Value);
+				}else if (request.WindowType is WindowType.WinWindow)
+				{
+					ref var winWindow = ref world.GetAsSingleton<WinWindowComponent>();
+					winWindow.Value.Show(fragCount.Value);
 				}
 				world.DelEntity(requestEntity);
 			}
