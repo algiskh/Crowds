@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c84db03159d408c49acd4e4d68d680ce, type: 3}
+  m_Name: FastToxic
+  m_EditorClassIdentifier: 
+  _id: FastToxic
+  _health: 100
+  _speed: 5.5
+  _damage: 10
+  _collisionRadius: 1
+  _hitCooldown: 0.5
+  _prefab: {fileID: 4635986969134950211, guid: bc11742dd78927a47a36d8ed598b7f41, type: 3}
+  _possibleLoots:
+  - LootType: 0
+    Id: 
+    Count: 15
+    Chance: 0.01
+  - LootType: 1
+    Id: 
+    Count: 25
+    Chance: 0.07
+  - LootType: 2
+    Id: Shotgun
+    Count: 1
+    Chance: 0.02
+  _targetType: 1
+  _attackModifiers:
+  - rid: 2646365703343439942
+  references:
+    version: 2
+    RefIds:
+    - rid: 2646365703343439942
+      type: {class: DamageModifier, ns: , asm: Assembly-CSharp}
+      data:
+        Id: DamagePoisoning
+        Source: 5
+        Value: 3
+        Lifetime: 2
+        HasEffect: 1
+        EffectId: toxicDamage
+        Interval: 0.5
+        Type: 3
+        Chance: 1

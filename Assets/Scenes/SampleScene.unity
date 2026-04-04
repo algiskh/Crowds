@@ -3888,6 +3888,13 @@ MonoBehaviour:
       Cooldown: 8
     - DifficultyLevel: 1
       Cooldown: 7
+    - DifficultyLevel: 2
+      Cooldown: 1
+  - _mobId: FastToxic
+    _weight: 1
+    _spawnPresets:
+    - DifficultyLevel: 2
+      Cooldown: 1
 --- !u!1 &958773145
 GameObject:
   m_ObjectHideFlags: 0
@@ -4510,6 +4517,11 @@ MonoBehaviour:
       Cooldown: 8
     - DifficultyLevel: 1
       Cooldown: 7
+  - _mobId: FastToxic
+    _weight: 1
+    _spawnPresets:
+    - DifficultyLevel: 2
+      Cooldown: 1
 --- !u!1 &1182216096
 GameObject:
   m_ObjectHideFlags: 0
@@ -5132,6 +5144,9 @@ MonoBehaviour:
       Cooldown: 15
     - DifficultyLevel: 3
       Cooldown: 7
+  - _mobId: FastToxic
+    _weight: 2
+    _spawnPresets: []
 --- !u!1 &1306966350
 GameObject:
   m_ObjectHideFlags: 0
