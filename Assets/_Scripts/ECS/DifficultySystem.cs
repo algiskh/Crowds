@@ -1,9 +1,6 @@
 ﻿using Leopotam.EcsLite;
 using Sirenix.OdinInspector.Editor.GettingStarted;
-using System.Linq;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.LightTransport;
 
 namespace ECS
 {
@@ -35,8 +32,21 @@ namespace ECS
 
 			difficulty.DifficultyTimer -= Time.deltaTime;
 
+			bool allConditionsMet = true;
+			var conditions = difficulty.Conditions;
+
+			for (int i = 0; i < conditions.Length; i++)
+			{
+				var c = conditions[i];
+				if (c != null && !c.IsFulfilled)
+				{
+					allConditionsMet = false;
+					break;
+				}
+			}
+
 			if (difficulty.DifficultyTimer < 0 && (!difficulty.Stage.HasEndConditions || // check if timer is over
-				(difficulty.Conditions.All(c => c == null || c.IsFulfilled)))) // check if all conditions are fulfilled
+				allConditionsMet)) // check if all conditions are fulfilled
 			{
 				FinishStage(world, ref difficulty, levelConfig);
 			}
@@ -92,7 +102,20 @@ namespace ECS
 			{
 				var smartCondition = conditionsPool.Get(entity);
 
-				if (difficulty.Conditions.Contains(smartCondition.Value))
+				bool contains = false;
+				var conditions = difficulty.Conditions;
+				var value = smartCondition.Value;
+
+				for (int i = 0; i < conditions.Length; i++)
+				{
+					if (conditions[i] == value)
+					{
+						contains = true;
+						break;
+					}
+				}
+
+				if (contains)
 				{
 					conditionsPool.Del(entity);
 				}

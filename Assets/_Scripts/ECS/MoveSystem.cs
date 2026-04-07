@@ -1,7 +1,5 @@
 ﻿using Leopotam.EcsLite;
-using System.Linq;
 using UnityEngine;
-using static UnityEngine.UI.GridLayoutGroup;
 
 namespace ECS
 {

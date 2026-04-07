@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System;
-using System.Linq;
 using UnityEngine;
 using Random = System.Random;
 
@@ -37,142 +36,146 @@ public static class Extensions
 	}
 
 	public static T GetRandomElement<T>(
-		this IEnumerable<T> source,
-		Func<T, bool> predicate = null,
-		bool throwOnEmpty = true)
+	this IList<T> list,
+	Func<T, bool> predicate = null,
+	bool throwOnEmpty = true)
 	{
-		if (source == null)
+		if (list == null || list.Count == 0)
 		{
 			if (throwOnEmpty)
-				throw new InvalidOperationException("Source is null.");
+				throw new InvalidOperationException("Empty collection");
 			return default;
 		}
-
-		var list = source as IList<T> ?? source.ToList();
-		if (list.Count == 0)
-		{
-			if (throwOnEmpty)
-				throw new InvalidOperationException("Cannot select a random element from an empty collection.");
-			return default;
-		}
-
-		var random = new System.Random();
 
 		if (predicate == null)
 		{
-			return list[random.Next(list.Count)];
+			return list[UnityEngine.Random.Range(0, list.Count)];
 		}
 
-		var indices = Enumerable.Range(0, list.Count)
-								.OrderBy(_ => random.Next())
-								.ToList();
+		T result = default;
+		int validCount = 0;
 
-		T lastTried = default!;
-		foreach (var idx in indices)
+		for (int i = 0; i < list.Count; i++)
 		{
-			var element = list[idx];
-			lastTried = element;
-			if (predicate(element))
+			var item = list[i];
+
+			if (!predicate(item))
+				continue;
+
+			validCount++;
+
+			if (UnityEngine.Random.Range(0, validCount) == 0)
 			{
-				return element;
+				result = item;
 			}
 		}
 
-		return lastTried;
+		if (validCount == 0 && throwOnEmpty)
+			throw new InvalidOperationException("No matching elements");
+
+		return result;
 	}
 
 	public static T GetRandomByWeight<T>(
-		this IEnumerable<T> source,
+		this IList<T> list,
 		Func<T, bool> predicate = null,
 		bool throwOnEmpty = true)
 		where T : IWeightable
 	{
-		if (source == null)
+		if (list == null || list.Count == 0)
 		{
 			if (throwOnEmpty)
-				throw new InvalidOperationException("Source is null.");
+				throw new InvalidOperationException("Empty collection");
 			return default;
 		}
 
-		var list = source as IList<T> ?? source.ToList();
-		if (list.Count == 0)
+		float totalWeight = 0f;
+		T selected = default;
+
+		for (int i = 0; i < list.Count; i++)
 		{
-			Debug.Log("Cannot select a random element from an empty collection.");
-			return default;
+			var item = list[i];
+
+			if (predicate != null && !predicate(item))
+				continue;
+
+			float weight = item.Weight;
+			if (weight <= 0f)
+				continue;
+
+			totalWeight += weight;
+
+			if (UnityEngine.Random.value * totalWeight < weight)
+			{
+				selected = item;
+			}
 		}
 
-		if (predicate != null)
-			list = list.Where(predicate).ToList();
+		if (selected == null && throwOnEmpty)
+			throw new InvalidOperationException("No valid elements");
 
-		if (list.Count == 0)
-		{
-			if (throwOnEmpty)
-				throw new InvalidOperationException("No elements match the predicate.");
-			return default;
-		}
-
-		float totalWeight = list.Sum(e => e.Weight);
-		if (totalWeight <= 0f)
-		{
-			if (throwOnEmpty)
-				throw new InvalidOperationException("Total weight is zero or negative.");
-			return default;
-		}
-
-		var random = new Random();
-		double roll = random.NextDouble() * totalWeight;
-		double cumulative = 0;
-
-		foreach (var element in list)
-		{
-			cumulative += element.Weight;
-			if (roll <= cumulative)
-				return element;
-		}
-
-		// На случай погрешности в double
-		return list[list.Count - 1];
+		return selected;
 	}
 
 
-	public static IEnumerable<T> GetRandomUniqueElements<T>(this IEnumerable<T> source, int count, bool throwException = true)
+	public static IEnumerable<T> GetRandomUniqueElementsFast<T>(
+		this IList<T> source,
+		int count,
+		bool throwException = true)
 	{
 		if (source == null)
 		{
 			if (throwException)
 				throw new InvalidOperationException("Cannot select random elements from a null collection");
-			return Enumerable.Empty<T>();
+			return null;
 		}
 
-		var list = source.ToList();
-		if (!list.Any())
+		int sourceCount = source.Count;
+
+		if (sourceCount == 0)
 		{
 			if (throwException)
 				throw new InvalidOperationException("Cannot select random elements from an empty collection");
-			return Enumerable.Empty<T>();
+			return null;
 		}
 
 		if (count < 0)
-			throw new ArgumentOutOfRangeException("Count cannot be negative");
+			throw new ArgumentOutOfRangeException(nameof(count), "Count cannot be negative");
 
-		if (count > list.Count)
+		if (count > sourceCount)
 		{
 			if (throwException)
-				throw new InvalidOperationException($"Requested {count} elements but only {list.Count} available");
-			count = list.Count;
+				throw new InvalidOperationException($"Requested {count} elements but only {sourceCount} available");
+			count = sourceCount;
 		}
+
+		if (count == sourceCount)
+			return source; // Просто возвращаем исходный список
 
 		var random = new Random();
+		var result = new T[count];
+
+		// Копируем первые count элементов во временное хранилище
+		// и одновременно перемешиваем
 		for (int i = 0; i < count; i++)
 		{
-			var j = random.Next(i, list.Count);
+			int j = random.Next(i, sourceCount);
 
-			T temp = list[i];
-			list[i] = list[j];
-			list[j] = temp;
+			// Меняем местами в исходной коллекции (если это допустимо)
+			if (j != i)
+			{
+				T temp = source[i];
+				source[i] = source[j];
+				source[j] = temp;
+			}
+
+			result[i] = source[i];
 		}
 
-		return list.Take(count);
+		// Восстанавливаем исходный порядок (если нужно)
+		// for (int i = count - 1; i >= 0; i--) { ... }
+
+		return result;
 	}
 
 	public static void Shuffle<T>(this IList<T> list, bool avoidOriginalNeighbors = true, int maxAttempts = 100)
@@ -185,7 +188,9 @@ public static class Extensions
 			return;
 		}
 
-		var original = list.ToArray();
+		var original = new T[n];
+		for (int i = 0; i < n; i++)
+			original[i] = list[i];
 
 		for (int attempt = 0; attempt < maxAttempts; attempt++)
 		{
@@ -207,11 +212,11 @@ public static class Extensions
 		}
 	}
 
-	public static List<T> Multiply<T>(this IEnumerable<T> list, int times)
+	public static List<T> Multiply<T>(this IList<T> list, int times)
 	{
 		if (list == null || times <= 1)
 			return new List<T>();
-		var result = new List<T>(list.Count() * times);
+		var result = new List<T>(list.Count * times);
 		for (int i = 0; i < times; i++)
 		{
 			result.AddRange(list);

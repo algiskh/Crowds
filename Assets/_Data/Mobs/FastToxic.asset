@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _id: FastToxic
   _health: 100
-  _speed: 5.5
+  _speed: 4.7
   _damage: 10
   _collisionRadius: 1
   _hitCooldown: 0.5
