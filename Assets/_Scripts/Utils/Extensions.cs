@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System;
 using UnityEngine;
 using Random = System.Random;
+using Unity.VisualScripting;
 
 public static class Extensions
 {
@@ -76,10 +77,22 @@ public static class Extensions
 		return result;
 	}
 
-	public static T GetRandomByWeight<T>(
+
+	public static T GetRandomByWeight<T>(this IEnumerable<T> collection) where T : IWeightable
+	{
+		var list = new List<T>();
+		foreach (var item in collection)
+		{
+			list.Add(item);
+		}
+
+		return GetRandomByWeightFromList(list);
+	}
+
+	public static T GetRandomByWeightFromList<T>(
 		this IList<T> list,
 		Func<T, bool> predicate = null,
-		bool throwOnEmpty = true)
+		bool throwOnEmpty = false)
 		where T : IWeightable
 	{
 		if (list == null || list.Count == 0)

@@ -549,11 +549,22 @@
                 },
                 {
                     "name": "",
-                    "id": "71739ab0-3815-4015-943d-a3a73c8d0c54",
-                    "path": "<XInputController>/buttonWest",
+                    "id": "bd109242-b9a5-4f73-9ce4-98e1acbccbcf",
+                    "path": "<XInputController>/buttonNorth",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
+                    "action": "Melee",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "55a1c390-091b-4297-a6e4-5884254d584e",
+                    "path": "<Gamepad>/buttonNorth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Gamepad",
                     "action": "Melee",
                     "isComposite": false,
                     "isPartOfComposite": false
