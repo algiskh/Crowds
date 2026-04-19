@@ -1,11 +1,15 @@
-﻿using Leopotam.EcsLite;
+using Leopotam.EcsLite;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace ECS
 {
 	public class ModifiersSystem : IEcsRunSystem
 	{
+		// Переиспользуемый scratch: (ownerEntity, modifier) пары на удаление.
+		// Раньше был Dictionary<ModifierOwnerComponent, Modifier> — боксинг struct-ключа
+		// и потенциальный конфликт/потеря при нескольких модификаторах у одного owner'а.
+		private readonly List<(int ownerEntity, Modifier modifier)> _toRemove = new List<(int, Modifier)>(16);
+
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
@@ -18,17 +22,13 @@ namespace ECS
 			foreach (var entity in tryApplyFilter)
 			{
 				ref var request = ref tryApplyModifierPool.Get(entity);
-				if (request.TargetEntity == -1)
+				if (request.TargetEntity == -1 || !modifierPool.Has(request.TargetEntity))
 					continue;
-				if (!modifierPool.Has(request.TargetEntity))
-				{
-					continue;
-				}
+
 				ref var modifierOwner = ref modifierPool.Get(request.TargetEntity);
 				if (modifierOwner.Modifiers == null)
-				{
 					modifierOwner.Modifiers = new List<Modifier>();
-				}
+
 				modifierOwner.Modifiers.Add(request.Modifier);
 
 				if (request.Modifier.HasEffect)
@@ -36,65 +36,56 @@ namespace ECS
 					var effectConfig = effectsHolder.Value.GetEffect(request.Modifier.EffectId);
 					if (effectConfig != null)
 					{
-						Debug.Log($"Setting effect: Try to apply effect {request.Modifier.EffectId}");
 						requestEffectPool.Add(world.NewEntity()) = new RequestEffectComponent
 						{
 							EffectId = request.Modifier.EffectId,
 							Parent = modifierOwner.Transform,
-							DamageType = request.Modifier is DamageModifier damageModifier ? damageModifier.Type : DamageType.Unknown,
+							DamageType = request.Modifier is DamageModifier dmg ? dmg.Type : DamageType.Unknown,
 							ModifierEntity = request.TargetEntity
 						};
 					}
 				}
-				Debug.Log($"Applied modifier {request.Modifier.Id} to entity {request.TargetEntity}");
 				world.DelEntity(entity);
 			}
 
-			var filter = world.Filter<ModifierOwnerComponent>().End();
-			Dictionary<ModifierOwnerComponent, Modifier> modifiersToRemove = new Dictionary<ModifierOwnerComponent, Modifier>();
+			_toRemove.Clear();
+			var deltaTime = UnityEngine.Time.deltaTime;
 
+			var filter = world.Filter<ModifierOwnerComponent>().End();
 			foreach (var entity in filter)
 			{
-				var deltaTime = Time.deltaTime;
 				ref var modifierOwner = ref modifierPool.Get(entity);
-
-				if (modifierOwner.Modifiers == null || modifierOwner.Modifiers.Count == 0)
+				var mods = modifierOwner.Modifiers;
+				if (mods == null || mods.Count == 0)
 					continue;
 
-				foreach (var modifier in modifierOwner.Modifiers)
+				for (int i = 0; i < mods.Count; i++)
 				{
+					var modifier = mods[i];
 					modifier.Lifetime -= deltaTime;
 
 					if (modifier.Lifetime <= 0)
-					{
-						modifiersToRemove.Add(modifierOwner, modifier);
-					}
+						_toRemove.Add((entity, modifier));
+
 					if (modifier is IIteratableModifier iterable)
-					{
 						IterateModifier(world, iterable, entity, deltaTime);
-					}
 				}
 			}
 
-			if (modifiersToRemove.Count > 0)
+			for (int i = 0; i < _toRemove.Count; i++)
 			{
-				foreach (var kvp in modifiersToRemove)
-				{
-					var owner = kvp.Key;
-					var modifier = kvp.Value;
-					owner.Modifiers.Remove(modifier);
-					Debug.Log($"Modifier {modifier.Id} removed from entity {owner.Entity}");
-				}
+				var (ownerEntity, modifier) = _toRemove[i];
+				if (!modifierPool.Has(ownerEntity))
+					continue;
+				ref var owner = ref modifierPool.Get(ownerEntity);
+				owner.Modifiers?.Remove(modifier);
 			}
 		}
 
-
 		private void IterateModifier(EcsWorld world, IIteratableModifier modifier, int targetEntity, float deltaTime)
 		{
-			Debug.Log($"Trying to iterate modifier on entity {targetEntity}");
 			if (modifier.TryIterate(deltaTime, out var value))
 			{
-				Debug.Log($"Iterating modifier on entity {targetEntity} with value {value}");
 				if (modifier is DamageModifier)
 				{
 					world.GetPool<RequestDamageComponent>().Add(targetEntity) = new RequestDamageComponent

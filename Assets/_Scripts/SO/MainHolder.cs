@@ -42,6 +42,9 @@ public class MainHolder : ScriptableObject
 
 	[SerializeField] private float _defaultCollisionRadius = 0.5f;
 
+	[SerializeField, BoxGroup("GameplayParameters")] private LayerMask _mobLayerMask = ~0;
+	public LayerMask MobLayerMask => _mobLayerMask;
+
 	public MobConfig MobConfig => _mobConfig;
 	public Mob Prefab => _prefab;
 	public Loot LootPrefab => _lootPrefab;

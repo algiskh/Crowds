@@ -1,110 +1,98 @@
-﻿using Leopotam.EcsLite;
+using Leopotam.EcsLite;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.UIElements;
-using UnityEngine.Windows;
 
 namespace ECS
 {
 	public class CollisionSystem : IEcsRunSystem
 	{
+		// Переиспользуется между кадрами. Локальная для системы — не singleton-компонент.
+		private readonly List<Modifier> _modifierScratch = new List<Modifier>(8);
+
 		public void Run(IEcsSystems systems)
 		{
 			#region GettingPools
 			var world = systems.GetWorld();
 			ref var mainHolder = ref world.GetAsSingleton<MainHolderComponent>();
 			ref var muzzle = ref world.GetAsSingleton<WeaponComponent>();
-			var colliderPool = world.GetPool<ColliderComponent>();
 			var bulletOverlapPool = world.GetPool<BulletOverlapComponent>();
 			var disposedPool = world.GetPool<DisposableComponent>();
 			var movePool = world.GetPool<MoveComponent>();
 			var bulletPool = world.GetPool<BulletComponent>();
 			var lootPool = world.GetPool<LootComponent>();
 			var mobPool = world.GetPool<MobComponent>();
-			
+
 			ref var player = ref world.GetAsSingleton<PlayerComponent>();
 			var playerTransform = player.Value.transform;
 			var playerPos = playerTransform.position;
 
-			var playerPool = world.GetPool<PlayerComponent>();
 			var healthPool = world.GetPool<HealthComponent>();
-			var borderPool = world.GetPool<BorderComponent>();
 			#endregion
 
 			#region Check pause
 			ref var pauseState = ref world.GetAsSingleton<PauseStateComponent>();
 			if (pauseState.IsPaused)
-			{
 				return;
-			}
 			#endregion
 
-			#region CreatingCollidersList
-			var filter = world.Filter<ColliderComponent>().End();
-
-			var bulletsList = new List<int>();
-			var mobDict = new Dictionary<int, Collider>();
-			foreach (var entity in filter)
-			{
-				ref var colliderComponent = ref colliderPool.Get(entity);
-
-				if (colliderComponent.CollisionType == CollisionType.Bullet)
-				{
-					bulletsList.Add(entity);
-				}
-				else if (colliderComponent.CollisionType == CollisionType.Mob)
-				{
-					mobDict.Add(entity,colliderComponent.Value);
-				}
-			}
-			#endregion
-
-			var bulletFilter = world.Filter<BulletComponent>().Inc<MoveComponent>().Inc<ModifierOwnerComponent>().Inc<BulletOverlapComponent>().Inc<DisposableComponent>().End();
+			#region BulletVsMob
+			var bulletFilter = world.Filter<BulletComponent>()
+				.Inc<MoveComponent>()
+				.Inc<ModifierOwnerComponent>()
+				.Inc<BulletOverlapComponent>()
+				.Inc<DisposableComponent>()
+				.End();
 
 			foreach (var bulletEntity in bulletFilter)
 			{
 				ref var bulletComponent = ref bulletPool.Get(bulletEntity);
-				var transform = bulletComponent.Bullet.transform;
 				ref var overlap = ref bulletOverlapPool.Get(bulletEntity);
 				ref var disposed = ref disposedPool.Get(bulletEntity);
-				foreach (var mobKvp in mobDict) {
-					if (overlap.colliders.Any(b => b == mobKvp.Value))
+
+				var bulletTransform = bulletComponent.Bullet.transform;
+				int hitsLen = overlap.MobHits.Length;
+
+				for (int i = 0; i < hitsLen; i++)
+				{
+					int mobEntity = overlap.MobHits[i];
+
+					// Entity мог быть удалён (умер/ушёл в пул) между кадрами.
+					if (!mobPool.Has(mobEntity))
+						continue;
+
+					int maxPierce = bulletComponent.Bullet.MaxPierceCount;
+					if (maxPierce > 1 && bulletComponent.PiercedTargets.Length < maxPierce - 1)
 					{
-						if (bulletComponent.Bullet.MaxPierceCount > 1 && bulletComponent.PiercedTargets.Length < bulletComponent.Bullet.MaxPierceCount - 1)
-						{
-							if (bulletComponent.PiercedTargets.ContainsFixed(mobKvp.Key))
-							{
-								continue;
-							}
-							bulletComponent.PiercedTargets.Add(mobKvp.Key);
-						}
-						else
-						{
-							disposed.IsDisposed = true;
-						}
-
-						ref var damage = ref world.CreateSimpleEntity<RequestDamageComponent>();
-						damage.TargetEntity = mobKvp.Key;
-						damage.Damage = bulletComponent.Damage;
-						//add modifiers
-						ref var move = ref movePool.Get(bulletEntity);
-
-						ref var bloodDecal = ref world.CreateSimpleEntity<RequestDecalComponent>();
-						bloodDecal.Position = transform.position;
-						bloodDecal.Id = "Blood";
-						bloodDecal.Direction = move.Direction;
-
-
-						ref var bloodEffect = ref world.CreateSimpleEntity<RequestEffectComponent>();
-						bloodEffect.EffectId = "blood";
-						bloodEffect.Position = transform.position;
-
+						if (bulletComponent.PiercedTargets.ContainsFixed(mobEntity))
+							continue;
+						bulletComponent.PiercedTargets.Add(mobEntity);
 					}
+					else
+					{
+						disposed.IsDisposed = true;
+					}
+
+					ref var damage = ref world.CreateSimpleEntity<RequestDamageComponent>();
+					damage.TargetEntity = mobEntity;
+					damage.Damage = bulletComponent.Damage;
+
+					ref var move = ref movePool.Get(bulletEntity);
+
+					ref var bloodDecal = ref world.CreateSimpleEntity<RequestDecalComponent>();
+					bloodDecal.Position = bulletTransform.position;
+					bloodDecal.Id = "Blood";
+					bloodDecal.Direction = move.Direction;
+
+					ref var bloodEffect = ref world.CreateSimpleEntity<RequestEffectComponent>();
+					bloodEffect.EffectId = "blood";
+					bloodEffect.Position = bulletTransform.position;
+
+					if (disposed.IsDisposed) break;
 				}
 			}
+			#endregion
 
-			#region CheckingPlayerWithMobCollision
+			#region PlayerVsMob
 			var mobFilter = world.Filter<MobComponent>().End();
 			foreach (var mobEntity in mobFilter)
 			{
@@ -115,33 +103,30 @@ namespace ECS
 					ref var requestDamage = ref world.CreateSimpleEntity<RequestDamageComponent>();
 					requestDamage.TargetEntity = player.Value.Entity;
 					requestDamage.Damage = mob.Config.Damage;
-					if (mob.Config.AttackModifiers != null && mob.Config.AttackModifiers.Length > 0) 
-					{
-						Debug.Log($"Add modifiers for {requestDamage.TargetEntity}");
-						var list = new List<Modifier>();
-						foreach (var modifier in mob.Config.AttackModifiers)
-						{
-							if (modifier is DamageModifier dotModifier)
-							{
-								var chance = dotModifier.Chance;
-								var random = Random.value;
-								
-								Debug.Log($"Modifier is damagemodifier. Chance: {chance}, random: {random}");
-								if (random > chance)
-								{
-									continue;
-								}
-							}
 
-							var copy = modifier.Clone<Modifier>();
-							list.Add(copy);
+					var attackMods = mob.Config.AttackModifiers;
+					if (attackMods != null && attackMods.Length > 0)
+					{
+						_modifierScratch.Clear();
+						for (int i = 0; i < attackMods.Length; i++)
+						{
+							var modifier = attackMods[i];
+							if (modifier is DamageModifier dmgMod)
+							{
+								if (Random.value > dmgMod.Chance)
+									continue;
+							}
+							_modifierScratch.Add(modifier.Clone<Modifier>());
 						}
-						requestDamage.DamageModifiers = list;
+						if (_modifierScratch.Count > 0)
+						{
+							// Копируем в новый список: RequestDamage живёт дольше scratch'а.
+							requestDamage.DamageModifiers = new List<Modifier>(_modifierScratch);
+						}
 					}
 
 					mob.Cooldown = mob.Config.HitCooldown;
 
-					//Request Effect
 					ref var effectRequest = ref world.CreateSimpleEntity<RequestEffectComponent>();
 					effectRequest.EffectId = "playerHit";
 					effectRequest.Position = playerPos;
@@ -149,8 +134,7 @@ namespace ECS
 					ref var bloodDecal = ref world.CreateSimpleEntity<RequestDecalComponent>();
 					bloodDecal.Position = playerPos;
 					bloodDecal.Id = "Blood";
-					bloodDecal.Direction = playerTransform.rotation * Vector3.forward;
-
+					bloodDecal.Direction = playerTransform.forward;
 				}
 				else if (mob.Cooldown > 0)
 				{
@@ -159,42 +143,38 @@ namespace ECS
 			}
 			#endregion
 
-			#region CheckingPlayerWithLootCollision
+			#region PlayerVsLoot
 			var lootFilter = world.Filter<LootComponent>().Inc<DisposableComponent>().End();
+			float lootRadiusSqr = mainHolder.Value.LootRadius * mainHolder.Value.LootRadius;
 			foreach (var lootEntity in lootFilter)
 			{
 				ref var loot = ref lootPool.Get(lootEntity);
 				ref var disposable = ref disposedPool.Get(lootEntity);
-				if (playerTransform.position.DistanceTo(loot.Loot.transform.position)
-					<= mainHolder.Value.LootRadius)
+				if (disposable.IsDisposed) continue;
+
+				if ((playerTransform.position - loot.Loot.transform.position).sqrMagnitude <= lootRadiusSqr)
 				{
 					disposable.IsDisposed = true;
-					if (loot.LootType is LootType.Ammo)
+					switch (loot.LootType)
 					{
-						muzzle.AmmoCount += loot.Count;
-
-						ref var requestAmmoViewUpdate = ref world.CreateSimpleEntity<UpdateAmmoViewRequestComponent>();
-					}
-					else if(loot.LootType is LootType.Weapon)
-					{
-						var newConfig = mainHolder.Value.GunConfigHolder.GetConfig(loot.Id);
-						if (newConfig == null)
-							continue;
-
-						muzzle.GunConfig = newConfig;
-						muzzle.CurrentMagazineCount = newConfig.MagazineCapacity;
-						ref var requestWeaponViewUpdate = ref world.CreateSimpleEntity<UpdateWeaponViewRequestComponent>();
-					}
-					else if(loot.LootType is LootType.Health)
-					{
-						ref var healthComponent = ref healthPool.Get(player.Value.Entity);
-
-						healthComponent.CurrentHealth += loot.Count;
-						if (healthComponent.CurrentHealth > healthComponent.MaxHealth)
-						{
-							healthComponent.CurrentHealth = healthComponent.MaxHealth;
-						}
-						ref var requestUIHealthUpdate = ref world.CreateSimpleEntity<UpdateHealthViewRequestComponent>();
+						case LootType.Ammo:
+							muzzle.AmmoCount += loot.Count;
+							world.CreateSimpleEntity<UpdateAmmoViewRequestComponent>();
+							break;
+						case LootType.Weapon:
+							var newConfig = mainHolder.Value.GunConfigHolder.GetConfig(loot.Id);
+							if (newConfig == null) continue;
+							muzzle.GunConfig = newConfig;
+							muzzle.CurrentMagazineCount = newConfig.MagazineCapacity;
+							world.CreateSimpleEntity<UpdateWeaponViewRequestComponent>();
+							break;
+						case LootType.Health:
+							ref var healthComponent = ref healthPool.Get(player.Value.Entity);
+							healthComponent.CurrentHealth += loot.Count;
+							if (healthComponent.CurrentHealth > healthComponent.MaxHealth)
+								healthComponent.CurrentHealth = healthComponent.MaxHealth;
+							world.CreateSimpleEntity<UpdateHealthViewRequestComponent>();
+							break;
 					}
 				}
 			}

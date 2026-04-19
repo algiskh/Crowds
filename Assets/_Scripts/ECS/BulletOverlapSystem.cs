@@ -1,75 +1,100 @@
-using UnityEngine;
+using System.Collections.Generic;
 using Leopotam.EcsLite;
+using UnityEngine;
 
 namespace ECS
 {
 	public class BulletOverlapSystem : IEcsRunSystem
 	{
+		private const int BUFFER_SIZE = 32;
+
+		private readonly Collider[] _overlapBuffer = new Collider[BUFFER_SIZE];
+		private readonly RaycastHit[] _raycastBuffer = new RaycastHit[BUFFER_SIZE];
+
+		// –ü–µ—Ä–µ–∏—Å–ø–æ–ª—å–∑—É–µ—Ç—Å—è –∫–∞–∂–¥—ã–π –∫–∞–¥—Ä: collider ‚Üí mob entity id.
+		private readonly Dictionary<Collider, int> _mobColliderMap = new Dictionary<Collider, int>(64);
+
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
 			var bulletPool = world.GetPool<BulletComponent>();
 			var overlapPool = world.GetPool<BulletOverlapComponent>();
 			var movePool = world.GetPool<MoveComponent>();
+			var colliderPool = world.GetPool<ColliderComponent>();
+			var mobPool = world.GetPool<MobComponent>();
+
+			int layerMask = ~0;
+			if (world.TryGetAsSingleton<MainHolderComponent>(out var mainHolder) && mainHolder.Value != null)
+				layerMask = mainHolder.Value.MobLayerMask.value;
+
+			// --- –û–¥–∏–Ω —Ä–∞–∑ –∑–∞ –∫–∞–¥—Ä —Å—Ç—Ä–æ–∏–º collider ‚Üí entity –∫–∞—Ä—Ç—É –¥–ª—è –≤—Å–µ—Ö –º–æ–±–æ–≤.
+			_mobColliderMap.Clear();
+			var mobFilter = world.Filter<MobComponent>().Inc<ColliderComponent>().End();
+			foreach (var mobEntity in mobFilter)
+			{
+				ref var col = ref colliderPool.Get(mobEntity);
+				if (col.CollisionType == CollisionType.Mob && col.Value != null)
+					_mobColliderMap[col.Value] = mobEntity;
+			}
 
 			var bulletFilter = world.Filter<BulletComponent>().Inc<MoveComponent>().End();
-
 			foreach (var bulletEntity in bulletFilter)
 			{
 				ref var bullet = ref bulletPool.Get(bulletEntity);
 				ref var move = ref movePool.Get(bulletEntity);
+				if (move.Transform == null) continue;
 
 				var position = move.Transform.position;
-				Collider[] overlapped = null;
+				int hitCount = 0;
 
 				switch (bullet.CheckType)
 				{
 					case BulletCheckType.OverlapSphere:
-						overlapped = Physics.OverlapSphere(position, bullet.Radius);
+						hitCount = Physics.OverlapSphereNonAlloc(position, bullet.Radius, _overlapBuffer, layerMask, QueryTriggerInteraction.Collide);
 						break;
+
 					case BulletCheckType.OverlapBox:
 						var halfExtents = new Vector3(bullet.Radius, bullet.Radius, bullet.Radius);
-						overlapped = Physics.OverlapBox(position, halfExtents, move.Transform.rotation);
+						hitCount = Physics.OverlapBoxNonAlloc(position, halfExtents, _overlapBuffer, move.Transform.rotation, layerMask, QueryTriggerInteraction.Collide);
 						break;
 
 					case BulletCheckType.Raycast:
-						// ÃÓÊÌÓ ı‡ÌËÚ¸ ‚ BulletComponent ÔÂ‰˚‰Û˘ÂÂ ÔÓÎÓÊÂÌËÂ (prevPosition),
-						// ÎË·Ó ËÒÔÓÎ¸ÁÓ‚‡Ú¸ ÔÓÁËˆË˛ ÏÛÁ‡ Ë ÒÍÓÓÒÚ¸ ÔÛÎË
 						var direction = move.Transform.forward;
-						var distance = bullet.Radius; // ÃÓÊÌÓ ËÒÔÓÎ¸ÁÓ‚‡Ú¸ ÒÍÓÓÒÚ¸ * Time.deltaTime ‰Îˇ fast-moving
-						var hits = Physics.RaycastAll(position, direction, distance);
-
-						if (hits.Length > 0)
-						{
-							overlapped = new Collider[hits.Length];
-							for (int i = 0; i < hits.Length; i++)
-								overlapped[i] = hits[i].collider;
-							Debug.Log($"Raycast hit {hits.Length} colliders from bullet {bulletEntity} at position {position} with direction {direction}");
-						}
-						else
-						{
-							overlapped = new Collider[0];
-						}
+						// –î–ª—è –±—ã—Å—Ç—Ä—ã—Ö –ø—É–ª—å: –ø—É—Ç—å –∑–∞ –∫–∞–¥—Ä + —Ä–∞–¥–∏—É—Å.
+						float distance = Mathf.Max(bullet.Radius, move.Speed * Time.deltaTime + bullet.Radius);
+						int rayHits = Physics.RaycastNonAlloc(position, direction, _raycastBuffer, distance, layerMask, QueryTriggerInteraction.Collide);
+						hitCount = Mathf.Min(rayHits, _overlapBuffer.Length);
+						for (int i = 0; i < hitCount; i++)
+							_overlapBuffer[i] = _raycastBuffer[i].collider;
 						break;
 				}
 
-				if (overlapped != null && overlapped.Length > 0)
+				bool hasAnyMobHit = false;
+				Unity.Collections.FixedList128Bytes<int> mobHits = default;
+
+				for (int i = 0; i < hitCount; i++)
 				{
-					if (overlapPool.Has(bulletEntity))
+					var col = _overlapBuffer[i];
+					if (col == null) continue;
+					if (_mobColliderMap.TryGetValue(col, out var mobEntityId))
 					{
-						ref var overlap = ref overlapPool.Get(bulletEntity);
-						overlap.colliders = overlapped;
-					}
-					else
-					{
-						ref var overlap = ref overlapPool.Add(bulletEntity);
-						overlap.colliders = overlapped;
+						// FixedList128Bytes<int>: ~31 —ç–ª–µ–º–µ–Ω—Ç–æ–≤ max ‚Äî —Å –∑–∞–ø–∞—Å–æ–º –¥–ª—è –æ–¥–Ω–æ–π –ø—É–ª–∏.
+						if (mobHits.Length < mobHits.Capacity)
+							mobHits.Add(mobEntityId);
+						hasAnyMobHit = true;
 					}
 				}
-				else
+
+				if (hasAnyMobHit)
 				{
-					if (overlapPool.Has(bulletEntity))
-						overlapPool.Del(bulletEntity);
+					ref var overlap = ref overlapPool.Has(bulletEntity)
+						? ref overlapPool.Get(bulletEntity)
+						: ref overlapPool.Add(bulletEntity);
+					overlap.MobHits = mobHits;
+				}
+				else if (overlapPool.Has(bulletEntity))
+				{
+					overlapPool.Del(bulletEntity);
 				}
 			}
 		}

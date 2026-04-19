@@ -13,23 +13,23 @@ namespace ECS
 		[Title("Temporary")]
 		[SerializeField, BoxGroup("Temporary")] private LevelConfig _levelConfig;
 
-		[Title("Основные ссылки")]
+		[Title("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ")]
 		[SerializeField, Required, BoxGroup("Game References")] private MainHolder _mainHolder;
 		[SerializeField, Required, BoxGroup("Game References")] private Player _player;
 		[SerializeField, Required, BoxGroup("Game References")] private Camera _mainCamera;
 
 		[Space]
-		[Title("Родители объектов")]
+		[Title("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _mobParent;
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _bulletParent;
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _effectParent;
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _decalParent;
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _lootParent;
 		[Space]
-		[Title("Точки спауна мобов")]
+		[Title("пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ")]
 		[SerializeField, Required, ListDrawerSettings, BoxGroup("Spawn Points")]
 		private Transform[] _spawnPoints;
-		[Title("Точки спауна доп лута"), SerializeField]
+		[Title("пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ"), SerializeField]
 		private Transform[] _additionalLootPoints;
 		[Title("UI")]
 		[SerializeField, Required, BoxGroup("UI")] private PlayerStats _playerStats;
@@ -81,7 +81,7 @@ namespace ECS
 		{
 			SetUpLevel();
 
-			// --- Общие сущности приложения ---
+			// --- пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ---
 			int appEntity = _world.NewEntity();
 			ref var config = ref _world.GetPool<MainHolderComponent>().Add(appEntity);
 			config.Value = _mainHolder;
@@ -94,7 +94,7 @@ namespace ECS
 			ref var inputActions = ref _world.CreateSimpleEntity<InputActionsComponent>();
 			inputActions.Value = _inputActions;
 
-			// --- UI компоненты ---
+			// --- UI пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ---
 			ref var weaponViewComponent = ref _world.CreateSimpleEntity<WeaponUIViewComponent>();
 			weaponViewComponent.Value = _weaponView;
 
@@ -110,7 +110,7 @@ namespace ECS
 			ref var difficultyTimerUIComponent = ref _world.CreateSimpleEntity<DifficultyTimerUIComponent>();
 			difficultyTimerUIComponent.Value = _difficultyTimerView;
 
-			// --- Точки спауна ---
+			// --- пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ ---
 			var spawnPointPool = _world.GetPool<SpawnPointComponent>();
 			var spawnTimerPool = _world.GetPool<SpawnTimer>();
 			var spawnPoints = FindObjectsByType<SpawnPoint>(FindObjectsSortMode.None);
@@ -125,7 +125,7 @@ namespace ECS
 			ref var spawnPointsComponent = ref _world.CreateSimpleEntity<SpawnPointsComponent>();
 			spawnPointsComponent.Value = _spawnPoints;
 
-			// --- Система спауна ---
+			// --- пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ ---
 			ref var spawnRequest = ref _world.CreateSimpleEntity<SpawnRequestComponent>();
 			spawnRequest.MaxCoolDown = _mainHolder.MaxSpawnCoolDown;
 			spawnRequest.MinCoolDown = _mainHolder.MinSpawnCoolDown;
@@ -133,7 +133,7 @@ namespace ECS
 			spawnRequest.LastSpawnTime = 0;
 			spawnRequest.IsBlocked = false;
 
-			// --- Хранилища и пулы ---
+			// --- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ ---
 			ref var soundHolderComponent = ref _world.CreateSimpleEntity<SoundHolderComponent>();
 			soundHolderComponent.Value = _mainHolder.SoundHolder;
 
@@ -145,10 +145,13 @@ namespace ECS
 
 			ref var effectPool = ref _world.CreateSimpleEntity<EffectPoolComponent>();
 			effectPool.Value = new();
+			effectPool.Pools = new Dictionary<string, Stack<SceneEffect>>();
 			effectPool.Parent = _effectParent;
 
 			ref var mobPoolComponent = ref _world.CreateSimpleEntity<MobPoolComponent>();
 			mobPoolComponent.Value = new();
+			mobPoolComponent.Pools = new Dictionary<string, Stack<Mob>>();
+			mobPoolComponent.Parent = _mobParent;
 
 			ref var bulletPool = ref _world.CreateSimpleEntity<BulletPoolComponent>();
 			bulletPool.Value = new();
@@ -156,6 +159,7 @@ namespace ECS
 
 			ref var decalPool = ref _world.CreateSimpleEntity<DecalPoolComponent>();
 			decalPool.Value = new();
+			decalPool.Pools = new Dictionary<string, Stack<Decal>>();
 			decalPool.Parent = _decalParent;
 
 			ref var lootPool = ref _world.CreateSimpleEntity<LootPoolComponent>();
@@ -177,7 +181,7 @@ namespace ECS
 				}
 			}
 
-				// --- Игрок ---
+				// --- пїЅпїЅпїЅпїЅпїЅ ---
 
 			int playerEntity = _world.NewEntity();
 			ref var playerComponent = ref _world.GetPool<PlayerComponent>().Add(playerEntity);
@@ -204,7 +208,7 @@ namespace ECS
 			ref var aimVisualizerComponent = ref _world.CreateSimpleEntity<AimVisualizerComponent>();
 			aimVisualizerComponent.Value = aimVisualizer;
 
-			// --- Камера ---
+			// --- пїЅпїЅпїЅпїЅпїЅпїЅ ---
 			int cameraFollowerEntity = _world.NewEntity();
 			ref var follower = ref _world.GetPool<FollowerComponent>().Add(cameraFollowerEntity);
 			follower.Value = _mainCamera.transform;
@@ -227,7 +231,7 @@ namespace ECS
 			ref var cameraComponent = ref _world.GetPool<CameraComponent>().Add(cameraEntity);
 			cameraComponent.Value = _mainCamera;
 
-			// --- Оружие/Магазин ---
+			// --- пїЅпїЅпїЅпїЅпїЅпїЅ/пїЅпїЅпїЅпїЅпїЅпїЅпїЅ ---
 			ref var muzzle = ref _world.CreateSimpleEntity<WeaponComponent>();
 			muzzle.Weapon = _player.Weapon;
 			muzzle.GunConfig = _mainHolder.GunConfigHolder.GetConfig("Pistol");
@@ -239,12 +243,12 @@ namespace ECS
 			_weaponView.SetWeaponView(muzzle.GunConfig, muzzle.AmmoCount);
 
 
-			// --- Система LookAtCursor ---
+			// --- пїЅпїЅпїЅпїЅпїЅпїЅпїЅ LookAtCursor ---
 			ref var lookAtCursor = ref _world.CreateSimpleEntity<LookAtCursor>();
 			lookAtCursor.Transform = _player.transform;
 			lookAtCursor.Mode3D = true;
 
-			// --- Гизмо для отрисовки пути ---
+			// --- пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ ---
 			var drawer = FindFirstObjectByType<PathGizmoDrawer>();
 			if (drawer != null)
 				drawer.Initialize(_world);

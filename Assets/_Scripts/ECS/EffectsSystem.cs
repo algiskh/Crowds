@@ -1,5 +1,5 @@
 ﻿using Leopotam.EcsLite;
-using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ECS
@@ -109,23 +109,18 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Spawn new mob or take used mob from pool
+		/// Берёт эффект по id из стека пула или инстанцирует новый.
 		/// </summary>
 		private SceneEffect SpawnEffect(EffectPoolComponent pool, FxWrapper config, float rotation)
 		{
 			SceneEffect effect;
-			if (pool.Value != null &&
-				pool.Value.Count > 0 &&
-				pool.Value.Any(b => b.Id.Equals(config.Id)))
+			if (pool.Pools != null && pool.Pools.TryGetValue(config.Id, out var stack) && stack.Count > 0)
 			{
-				effect = pool.Value.First(mob => mob.Id.Equals(config.Id));
-				pool.Value.Remove(effect);
+				effect = stack.Pop();
 			}
 			else
 			{
-				effect = Object.Instantiate(
-					config.Prefab,
-					pool.Parent);
+				effect = Object.Instantiate(config.Prefab, pool.Parent);
 				effect.Initialize(config.Id);
 			}
 			effect.transform.eulerAngles = new Vector3(0, rotation, 0);

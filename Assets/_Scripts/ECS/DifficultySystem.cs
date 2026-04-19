@@ -1,5 +1,4 @@
 ﻿using Leopotam.EcsLite;
-using Sirenix.OdinInspector.Editor.GettingStarted;
 using UnityEngine;
 
 namespace ECS

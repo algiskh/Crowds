@@ -1,6 +1,7 @@
-﻿using Leopotam.EcsLite;
-using System.Linq;
+using Leopotam.EcsLite;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace ECS
 {
@@ -11,31 +12,42 @@ namespace ECS
 			var world = systems.GetWorld();
 
 			var spawnRequestPool = world.GetPool<MobSpawnRequestComponent>();
+			var filter = world.Filter<MobSpawnRequestComponent>().End();
 
-			var filter = world.Filter<MobSpawnRequestComponent>()
-				.End();
-			foreach ( var spawnEntity in filter)
+			if (filter.GetEntitiesCount() == 0)
+				return;
+
+			ref var spawnPoints = ref world.GetAsSingleton<SpawnPointsComponent>();
+			ref var mobPool = ref world.GetAsSingleton<MobPoolComponent>();
+			ref var playerComponent = ref world.GetAsSingleton<PlayerComponent>();
+			var mainHolder = world.GetAsSingleton<MainHolderComponent>().Value;
+
+			var mobComponentPool = world.GetPool<MobComponent>();
+			var moveComponentPool = world.GetPool<MoveComponent>();
+			var modifierComponentPool = world.GetPool<ModifierOwnerComponent>();
+			var healthComponentPool = world.GetPool<HealthComponent>();
+			var colliderComponentPool = world.GetPool<ColliderComponent>();
+			var pathRecalculationPool = world.GetPool<PathRecalculation>();
+			var lookerPool = world.GetPool<LookerAtCamera>();
+
+			float recalcInterval = mainHolder.PathRecalculationInterval;
+			float now = Time.time;
+			var playerPosition = playerComponent.Value.transform.position;
+
+			foreach (var spawnEntity in filter)
 			{
 				ref var spawnRequest = ref spawnRequestPool.Get(spawnEntity);
-				ref var spawnPoints = ref world.GetAsSingleton<SpawnPointsComponent>();
-				ref var mobPool = ref world.GetAsSingleton<MobPoolComponent>();
-				ref var playerComponent = ref world.GetAsSingleton<PlayerComponent>();
-
 				var mobConfig = spawnRequest.Config;
 				var spawnPoint = spawnRequest.SpawnPoint;
 
-				Mob mob = SpawnMob(mobPool, mobConfig);
+				Mob mob = SpawnMob(ref mobPool, mobConfig);
 
-				mob.transform.position = spawnPoint.position;
+				Vector3 spawnPos = spawnPoint.position;
+				if (NavMesh.SamplePosition(spawnPos, out var navHit, 2f, NavMesh.AllAreas))
+					spawnPos = navHit.position;
+				mob.transform.position = spawnPos;
+
 				var mobEntity = world.NewEntity();
-
-				var mobComponentPool = world.GetPool<MobComponent>();
-				var moveComponentPool = world.GetPool<MoveComponent>();
-				var modifierComponentPool = world.GetPool<ModifierOwnerComponent>();
-				var healthComponentPool = world.GetPool<HealthComponent>();
-				var colliderComponentPool = world.GetPool<ColliderComponent>();
-				var pathRecalculationPool = world.GetPool<PathRecalculation>();
-				var lookerPool = world.GetPool<LookerAtCamera>();
 
 				ref var mobComponent = ref mobComponentPool.Add(mobEntity);
 				ref var moveComponent = ref moveComponentPool.Add(mobEntity);
@@ -52,17 +64,24 @@ namespace ECS
 				mobComponent.Config = mobConfig;
 				mobComponent.Cooldown = 0;
 
-
-				var playerPosition = playerComponent.Value.transform.position;
-				moveComponent.Direction = new Vector2(playerPosition.x - spawnPoint.position.x, 0).normalized;
+				Vector3 toPlayer = playerPosition - spawnPos;
+				toPlayer.y = 0f;
+				moveComponent.Direction = toPlayer.sqrMagnitude > 0.0001f ? toPlayer.normalized : Vector3.forward;
 				moveComponent.Speed = mobConfig.Speed;
 				moveComponent.Transform = mob.transform;
+
 				healthComponent.CurrentHealth = mobConfig.Health;
 				healthComponent.MaxHealth = mobConfig.Health;
 				healthComponent.TargetType = mobConfig.TargetType;
+
 				colliderComponent.CollisionType = CollisionType.Mob;
 				colliderComponent.Value = mob.Collider;
-				looker.Transform = mob.ValueBar.Transform;
+
+				pathRecalculationComponent.Interval = recalcInterval;
+				// Джиттер: разносим первый пересчёт у пачки мобов, чтобы не пересчитывать всех в один кадр.
+				pathRecalculationComponent.LastTime = now - Random.Range(0f, recalcInterval);
+
+				looker.Transform = mob.ValueBar != null ? mob.ValueBar.Transform : null;
 				looker.FlatBillboard = true;
 
 				InitializeMobGameObject(mob, mobConfig, playerPosition);
@@ -71,30 +90,21 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Spawn new mob or take used mob from pool
+		/// Берёт моба по id из стека пула или инстанцирует нового.
 		/// </summary>
-		private Mob SpawnMob(MobPoolComponent mobPool, MobConfig mobConfig)
+		private Mob SpawnMob(ref MobPoolComponent mobPool, MobConfig mobConfig)
 		{
-			Mob mob;
-			if (mobPool.Value.Count > 0 &&
-				mobPool.Value.Any(b => b.Id.Equals(mobConfig.Id)))
-			{
-				mob = mobPool.Value.First(mob => mob.Id.Equals(mobConfig.Id));
-				mobPool.Value.Remove(mob);
-			}
-			else
-			{
-				mob = Object.Instantiate(
-					mobConfig.Prefab,
-					mobPool.Parent);
-				mob.SetId(mobConfig.Id);
-			}
+			if (mobPool.Pools == null)
+				mobPool.Pools = new Dictionary<string, Stack<Mob>>();
+
+			if (mobPool.Pools.TryGetValue(mobConfig.Id, out var stack) && stack.Count > 0)
+				return stack.Pop();
+
+			var mob = Object.Instantiate(mobConfig.Prefab, mobPool.Parent);
+			mob.SetId(mobConfig.Id);
 			return mob;
 		}
 
-		/// <summary>
-		/// Initialize mob game object with its configuration
-		/// </summary>
 		private void InitializeMobGameObject(Mob mob, MobConfig mobConfig, Vector2 playerPosition)
 		{
 			mob.ValueBar.SetMaxValue(mobConfig.Health)
@@ -102,7 +112,6 @@ namespace ECS
 						.SetVisible(true);
 
 			mob.gameObject.SetActive(true);
-			//mob.SimpleAnimator.SetAnimation("Run");
 		}
 	}
 }

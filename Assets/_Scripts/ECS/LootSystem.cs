@@ -1,5 +1,4 @@
 ﻿using Leopotam.EcsLite;
-using System.Linq;
 using UnityEngine;
 
 namespace ECS
@@ -81,35 +80,40 @@ namespace ECS
 
 				if (possibleLoots.Length > 1)
 				{
-					var cumulativeChance = possibleLoots.Sum(b => b.Chance);
+					float totalChance = 0f;
+					for (int i = 0; i < possibleLoots.Length; i++)
+						totalChance += possibleLoots[i].Chance;
 
-					// Select loot based on chance  
-					var randomValue = Random.value * Mathf.Clamp(cumulativeChance, 1f, float.MaxValue);
+					// Если суммарный шанс < 1, нормируем до 1: разыгрываем возможность "нет лута".
+					float rollRange = Mathf.Max(totalChance, 1f);
+					float roll = Random.value * rollRange;
 
-					if (randomValue > cumulativeChance)
+					if (roll > totalChance)
 					{
+						// Выпал "пустой" сектор вне суммарного шанса.
 						world.DelEntity(entity);
 						continue;
 					}
 
-					for (int i = possibleLoots.Length - 1; i >= 0; i--)
+					// Кумулятивный выбор: первый сегмент, накрывающий roll.
+					float acc = 0f;
+					for (int i = 0; i < possibleLoots.Length; i++)
 					{
-						if (i > 0)
+						acc += possibleLoots[i].Chance;
+						if (roll <= acc)
 						{
-							cumulativeChance -= possibleLoots[i].Chance;
 							selectedLoot = possibleLoots[i];
-							if (randomValue > cumulativeChance)
-							{
-								break;
-							}
+							break;
 						}
 					}
+					// Страховка от numerical drift — обычно не срабатывает.
+					if (selectedLoot == null)
+						selectedLoot = possibleLoots[possibleLoots.Length - 1];
 				}
 				else
 				{
 					selectedLoot = possibleLoots[0];
 				}
-				//var selectedLoot = possibleLoots.FirstOrDefault(b => randomValue <= b.Chance);
 
 				if (selectedLoot != null)
 				{

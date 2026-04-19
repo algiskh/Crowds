@@ -1,5 +1,5 @@
 using Leopotam.EcsLite;
-using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ECS
@@ -38,7 +38,7 @@ namespace ECS
 				if (lt.Value <= 0)
 				{
 					DisposeDecal(world, entity, decalMainPool, decal);
-					break;
+					continue;
 				}
 
 				ref var disposable = ref disposablePool.Get(entity);
@@ -89,32 +89,34 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Spawn new mob or take used mob from pool
+		/// Берёт декаль по id из стека пула или инстанцирует новую.
 		/// </summary>
 		private Decal SpawnDecal(DecalPoolComponent pool, DecalConfig config, Decal prefab)
 		{
-			Decal effect;
-			if (pool.Value != null &&
-				pool.Value.Count > 0 &&
-				pool.Value.Any(b => b.Id.Equals(config.Id)))
+			Decal decal;
+			if (pool.Pools != null && pool.Pools.TryGetValue(config.Id, out var stack) && stack.Count > 0)
 			{
-				effect = pool.Value.First(mob => mob.Id.Equals(config.Id));
-				pool.Value.Remove(effect);
+				decal = stack.Pop();
 			}
 			else
 			{
-				effect = Object.Instantiate(
-					prefab,
-					pool.Parent);
-				effect.Initialize(config);
+				decal = Object.Instantiate(prefab, pool.Parent);
+				decal.Initialize(config);
 			}
-			return effect;
+			return decal;
 		}
 
 		private void DisposeDecal(EcsWorld world, int entity, DecalPoolComponent mainPool, DecalComponent decal)
 		{
 			decal.Value.Hide();
-			mainPool.Value.Add(decal.Value);
+			if (mainPool.Pools == null)
+				mainPool.Pools = new Dictionary<string, Stack<Decal>>();
+			if (!mainPool.Pools.TryGetValue(decal.Value.Id, out var stack))
+			{
+				stack = new Stack<Decal>();
+				mainPool.Pools[decal.Value.Id] = stack;
+			}
+			stack.Push(decal.Value);
 			world.DelEntity(entity);
 		}
 	}

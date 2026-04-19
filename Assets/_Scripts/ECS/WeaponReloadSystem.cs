@@ -1,7 +1,5 @@
 ﻿using Leopotam.EcsLite;
 using UnityEngine;
-using UnityEngine.LightTransport;
-using static UnityEditor.Experimental.GraphView.Port;
 
 namespace ECS
 {

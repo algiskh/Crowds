@@ -62,6 +62,7 @@ public struct BulletPoolComponent
 public struct EffectPoolComponent
 {
 	public List<SceneEffect> Value;
+	public Dictionary<string, Stack<SceneEffect>> Pools;
 	public Transform Parent;
 }
 #endregion
@@ -92,6 +93,13 @@ public struct PathRecalculation
 	public float LastTime;
 	public float Interval;
 }
+
+/// <summary>
+/// Tag-signal: требует внеочередного пересчёта пути (в обход Interval).
+/// Выставляется извне (смена препятствий, динамические блокеры и т.п.),
+/// снимается в MobPathfindingSystem после обработки.
+/// </summary>
+public struct PathRecalculationRequest { }
 
 public struct HealthComponent
 {
@@ -194,7 +202,12 @@ public struct BulletComponent
 
 public struct BulletOverlapComponent
 {
-	public Collider[] colliders;
+	/// <summary>
+	/// Mob entity-ids, попавшие в overlap текущего кадра.
+	/// Заполняется в BulletOverlapSystem, читается в CollisionSystem.
+	/// Никаких managed-аллокаций: FixedList — inline value-type.
+	/// </summary>
+	public Unity.Collections.FixedList128Bytes<int> MobHits;
 }
 #endregion
 
@@ -325,6 +338,7 @@ public struct LifeTimeComponent
 public struct DecalPoolComponent
 {
 	public List<Decal> Value;
+	public Dictionary<string, Stack<Decal>> Pools;
 	public Transform Parent;
 }
 

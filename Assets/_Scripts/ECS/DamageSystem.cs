@@ -97,9 +97,16 @@ namespace ECS
 
 				if (healthComponent.CurrentHealth <= 0)
 				{
-					mobSpawnPool.Value.Add(mobComponent.Value);
-					//mobComponent.Value.SimpleAnimator.Stop();
-					mobComponent.Value.gameObject.SetActive(false);
+					var deadMob = mobComponent.Value;
+					if (mobSpawnPool.Pools == null)
+						mobSpawnPool.Pools = new Dictionary<string, Stack<Mob>>();
+					if (!mobSpawnPool.Pools.TryGetValue(deadMob.Id, out var stack))
+					{
+						stack = new Stack<Mob>();
+						mobSpawnPool.Pools[deadMob.Id] = stack;
+					}
+					stack.Push(deadMob);
+					deadMob.gameObject.SetActive(false);
 
 
 

@@ -9,16 +9,17 @@ namespace ECS
 		{
 			var world = systems.GetWorld();
 			var lookAtCameraPool = world.GetPool<LookerAtCamera>();
-			var cameraPool = world.GetPool<CameraComponent>();
 
-			// Находим камеру
-			Camera camera = null;
-			foreach (var camEntity in world.Filter<CameraComponent>().End())
-			{
-				camera = cameraPool.Get(camEntity).Value;
-				break;
-			}
-			if (camera == null) return;
+			if (!world.TryGetAsSingleton<CameraComponent>(out var camComp) || camComp.Value == null)
+				return;
+
+			var cameraTransform = camComp.Value.transform;
+			var cameraForward = cameraTransform.forward;
+			var cameraUp = cameraTransform.up;
+			var cameraPos = cameraTransform.position;
+
+			// Р’С‹С‡РёСЃР»СЏРµРј В«flat billboardВ»-РєРІР°С‚РµСЂРЅРёРѕРЅ РѕРґРёРЅ СЂР°Р· Р·Р° РєР°РґСЂ.
+			var flatRotation = Quaternion.LookRotation(cameraForward, cameraUp);
 
 			foreach (var entity in world.Filter<LookerAtCamera>().End())
 			{
@@ -27,14 +28,11 @@ namespace ECS
 
 				if (comp.FlatBillboard)
 				{
-					comp.Transform.rotation = Quaternion.LookRotation(
-						camera.transform.forward, camera.transform.up);
+					comp.Transform.rotation = flatRotation;
 				}
 				else
 				{
-					comp.Transform.LookAt(camera.transform);
-					// // Иногда Canvas надо инвертировать:
-					// comp.Transform.forward = (comp.Transform.position - camera.transform.position).normalized;
+					comp.Transform.LookAt(cameraPos);
 				}
 			}
 		}

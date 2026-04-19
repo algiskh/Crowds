@@ -41,7 +41,13 @@ public static class Utils
 	{
 		effect.Hide();
 		effect.SetParent(pool.Parent.transform);
-		pool.Value.Add(effect);
+		if (pool.Pools == null) return;
+		if (!pool.Pools.TryGetValue(effect.Id, out var stack))
+		{
+			stack = new System.Collections.Generic.Stack<SceneEffect>();
+			pool.Pools[effect.Id] = stack;
+		}
+		stack.Push(effect);
 	}
 
 	public static Vector3 GetForwardPosition(this Transform original, float range)
