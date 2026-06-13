@@ -249,6 +249,14 @@ namespace ECS
 			grenadeState.Count = _mainHolder.PlayerConfig.StartGrenades;
 			grenadeState.IsCharging = false;
 			grenadeState.ChargeTime = 0f;
+			var grenadeConfigHolder = _mainHolder.GrenadeConfigHolder;
+			if (grenadeConfigHolder != null)
+			{
+				var startId = _mainHolder.PlayerConfig.StartGrenadeId;
+				grenadeState.CurrentConfig = string.IsNullOrEmpty(startId)
+					? grenadeConfigHolder.Default
+					: grenadeConfigHolder.GetConfig(startId);
+			}
 
 			ref var grenadeCounterComponent = ref _world.CreateSimpleEntity<GrenadeCounterUIComponent>();
 			grenadeCounterComponent.Value = _grenadeCounter;

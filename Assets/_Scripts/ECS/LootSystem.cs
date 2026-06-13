@@ -147,9 +147,26 @@ namespace ECS
 						lookerComponent.Transform = loot.SpriteLooker.transform;
 						lookerComponent.FlatBillboard = true;
 
-						var sprite = lootComponent.LootType != LootType.Weapon ?
-							mainHolder.Value.SpriteHolder.GetSpriteById(selectedLoot.LootType.ToString()) :
-							mainHolder.Value.GunConfigHolder.GetConfig(selectedLoot.Id).Preview;
+						Sprite sprite;
+						switch (lootComponent.LootType)
+						{
+							case LootType.Weapon:
+								sprite = mainHolder.Value.GunConfigHolder.GetConfig(selectedLoot.Id).Preview;
+								break;
+							case LootType.Grenade:
+								var grenadeCfg = mainHolder.Value.GrenadeConfigHolder != null
+									? (string.IsNullOrEmpty(selectedLoot.Id)
+										? mainHolder.Value.GrenadeConfigHolder.Default
+										: mainHolder.Value.GrenadeConfigHolder.GetConfig(selectedLoot.Id))
+									: null;
+								sprite = grenadeCfg != null && grenadeCfg.Preview != null
+									? grenadeCfg.Preview
+									: mainHolder.Value.SpriteHolder.GetSpriteById(selectedLoot.LootType.ToString());
+								break;
+							default:
+								sprite = mainHolder.Value.SpriteHolder.GetSpriteById(selectedLoot.LootType.ToString());
+								break;
+						}
 
 						loot.SetSprite(sprite);
 					}

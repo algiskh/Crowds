@@ -571,6 +571,8 @@ public struct GrenadeStateComponent
 	public int Count;
 	public bool IsCharging;
 	public float ChargeTime;
+	// Конфиг текущего типа гранаты (задаётся при подборе лута; см. GrenadeConfig).
+	public GrenadeConfig CurrentConfig;
 }
 
 /// <summary>
@@ -617,6 +619,8 @@ public struct GrenadeProjectileComponent
 	public float MinDamage;
 	public float FuseDelay;
 	public string EffectId;
+	// сопровождающий эффект-трейл (ребёнок гранаты); при взрыве возвращается в пул эффектов.
+	public SceneEffect TrailEffect;
 }
 
 /// <summary>

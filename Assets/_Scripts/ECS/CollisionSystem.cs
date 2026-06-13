@@ -177,6 +177,15 @@ namespace ECS
 							break;
 						case LootType.Grenade:
 							ref var grenadeState = ref world.GetAsSingleton<GrenadeStateComponent>();
+							var grenadeHolder = mainHolder.Value.GrenadeConfigHolder;
+							if (grenadeHolder != null)
+							{
+								var pickedConfig = string.IsNullOrEmpty(loot.Id)
+									? grenadeHolder.Default
+									: grenadeHolder.GetConfig(loot.Id);
+								if (pickedConfig != null)
+									grenadeState.CurrentConfig = pickedConfig;
+							}
 							grenadeState.Count += loot.Count;
 							world.CreateSimpleEntity<UpdateGrenadeViewRequestComponent>();
 							break;

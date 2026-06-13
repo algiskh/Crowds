@@ -50,6 +50,28 @@ public static class Utils
 		stack.Push(effect);
 	}
 
+	/// <summary>
+	/// Достаёт эффект из пула по конфигу (или инстанцирует новый). Зеркало приватного
+	/// SpawnEffect в EffectsSystem — для систем, которым нужен прямой контроль над
+	/// временем жизни эффекта (например, сопровождающий гранату трейл).
+	/// </summary>
+	public static SceneEffect SpawnFromPool(this EffectPoolComponent pool, FxWrapper config)
+	{
+		if (config == null || config.Prefab == null) return null;
+
+		SceneEffect effect;
+		if (pool.Pools != null && pool.Pools.TryGetValue(config.Id, out var stack) && stack.Count > 0)
+		{
+			effect = stack.Pop();
+		}
+		else
+		{
+			effect = UnityEngine.Object.Instantiate(config.Prefab, pool.Parent);
+			effect.Initialize(config.Id);
+		}
+		return effect;
+	}
+
 	public static Vector3 GetForwardPosition(this Transform original, float range)
 	{
 		return original.position + original.forward * range;
