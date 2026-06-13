@@ -15,6 +15,7 @@ public class MainHolder : ScriptableObject
 	[SerializeField,BoxGroup("Prefabs")] private Mob _prefab;
 	[SerializeField, BoxGroup("Prefabs")] private Loot _lootPrefab;
 	[SerializeField, BoxGroup("Prefabs")] private Bullet _bulletPrefab;
+	[SerializeField, BoxGroup("Prefabs")] private Grenade _grenadePrefab;
 
 	[SerializeField, BoxGroup("TimerPresets")] private float _spawnCooldown = 5f;
 	[SerializeField, BoxGroup("TimerPresets")] private float _pathRecalculationInterval = 0.5f;
@@ -49,6 +50,7 @@ public class MainHolder : ScriptableObject
 	public Mob Prefab => _prefab;
 	public Loot LootPrefab => _lootPrefab;
 	public Bullet BulletPrefab => _bulletPrefab;
+	public Grenade GrenadePrefab => _grenadePrefab;
 	public float SpawnCooldown => _spawnCooldown;
 	public float PathRecalculationInterval => _pathRecalculationInterval;
 	public float UtilizationTimer => _utilizationTimer;

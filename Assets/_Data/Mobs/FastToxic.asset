@@ -32,6 +32,10 @@ MonoBehaviour:
     Id: Shotgun
     Count: 1
     Chance: 0.02
+  - LootType: 3
+    Id: Grenade
+    Count: 1
+    Chance: 0.009
   _targetType: 1
   _attackModifiers:
   - rid: 2646365703343439942

@@ -21,3 +21,5 @@ MonoBehaviour:
     Sprite: {fileID: -2081245629, guid: 132358e9bf26b60458b731bf001e31db, type: 3}
   - Id: Speed
     Sprite: {fileID: -1273248914, guid: 05e0567213a58c840a3ea79a4409bdfd, type: 3}
+  - Id: Grenade
+    Sprite: {fileID: 1611833165, guid: 07dd7f595b7594a41846f9fc14a301fe, type: 3}

@@ -4,5 +4,6 @@ public enum LootType
 {
     Ammo,
     Health,
-	Weapon
+	Weapon,
+	Grenade
 }

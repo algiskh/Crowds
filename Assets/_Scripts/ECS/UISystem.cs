@@ -82,6 +82,16 @@ namespace ECS
 				playerStats.Value.SetFragCount(fragCount.Value);
 			}
 
+			var grenadeUpdateFilter = world.Filter<UpdateGrenadeViewRequestComponent>()
+				.End();
+			if (grenadeUpdateFilter.GetEntitiesCount() > 0)
+			{
+				ref var grenadeState = ref world.GetAsSingleton<GrenadeStateComponent>();
+				ref var grenadeCounter = ref world.GetAsSingleton<GrenadeCounterUIComponent>();
+				if (grenadeCounter.Value != null)
+					grenadeCounter.Value.SetCount(grenadeState.Count);
+			}
+
 			if (world.TryGetAsSingleton<RequestShowDifficultyComponent>(out var value))
 			{
 				difficultyView.Value.Show(value.DifficultyLevel, difficulty.DifficultyTimer);
@@ -109,6 +119,7 @@ namespace ECS
 			world.DeleteAllWith<RequestOpenWindowComponent>();
 			world.DeleteAllWith<UpdateHealthViewRequestComponent>();
 			world.DeleteAllWith<RequestUpdateFragCountComponent>();
+			world.DeleteAllWith<UpdateGrenadeViewRequestComponent>();
 			world.DeleteAllWith<RequestShowDifficultyComponent>();
 			world.DeleteAllWith<RequestHideDifficultyComponent>();
 		}

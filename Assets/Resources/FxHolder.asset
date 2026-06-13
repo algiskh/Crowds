@@ -17,27 +17,39 @@ MonoBehaviour:
     Prefab: {fileID: 7970544682367293265, guid: b1fbcfd566c42d849b01d8db0b329ea3, type: 3}
     HasDuration: 1
     Duration: 1
+    IsChild: 0
   - Id: collect
     Prefab: {fileID: 7970544682367293265, guid: 4ee4c35a51d4cd14bbaca95d83d125dd, type: 3}
     HasDuration: 1
     Duration: 1
+    IsChild: 0
   - Id: blood
     Prefab: {fileID: 7970544682367293265, guid: 47147e3b89d723e4bb38a689e0eb8f54, type: 3}
     HasDuration: 1
     Duration: 1
+    IsChild: 0
   - Id: playerHit
     Prefab: {fileID: 7970544682367293265, guid: ca6104c49abb81941a19bc22d2cff9af, type: 3}
     HasDuration: 1
     Duration: 1
+    IsChild: 0
   - Id: collectHealth
     Prefab: {fileID: 7970544682367293265, guid: f049739013666e441a20aac1da51c077, type: 3}
     HasDuration: 1
     Duration: 1
+    IsChild: 0
   - Id: melee1
     Prefab: {fileID: 7970544682367293265, guid: c91dc444c76d55b4693e6cb9f0a1177b, type: 3}
     HasDuration: 1
     Duration: 1
+    IsChild: 0
   - Id: toxicDamage
     Prefab: {fileID: 7970544682367293265, guid: bd52e663f5e986e4aaf3e6879fc80d84, type: 3}
     HasDuration: 0
     Duration: 0
+    IsChild: 0
+  - Id: explosion
+    Prefab: {fileID: 7970544682367293265, guid: cf2c9cb78f4bbbc42b2cda95cb110d4c, type: 3}
+    HasDuration: 1
+    Duration: 1
+    IsChild: 0

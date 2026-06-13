@@ -469,6 +469,7 @@ public struct InputActionsComponent
 	public InputAction FireAction;
 	public InputAction MeleeAction;
 	public InputAction ReloadAction;
+	public InputAction ThrowAction;
 }
 
 public struct RequestReloadComponent
@@ -559,3 +560,84 @@ public struct RequestMeleeComponent
 	public MeleeConfig Config;
 	public float Rotation;
 }
+
+#region Grenade
+/// <summary>
+/// Singleton: текущее число гранат у игрока + состояние зарядки броска.
+/// Зарядка копится, пока зажат Throw; на отпускании рассчитывается дальность.
+/// </summary>
+public struct GrenadeStateComponent
+{
+	public int Count;
+	public bool IsCharging;
+	public float ChargeTime;
+}
+
+/// <summary>
+/// Singleton-ссылка на UI-вью счётчика гранат.
+/// </summary>
+public struct GrenadeCounterUIComponent
+{
+	public GrenadeCounter Value;
+}
+
+/// <summary>
+/// Singleton-ссылка на визуализатор точки приземления броска.
+/// </summary>
+public struct GrenadeAimVisualizerComponent
+{
+	public GrenadeAimVisualizer Value;
+}
+
+/// <summary>
+/// Singleton: пул брошенных гранат-снарядов.
+/// </summary>
+public struct GrenadePoolComponent
+{
+	public Stack<Grenade> Value;
+	public Transform Parent;
+}
+
+/// <summary>
+/// Летящая граната. Движется по параболической дуге от Start к Target;
+/// при приземлении (Elapsed >= FlightTime) порождает RequestExplosionComponent
+/// и возвращается в пул. Параметры взрыва несёт сама — независимо от конфига.
+/// </summary>
+public struct GrenadeProjectileComponent
+{
+	public Grenade Value;
+	public Vector3 Start;
+	public Vector3 Target;
+	public float Elapsed;
+	public float FlightTime;
+	public float ArcHeight;
+	// параметры взрыва, передаваемые при приземлении
+	public float Radius;
+	public float MaxDamage;
+	public float MinDamage;
+	public float FuseDelay;
+	public string EffectId;
+}
+
+/// <summary>
+/// Tag-request: обновить отображение счётчика гранат в UISystem.
+/// </summary>
+public struct UpdateGrenadeViewRequestComponent
+{
+}
+
+/// <summary>
+/// Request: устроить взрыв по требованию в заданной точке.
+/// Delay — фитиль (сек): пока > 0, взрыв откладывается. Урон линейно
+/// падает от MaxDamage (центр) до MinDamage (край радиуса).
+/// </summary>
+public struct RequestExplosionComponent
+{
+	public Vector3 Position;
+	public float Radius;
+	public float MaxDamage;
+	public float MinDamage;
+	public float Delay;
+	public string EffectId;
+}
+#endregion

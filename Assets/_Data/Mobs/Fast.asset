@@ -44,4 +44,12 @@ MonoBehaviour:
     Id: MachineGun
     Count: 1
     Chance: 0.005
+  - LootType: 3
+    Id: Greande
+    Count: 1
+    Chance: 0.005
   _targetType: 1
+  _attackModifiers: []
+  references:
+    version: 2
+    RefIds: []

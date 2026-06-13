@@ -16,6 +16,8 @@ namespace ECS
 			inputActions.FireAction = inputActions.ActionMap.FindAction("Attack", throwIfNotFound: true);
 			inputActions.MeleeAction = inputActions.ActionMap.FindAction("Melee", throwIfNotFound: true);
 			inputActions.ReloadAction = inputActions.ActionMap.FindAction("Reload", throwIfNotFound: true);
+			// Throw может отсутствовать, если .inputactions ещё не переимпортирован — не валим игру.
+			inputActions.ThrowAction = inputActions.ActionMap.FindAction("Throw", throwIfNotFound: false);
 		}
 
 		public void Run(IEcsSystems systems)

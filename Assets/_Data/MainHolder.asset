@@ -20,6 +20,7 @@ MonoBehaviour:
   _prefab: {fileID: 4635986969134950211, guid: d3e264603209c9c4d9bc3e4eecaa0243, type: 3}
   _lootPrefab: {fileID: 8950431889810804258, guid: d02615f5b7f7e5943a44c8d98bc5ca71, type: 3}
   _bulletPrefab: {fileID: 3834319163352093731, guid: 4ccad587412ec194e812f98752fa1afb, type: 3}
+  _grenadePrefab: {fileID: -5410458612479281204, guid: 3b2005efbc9db7c42abfde5c39092803, type: 3}
   _spawnCooldown: 2
   _pathRecalculationInterval: 0.5
   _utilizationTimer: 5
@@ -35,3 +36,6 @@ MonoBehaviour:
   _gunConfigHolder: {fileID: 11400000, guid: ec2dc9cc0e8b712428c4a63f67295746, type: 2}
   _soundHolder: {fileID: 11400000, guid: 729264cdb4e2fb743802d88da75cc8e0, type: 2}
   _defaultCollisionRadius: 0.5
+  _mobLayerMask:
+    serializedVersion: 2
+    m_Bits: 63

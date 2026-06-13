@@ -25,6 +25,7 @@ namespace ECS
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _effectParent;
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _decalParent;
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _lootParent;
+		[SerializeField, BoxGroup("Parents")] private Transform _grenadeParent;
 		[Space]
 		[Title("����� ������ �����")]
 		[SerializeField, Required, ListDrawerSettings, BoxGroup("Spawn Points")]
@@ -37,6 +38,7 @@ namespace ECS
 		[SerializeField, Required, BoxGroup("UI")] private FailWindow _failWindow;
 		[SerializeField, Required, BoxGroup("UI")] private WinWindow _winWindow;
 		[SerializeField, Required, BoxGroup("UI")] private DifficultyTimerView _difficultyTimerView;
+		[SerializeField, Required, BoxGroup("UI")] private GrenadeCounter _grenadeCounter;
 
 		[Title("Input")]
 		[SerializeField, Required, BoxGroup("Input")] private InputActionReference _aimAction;
@@ -242,6 +244,27 @@ namespace ECS
 
 			_weaponView.SetWeaponView(muzzle.GunConfig, muzzle.AmmoCount);
 
+			// --- Grenades ---
+			ref var grenadeState = ref _world.CreateSimpleEntity<GrenadeStateComponent>();
+			grenadeState.Count = _mainHolder.PlayerConfig.StartGrenades;
+			grenadeState.IsCharging = false;
+			grenadeState.ChargeTime = 0f;
+
+			ref var grenadeCounterComponent = ref _world.CreateSimpleEntity<GrenadeCounterUIComponent>();
+			grenadeCounterComponent.Value = _grenadeCounter;
+			if (_grenadeCounter != null)
+				_grenadeCounter.SetCount(grenadeState.Count);
+
+			ref var grenadePool = ref _world.CreateSimpleEntity<GrenadePoolComponent>();
+			grenadePool.Value = new();
+			grenadePool.Parent = _grenadeParent;
+
+			var grenadeAimVisualizer = FindFirstObjectByType<GrenadeAimVisualizer>();
+			ref var grenadeAimComponent = ref _world.CreateSimpleEntity<GrenadeAimVisualizerComponent>();
+			grenadeAimComponent.Value = grenadeAimVisualizer;
+			if (grenadeAimVisualizer != null)
+				grenadeAimVisualizer.Hide();
+
 
 			// --- ������� LookAtCursor ---
 			ref var lookAtCursor = ref _world.CreateSimpleEntity<LookAtCursor>();
@@ -300,6 +323,8 @@ namespace ECS
 				.Add(new BulletOverlapSystem())
 				// Collision and Damage Systems
 				.Add(new CollisionSystem())
+				.Add(new GrenadeProjectileSystem())
+				.Add(new ExplosionSystem())
 				.Add(new DamageSystem())
 				// Other spawning systems
 				.Add(new LootSystem())
@@ -307,6 +332,7 @@ namespace ECS
 				.Add(new DecalSystem())
 				// Player systems
 				.Add(new InputSystem())
+				.Add(new GrenadeThrowSystem())
 				.Add(new PlayerSystem())
 				.Add(new PlayerMovementSystem())
 				.Add(new CheckEndSystem())

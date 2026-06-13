@@ -175,6 +175,11 @@ namespace ECS
 								healthComponent.CurrentHealth = healthComponent.MaxHealth;
 							world.CreateSimpleEntity<UpdateHealthViewRequestComponent>();
 							break;
+						case LootType.Grenade:
+							ref var grenadeState = ref world.GetAsSingleton<GrenadeStateComponent>();
+							grenadeState.Count += loot.Count;
+							world.CreateSimpleEntity<UpdateGrenadeViewRequestComponent>();
+							break;
 					}
 				}
 			}
