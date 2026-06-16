@@ -315,6 +315,7 @@ namespace ECS
 				.Add(new MobSpawnSystem())
 				// Move and navigation systems
 				.Add(new MobPathfindingSystem())
+				.Add(new GrenadierSystem())
 				.Add(new MoveSystem())
 				.Add(new FollowSystem())
 				.Add(new LookAtCameraSystem())

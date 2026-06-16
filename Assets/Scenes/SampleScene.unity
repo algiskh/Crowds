@@ -1026,6 +1026,13 @@ MonoBehaviour:
       Cooldown: 15
     - DifficultyLevel: 3
       Cooldown: 7
+  - _mobId: Grenadier
+    _weight: 1
+    _spawnPresets:
+    - DifficultyLevel: 1
+      Cooldown: 15
+    - DifficultyLevel: 2
+      Cooldown: 15
 --- !u!1001 &293850002
 PrefabInstance:
   m_ObjectHideFlags: 0

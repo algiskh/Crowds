@@ -110,7 +110,7 @@ namespace ECS
 					if (selectedLoot == null)
 						selectedLoot = possibleLoots[possibleLoots.Length - 1];
 				}
-				else
+				else if (possibleLoots != null && possibleLoots.Length > 0)
 				{
 					selectedLoot = possibleLoots[0];
 				}

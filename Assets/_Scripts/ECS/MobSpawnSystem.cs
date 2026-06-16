@@ -29,6 +29,7 @@ namespace ECS
 			var colliderComponentPool = world.GetPool<ColliderComponent>();
 			var pathRecalculationPool = world.GetPool<PathRecalculation>();
 			var lookerPool = world.GetPool<LookerAtCamera>();
+			var grenadierPool = world.GetPool<GrenadierComponent>();
 
 			float recalcInterval = mainHolder.PathRecalculationInterval;
 			float now = Time.time;
@@ -83,6 +84,16 @@ namespace ECS
 
 				looker.Transform = mob.ValueBar != null ? mob.ValueBar.Transform : null;
 				looker.FlatBillboard = true;
+
+				// Моб-гренадёр: тот же моб + поведение броска гранат (GrenadierSystem).
+				if (mobConfig is GrenadierMobConfig grenadierConfig)
+				{
+					ref var grenadier = ref grenadierPool.Add(mobEntity);
+					grenadier.Config = grenadierConfig;
+					grenadier.State = GrenadierState.Chase;
+					grenadier.Timer = 0f;
+					grenadier.HasFleeTarget = false;
+				}
 
 				InitializeMobGameObject(mob, mobConfig, playerPosition);
 				world.DelEntity(spawnEntity);

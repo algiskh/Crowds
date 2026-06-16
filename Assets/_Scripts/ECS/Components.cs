@@ -619,6 +619,9 @@ public struct GrenadeProjectileComponent
 	public float MinDamage;
 	public float FuseDelay;
 	public string EffectId;
+	// Доля урона по мобам / по игроку (0..1). Взрыв задевает всех в радиусе, scale масштабирует урон.
+	public float MobDamageScale;
+	public float PlayerDamageScale;
 	// сопровождающий эффект-трейл (ребёнок гранаты); при взрыве возвращается в пул эффектов.
 	public SceneEffect TrailEffect;
 }
@@ -643,5 +646,36 @@ public struct RequestExplosionComponent
 	public float MinDamage;
 	public float Delay;
 	public string EffectId;
+	// Доля урона по мобам / по игроку (0..1). Взрыв бьёт всех в радиусе; 0 = эту цель не задевает.
+	public float MobDamageScale;
+	public float PlayerDamageScale;
+}
+
+/// <summary>
+/// Состояние моба-гренадёра. Chase — подходит к игроку; Throw — стоит и кидает гранату
+/// (анимация "throw"); Cooldown — стоит на перезарядке (анимация "throw_cooldown");
+/// Flee — отходит на свободное место, когда игрок ближе минимальной дистанции.
+/// </summary>
+public enum GrenadierState : byte
+{
+	Chase,
+	Throw,
+	Cooldown,
+	Flee
+}
+
+/// <summary>
+/// Per-entity: моб, кидающий гранаты. Висит поверх обычного MobComponent.
+/// Дистанции/кулдаун/тип гранаты берутся из GrenadierMobConfig.
+/// </summary>
+public struct GrenadierComponent
+{
+	public GrenadierMobConfig Config;
+	public GrenadierState State;
+	// В Throw — отсчёт замаха до вылета гранаты; в Cooldown — отсчёт перезарядки.
+	public float Timer;
+	// Точка отхода (на NavMesh), выбранная в состоянии Flee.
+	public Vector3 FleeTarget;
+	public bool HasFleeTarget;
 }
 #endregion
