@@ -36,6 +36,10 @@ MonoBehaviour:
     Id: Grenade
     Count: 1
     Chance: 0.009
+  - LootType: 4
+    Id: speedup
+    Count: 1
+    Chance: 0.01
   _targetType: 1
   _attackModifiers:
   - rid: 2646365703343439942

@@ -552,6 +552,28 @@ public struct ApplyModifierResponseComponent
 	public Modifier Modifier;
 }
 
+#region Bonus
+// Запрос на применение бонуса игроку (создаётся при подборе Bonus-лута).
+public struct RequestApplyBonusComponent
+{
+	public string ConfigId;
+}
+
+// Один активный бонус игрока: его модификатор + изначальная длительность (для нормализации бара/таймера).
+public struct ActiveBonus
+{
+	public BonusType Type;
+	public Modifier Modifier;
+	public float TotalDuration;
+}
+
+// Singleton: список активных бонусов игрока. BonusSystem прунит протухшие и гонит UI.
+public struct ActiveBonusesComponent
+{
+	public List<ActiveBonus> Value;
+}
+#endregion
+
 public struct RequestMeleeComponent
 {
 	public int SourceEntity;

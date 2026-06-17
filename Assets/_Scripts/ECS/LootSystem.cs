@@ -163,6 +163,16 @@ namespace ECS
 									? grenadeCfg.Preview
 									: mainHolder.Value.SpriteHolder.GetSpriteById(selectedLoot.LootType.ToString());
 								break;
+							case LootType.Bonus:
+								var bonusCfg = mainHolder.Value.BonusConfigHolder != null
+									? (string.IsNullOrEmpty(selectedLoot.Id)
+										? mainHolder.Value.BonusConfigHolder.Default
+										: mainHolder.Value.BonusConfigHolder.GetConfig(selectedLoot.Id))
+									: null;
+								sprite = bonusCfg != null && bonusCfg.Preview != null
+									? bonusCfg.Preview
+									: mainHolder.Value.SpriteHolder.GetSpriteById(selectedLoot.LootType.ToString());
+								break;
 							default:
 								sprite = mainHolder.Value.SpriteHolder.GetSpriteById(selectedLoot.LootType.ToString());
 								break;

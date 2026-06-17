@@ -32,6 +32,10 @@ MonoBehaviour:
     Id: Shotgun
     Count: 1
     Chance: 0.02
+  - LootType: 4
+    Id: shield
+    Count: 1
+    Chance: 0.01
   _targetType: 1
   _attackModifiers:
   - rid: 2646365703343439942

@@ -13,6 +13,7 @@ public static class ModifierConstants
 	public static string SpeedLowHealthDebuff = "SpeedLowHealthDebuff";
 	public static string SpeedShotDebuff = "SpeedShotDebuff";
 	public static string SpeedReloadDebuff = "SpeedReloadDebuff";
+	public static string SpeedBonusBuff = "SpeedBoostBuff";
 
 	public static string DamageMeleeBleeding = "DamageMeleeBleeding";
 	public static string DamageMeleeBurning = "DamageMeleeBurning";

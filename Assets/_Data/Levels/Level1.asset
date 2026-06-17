@@ -138,6 +138,18 @@ MonoBehaviour:
     InterSpawnCooldown: 0.25
     EndConditions: []
     ShowTimer: 1
+  - DifficultyLevel: 4
+    DifficultyTimer: 30
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.3
+    EndConditions: []
+    ShowTimer: 1
+  - DifficultyLevel: 5
+    DifficultyTimer: 60
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.24
+    EndConditions: []
+    ShowTimer: 1
   - DifficultyLevel: 13
     DifficultyTimer: 0
     SpeedMultiplier: 1

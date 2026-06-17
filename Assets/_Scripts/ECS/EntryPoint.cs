@@ -201,6 +201,10 @@ namespace ECS
 			playerModifiers.Entity = playerEntity;
 			playerModifiers.Modifiers = new();
 			playerModifiers.Transform = _player.transform;
+
+			// --- Бонусы (speed/shield) ---
+			ref var activeBonuses = ref _world.CreateSimpleEntity<ActiveBonusesComponent>();
+			activeBonuses.Value = new List<ActiveBonus>();
 			// --- Input
 			ref var playerInput = ref _world.GetPool<PlayerInputComponent>().Add(playerEntity);
 			ref var aimInput = ref _world.GetPool<AimInputComponent>().Add(playerEntity);
@@ -335,6 +339,7 @@ namespace ECS
 				.Add(new GrenadeProjectileSystem())
 				.Add(new ExplosionSystem())
 				.Add(new DamageSystem())
+				.Add(new BonusSystem())
 				// Other spawning systems
 				.Add(new LootSystem())
 				.Add(new EffectsSystem())

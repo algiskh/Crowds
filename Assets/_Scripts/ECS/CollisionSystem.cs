@@ -189,6 +189,13 @@ namespace ECS
 							grenadeState.Count += loot.Count;
 							world.CreateSimpleEntity<UpdateGrenadeViewRequestComponent>();
 							break;
+						case LootType.Bonus:
+							if (mainHolder.Value.BonusConfigHolder != null)
+							{
+								ref var bonusRequest = ref world.CreateSimpleEntity<RequestApplyBonusComponent>();
+								bonusRequest.ConfigId = loot.Id;
+							}
+							break;
 					}
 				}
 			}

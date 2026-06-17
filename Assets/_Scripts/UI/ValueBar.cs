@@ -1,3 +1,4 @@
+using LightSide;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,11 +10,14 @@ namespace Scene.UI
 		IValueBar ApplyValue(float value);
 		IValueBar SetMaxValue(float value);
 		IValueBar SetVisible(bool visible);
+		IValueBar SetText(string text);
 	}
 
 	public class ValueBar : MonoBehaviour, IValueBar
 	{
 		[SerializeField] private Image _bar;
+		[Tooltip("Опционально: подпись на баре (например, оставшиеся секунды бонуса).")]
+		[SerializeField] private UniText _valueText;
 		[SerializeField]
 		private Gradient _gradient = new Gradient
 		{
@@ -48,6 +52,20 @@ namespace Scene.UI
 		public IValueBar SetVisible(bool visible)
 		{
 			gameObject.SetActive(visible);
+			return this;
+		}
+
+		/// <summary>Подпись на баре. Пустая строка прячет текст. No-op, если поле не назначено.</summary>
+		public IValueBar SetText(string text)
+		{
+			if (_valueText == null)
+				return this;
+
+			bool show = !string.IsNullOrEmpty(text);
+			if (_valueText.gameObject.activeSelf != show)
+				_valueText.gameObject.SetActive(show);
+			if (show)
+				_valueText.Text = text;
 			return this;
 		}
 	}

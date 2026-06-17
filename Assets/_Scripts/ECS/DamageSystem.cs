@@ -16,6 +16,7 @@ namespace ECS
 			var mobPool = world.GetPool<MobComponent>();
 			var healthPool = world.GetPool<HealthComponent>();
 			var playerPool = world.GetPool<PlayerComponent>();
+			var modifierPool = world.GetPool<ModifierOwnerComponent>();
 			List<int> entitiesWithLoot = new();
 
 			#region Handling DamageRequests
@@ -34,8 +35,14 @@ namespace ECS
 				}
 
 				ref var healthComponent = ref healthPool.Get(target);
+
+				// Активный щит-бонус режет входящий урон: ShieldModifier.Value — множитель урона (0.5 = −50%).
+				var damage = requestDamageComponent.Damage;
+				if (modifierPool.Has(target))
+					damage *= modifierPool.Get(target).GetModifier<ShieldModifier>();
+
 				// Apply damage to health
-				healthComponent.CurrentHealth -= requestDamageComponent.Damage;
+				healthComponent.CurrentHealth -= damage;
 
 				if (isPlayer)
 				{

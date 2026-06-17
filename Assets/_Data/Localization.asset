@@ -13,4 +13,8 @@ MonoBehaviour:
   m_Name: Localization
   m_EditorClassIdentifier: 
   _defaultLanguage: 0
-  _entries: []
+  _entries:
+  - Key: 
+    Text: 
+    RuText: 
+    PoText: 
