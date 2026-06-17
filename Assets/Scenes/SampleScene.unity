@@ -9385,6 +9385,42 @@ PrefabInstance:
       propertyPath: m_Name
       value: RegularSpawnPoint
       objectReference: {fileID: 0}
+    - target: {fileID: 8787021877518644017, guid: 0cd4cfe5f426d6344ad54b979564e8eb, type: 3}
+      propertyPath: _spawnConfigs.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8787021877518644017, guid: 0cd4cfe5f426d6344ad54b979564e8eb, type: 3}
+      propertyPath: _spawnConfigs.Array.data[3]._weight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8787021877518644017, guid: 0cd4cfe5f426d6344ad54b979564e8eb, type: 3}
+      propertyPath: _spawnConfigs.Array.data[2]._spawnPresets.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8787021877518644017, guid: 0cd4cfe5f426d6344ad54b979564e8eb, type: 3}
+      propertyPath: _spawnConfigs.Array.data[2]._spawnPresets.Array.data[0].Cooldown
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8787021877518644017, guid: 0cd4cfe5f426d6344ad54b979564e8eb, type: 3}
+      propertyPath: _spawnConfigs.Array.data[2]._spawnPresets.Array.data[1].Cooldown
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 8787021877518644017, guid: 0cd4cfe5f426d6344ad54b979564e8eb, type: 3}
+      propertyPath: _spawnConfigs.Array.data[2]._spawnPresets.Array.data[2].Cooldown
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8787021877518644017, guid: 0cd4cfe5f426d6344ad54b979564e8eb, type: 3}
+      propertyPath: _spawnConfigs.Array.data[2]._spawnPresets.Array.data[0].DifficultyLevel
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8787021877518644017, guid: 0cd4cfe5f426d6344ad54b979564e8eb, type: 3}
+      propertyPath: _spawnConfigs.Array.data[2]._spawnPresets.Array.data[1].DifficultyLevel
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8787021877518644017, guid: 0cd4cfe5f426d6344ad54b979564e8eb, type: 3}
+      propertyPath: _spawnConfigs.Array.data[2]._spawnPresets.Array.data[2].DifficultyLevel
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

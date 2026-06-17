@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dced01e36c0ae6043be2b813632a39ea, type: 3}
+  m_Name: GrenadeConfig
+  m_EditorClassIdentifier: Assembly-CSharp::GrenadeConfig
+  _preview: {fileID: 21300000, guid: 1e6464a50eec73c4991e2c55000f3c0f, type: 3}
+  _id: Grenade
+  _throwSpeed: 12
+  _arcHeight: 2.5
+  _fuseDelay: 0
+  _radius: 3.5
+  _maxDamage: 120
+  _minDamage: 30
+  _explosionEffectId: explosion
+  _mobDamageScale: 1
+  _playerDamageScale: 0.2
+  _trailEffectId: 

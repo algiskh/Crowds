@@ -74,6 +74,17 @@ public struct MobComponent
 	public float Cooldown;
 }
 
+/// <summary>
+/// Desired vs applied animation state for a mob. Gameplay systems set <see cref="Requested"/> only;
+/// AnimationSystem reconciles it to the view and pushes to the Animator only on change.
+/// </summary>
+public struct AnimationStateComponent
+{
+	public Scene.Animation.AnimationType Requested;
+	public Scene.Animation.AnimationType Current;
+	public bool HasCurrent;
+}
+
 public struct MoveComponent
 {
 	public Transform Transform;

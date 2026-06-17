@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7615251346856073143
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6221388727742549775}
+  - component: {fileID: 8787021877518644017}
+  m_Layer: 0
+  m_Name: RegularSpawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6221388727742549775
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7615251346856073143}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 14.83, y: -0.5, z: -18.99}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8787021877518644017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7615251346856073143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f05a46ce26d68a4fbfc3d4415e5d556, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _spawnConfigs:
+  - _mobId: Slow
+    _weight: 1
+    _spawnPresets:
+    - DifficultyLevel: 1
+      Cooldown: 8
+    - DifficultyLevel: 2
+      Cooldown: 7
+    - DifficultyLevel: 3
+      Cooldown: 7
+  - _mobId: Fast
+    _weight: 1
+    _spawnPresets:
+    - DifficultyLevel: 2
+      Cooldown: 15
+    - DifficultyLevel: 3
+      Cooldown: 7
+    - DifficultyLevel: 4
+      Cooldown: 5
+    - DifficultyLevel: 5
+      Cooldown: 3
+  - _mobId: Grenadier
+    _weight: 1
+    _spawnPresets:
+    - DifficultyLevel: 3
+      Cooldown: 15
+    - DifficultyLevel: 4
+      Cooldown: 2

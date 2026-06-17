@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58be33ab96b38274fbcb8910e5679e03, type: 3}
+  m_Name: GrenadierMobConfig
+  m_EditorClassIdentifier: Assembly-CSharp::GrenadierMobConfig
+  _id: Grenadier
+  _health: 75
+  _speed: 4
+  _damage: 10
+  _collisionRadius: 1
+  _hitCooldown: 0.5
+  _prefab: {fileID: 4635986969134950211, guid: c5148d1256a142c4888d79fe6cfdcc1a, type: 3}
+  _possibleLoots:
+  - LootType: 3
+    Id: Grenade
+    Count: 1
+    Chance: 0.25
+  _targetType: 0
+  _attackModifiers: []
+  _throwMaxDistance: 10
+  _throwMinDistance: 5
+  _throwCooldown: 2
+  _throwWindup: 0.5
+  _grenadeConfig: {fileID: 11400000, guid: 3aa03117484e69442b5daa9c8a7fc7ba, type: 2}
+  references:
+    version: 2
+    RefIds: []

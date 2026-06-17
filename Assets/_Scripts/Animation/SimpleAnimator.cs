@@ -1,5 +1,6 @@
 using System;
-using System.Collections;
+using System.Collections.Generic;
+using Scene.Animation;
 using UnityEngine;
 
 [Serializable]
@@ -17,38 +18,65 @@ public class SimpleAnimator : MonoBehaviour
 	[SerializeField] private Animator _animator; // TODO: Move to DI / auto-assign
 
 	[Header("Settings")]
-	[SerializeField] private string _defaultAnimationName = "idle"; // Имя стейта в Animator
+	[SerializeField] private string _defaultAnimationName = "idle"; // state name in the Animator
+
+	// Cache string->hash once per id so we don't call Animator.StringToHash on every set.
+	// (The AnimationType overload bypasses this entirely via precomputed hashes.)
+	private static readonly Dictionary<string, int> _hashCache = new();
 
 	private bool _isPaused;
-	private string _currentAnimationId;
-	private Coroutine _onCompleteRoutine;
+	private int _currentHash;
+	private bool _hasCurrent;
 
-	public bool HasActiveAnimation => !string.IsNullOrEmpty(_currentAnimationId) && !_isPaused;
+	public bool HasActiveAnimation => _hasCurrent && !_isPaused;
 
 	private void Awake()
 	{
 		if (_animator == null)
 			_animator = GetComponent<Animator>();
-	}
 
-	private void OnEnable()
-	{
+		// Off-screen mobs skip bone/transform writes. Cheap, big win for crowds.
+		// (Gameplay logic doesn't read Animator state, so CullCompletely is an option too
+		//  if profiling shows this is still hot.)
+		if (_animator != null)
+			_animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
 	}
 
 	private void OnDisable()
 	{
-		_currentAnimationId = null;
+		_hasCurrent = false;
 	}
 
 	public void SetDefaultAnimation()
 	{
 		if (!string.IsNullOrEmpty(_defaultAnimationName))
-		{
 			SetAnimation(_defaultAnimationName);
-		}
 	}
 
-	public void SetAnimation(string id, Action onComplete = null, float crossFadeTime = 0.1f)
+	/// <summary>
+	/// Plays an animation by its <see cref="AnimationType"/> using a precomputed hash (no string work).
+	/// Preferred path for mobs driven by the ECS reconciliation loop.
+	/// </summary>
+	public void SetAnimation(AnimationType type, float crossFadeTime = 0.1f)
+	{
+		PlayHash(type.ToHash(), crossFadeTime);
+	}
+
+	/// <summary>
+	/// Plays an animation by its Animator state name. Kept for callers that still use string ids.
+	/// </summary>
+	public void SetAnimation(string id, float crossFadeTime = 0.1f)
+	{
+		if (string.IsNullOrEmpty(id))
+		{
+			Debug.LogWarning($"[{nameof(SimpleAnimator)}] Empty animation id on {name}");
+			return;
+		}
+
+		PlayHash(GetHash(id), crossFadeTime);
+	}
+
+	private void PlayHash(int stateHash, float crossFadeTime)
 	{
 		if (_animator == null)
 		{
@@ -56,56 +84,29 @@ public class SimpleAnimator : MonoBehaviour
 			return;
 		}
 
-		if (string.IsNullOrEmpty(id))
-		{
-			Debug.LogWarning($"[{nameof(SimpleAnimator)}] Empty animation id on {name}");
+		// Already playing this state and not paused вЂ” nothing to do. Avoids a redundant
+		// CrossFade restart when callers re-request the same animation every frame.
+		if (_hasCurrent && stateHash == _currentHash && !_isPaused)
 			return;
-		}
 
-		_currentAnimationId = id;
+		_currentHash = stateHash;
+		_hasCurrent = true;
 		_isPaused = false;
 		_animator.speed = 1f;
 
-		int stateHash = Animator.StringToHash(id);
-
-		// Запускаем стейт. Считаем, что стейт на 0-м слое.
 		_animator.CrossFade(stateHash, crossFadeTime, 0);
-
-		// Если раньше была корутина onComplete — гасим её
-		if (_onCompleteRoutine != null)
-		{
-			StopCoroutine(_onCompleteRoutine);
-			_onCompleteRoutine = null;
-		}
-
-		if (onComplete != null)
-		{
-			_onCompleteRoutine = StartCoroutine(WaitForAnimationEnd(stateHash, onComplete));
-		}
-
-		Debug.Log($"SetAnimation '{id}' on {GetHashCode()}");
 	}
 
 	/// <summary>
-	/// Остановить анимацию (сбросить текущий id и отменить onComplete).
+	/// Stops the current animation (clears the current state).
 	/// </summary>
 	public void Stop()
 	{
-		_currentAnimationId = null;
-
-		if (_onCompleteRoutine != null)
-		{
-			StopCoroutine(_onCompleteRoutine);
-			_onCompleteRoutine = null;
-		}
-
-		// Можно либо оставить текущий кадр,
-		// либо вернуться к дефолтному стейту:
-		// SetDefaultAnimation();
+		_hasCurrent = false;
 	}
 
 	/// <summary>
-	/// Поставить анимацию на паузу.
+	/// Pauses the animation in place.
 	/// </summary>
 	public void Pause()
 	{
@@ -116,7 +117,7 @@ public class SimpleAnimator : MonoBehaviour
 	}
 
 	/// <summary>
-	/// Снять паузу и продолжить проигрывание текущего стейта.
+	/// Resumes playback at normal speed.
 	/// </summary>
 	public void Play()
 	{
@@ -126,48 +127,14 @@ public class SimpleAnimator : MonoBehaviour
 			_animator.speed = 1f;
 	}
 
-	private IEnumerator WaitForAnimationEnd(int stateHash, Action onComplete)
+	private static int GetHash(string id)
 	{
-		// Ждём, пока Animator реально войдёт в нужный стейт
-		int layer = 0;
-		AnimatorStateInfo info = _animator.GetCurrentAnimatorStateInfo(layer);
-
-		// Если кроссфейд длинный или стейты накладываются — может занять пару кадров
-		while (info.shortNameHash != stateHash)
+		if (!_hashCache.TryGetValue(id, out var hash))
 		{
-			yield return null;
-
-			if (_animator == null)
-				yield break;
-
-			info = _animator.GetCurrentAnimatorStateInfo(layer);
+			hash = Animator.StringToHash(id);
+			_hashCache[id] = hash;
 		}
 
-		// Если стейт зациклен — ждём одну его длину и вызываем onComplete
-		if (info.loop)
-		{
-			yield return new WaitForSeconds(info.length);
-		}
-		else
-		{
-			// Для нелупящихся — ждём, пока normalizedTime >= 1
-			while (info.shortNameHash == stateHash && info.normalizedTime < 1f)
-			{
-				yield return null;
-
-				if (_animator == null)
-					yield break;
-
-				info = _animator.GetCurrentAnimatorStateInfo(layer);
-			}
-		}
-
-		_onCompleteRoutine = null;
-		onComplete?.Invoke();
-	}
-
-	private void OnDestroy()
-	{
-		Stop();
+		return hash;
 	}
 }
