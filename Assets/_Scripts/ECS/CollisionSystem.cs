@@ -77,11 +77,9 @@ namespace ECS
 					damage.Damage = bulletComponent.Damage;
 
 					ref var move = ref movePool.Get(bulletEntity);
+					var hitMobConfig = mobPool.Get(mobEntity).Config;
 
-					ref var bloodDecal = ref world.CreateSimpleEntity<RequestDecalComponent>();
-					bloodDecal.Position = bulletTransform.position;
-					bloodDecal.Id = "Blood";
-					bloodDecal.Direction = move.Direction;
+					world.RequestDamageDecal(hitMobConfig, DamageSourceType.Bullet, bulletTransform.position, move.Direction);
 
 					ref var bloodEffect = ref world.CreateSimpleEntity<RequestEffectComponent>();
 					bloodEffect.EffectId = "blood";

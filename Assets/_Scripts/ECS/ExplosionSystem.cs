@@ -82,9 +82,14 @@ namespace ECS
 						float t = Mathf.Clamp01(dist / request.Radius);
 						float damage = Mathf.Lerp(request.MaxDamage, request.MinDamage, t) * request.MobDamageScale;
 
+						var mobPos = mob.Value.transform.position;
+						var mobConfig = mob.Config;
+
 						ref var damageRequest = ref world.CreateSimpleEntity<RequestDamageComponent>();
 						damageRequest.TargetEntity = mobEntity;
 						damageRequest.Damage = damage;
+
+						world.RequestDamageDecal(mobConfig, DamageSourceType.Explosion, mobPos, mobPos - request.Position);
 					}
 				}
 

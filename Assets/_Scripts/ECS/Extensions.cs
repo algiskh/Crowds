@@ -1,4 +1,5 @@
 using Leopotam.EcsLite;
+using UnityEngine;
 
 namespace ECS
 {
@@ -128,6 +129,30 @@ namespace ECS
 			var pool = world.GetPool<T>();
 			var entity = world.NewEntity();
 			return ref pool.Add(entity);
+		}
+
+		/// <summary>
+		/// Запрашивает декаль для попадания по мобу. Id выбирается из пула в <see cref="MobConfig"/>
+		/// по источнику урона; если для моба/источника пул не настроен — используется <paramref name="fallbackId"/>.
+		/// Ничего не делает, если итоговый id пуст.
+		/// </summary>
+		public static void RequestDamageDecal(this EcsWorld world, MobConfig config, DamageSourceType source,
+			Vector3 position, Vector3 direction, string fallbackId = "Blood")
+		{
+			string id = config != null ? config.GetDecalId(source) : null;
+			if (string.IsNullOrEmpty(id))
+				id = fallbackId;
+			if (string.IsNullOrEmpty(id))
+				return;
+
+			// LookRotation падает на нулевом векторе — подстраховка.
+			if (direction == Vector3.zero)
+				direction = Vector3.forward;
+
+			ref var decal = ref world.CreateSimpleEntity<RequestDecalComponent>();
+			decal.Position = position;
+			decal.Id = id;
+			decal.Direction = direction;
 		}
 	}
 }

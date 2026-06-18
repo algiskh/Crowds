@@ -3,6 +3,23 @@ using Sirenix.Serialization;
 using System;
 using UnityEngine;
 
+[Serializable]
+public class DamageDecalSet
+{
+	[SerializeField] private DamageSourceType _source;
+	[SerializeField] private string[] _decalIds;
+
+	public DamageSourceType Source => _source;
+
+	/// <summary>Случайный id декали из пула, или null если пул пуст.</summary>
+	public string GetRandomId()
+	{
+		if (_decalIds == null || _decalIds.Length == 0)
+			return null;
+		return _decalIds[UnityEngine.Random.Range(0, _decalIds.Length)];
+	}
+}
+
 [CreateAssetMenu(fileName = "MobConfig", menuName = "Scriptable Objects/MobConfig", order = 1)]
 public class MobConfig: ScriptableObject
 {
@@ -17,6 +34,8 @@ public class MobConfig: ScriptableObject
 	[SerializeField] private PossibleLoot[] _possibleLoots;
 	[SerializeField] private TargetType _targetType;
 	[SerializeReference, OdinSerialize] private Modifier[] _attackModifiers;
+	// Пулы декалей по источнику урона (пуля/ближний бой/взрыв). Пусто → fallback на общий "Blood".
+	[SerializeField] private DamageDecalSet[] _damageDecals;
 	public string Id => _id;
 	public float Health => _health;
 	public float Speed => _speed;
@@ -27,4 +46,20 @@ public class MobConfig: ScriptableObject
 	public float Damage => _damage;
 	public TargetType TargetType => _targetType;
 	public Modifier[] AttackModifiers => _attackModifiers;
+
+	/// <summary>
+	/// Случайный id декали для данного источника урона, или null если для источника
+	/// пул не настроен (вызывающий код применит fallback).
+	/// </summary>
+	public string GetDecalId(DamageSourceType source)
+	{
+		if (_damageDecals == null)
+			return null;
+		for (int i = 0; i < _damageDecals.Length; i++)
+		{
+			if (_damageDecals[i].Source == source)
+				return _damageDecals[i].GetRandomId();
+		}
+		return null;
+	}
 }

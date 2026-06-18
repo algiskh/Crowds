@@ -15,6 +15,7 @@ namespace ECS
 			var healthPool = world.GetPool<HealthComponent>();
 			var moveComponentPool = world.GetPool<MoveComponent>();
 			var modifierPool = world.GetPool<ModifierOwnerComponent>();
+			var mobPool = world.GetPool<MobComponent>();
 
 			var damageRequestPool = world.GetPool<RequestDamageComponent>();
 
@@ -56,6 +57,14 @@ namespace ECS
 							TargetEntity = targetEntity,
 							Damage = spawnRequest.Config.Damage
 						};
+
+						// Декаль только для мобов (источник урона — ближний бой).
+						if (mobPool.Has(targetEntity))
+						{
+							ref var mob = ref mobPool.Get(targetEntity);
+							var mobPos = mob.Value.transform.position;
+							world.RequestDamageDecal(mob.Config, DamageSourceType.Melee, mobPos, mobPos - spawnRequest.Position);
+						}
 
 						if (modifierPool.Has(targetEntity))
 						{
