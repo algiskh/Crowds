@@ -91,9 +91,15 @@ namespace ECS
 			#endregion
 
 			#region PlayerVsMob
+			var meleeAttackerPool = world.GetPool<MeleeAttackerComponent>();
 			var mobFilter = world.Filter<MobComponent>().End();
 			foreach (var mobEntity in mobFilter)
 			{
+				// Мобы ближнего боя (MeleeAttackerSystem) наносят урон телеграфированной атакой,
+				// а не контактом — иначе урон по игроку удвоился бы.
+				if (meleeAttackerPool.Has(mobEntity))
+					continue;
+
 				ref var mob = ref mobPool.Get(mobEntity);
 				var distance = mob.Value.transform.position.DistanceTo(playerPos);
 				if (distance < mob.Config.HitRadius && mob.Cooldown <= 0)

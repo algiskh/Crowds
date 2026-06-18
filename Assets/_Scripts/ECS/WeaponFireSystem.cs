@@ -51,7 +51,6 @@ namespace ECS
 				weapon.IsFiring = true;
 				weapon.CoolDown = weapon.GunConfig.FireCoolDown;
 				weapon.CurrentMagazineCount--;
-				Debug.Log($"Fired bullet, Current Magazine Count: {weapon.CurrentMagazineCount}. Set cooldown {weapon.CoolDown}");
 
 				var sound = soundHolder.Value.GetClip(weapon.GunConfig.FireSoundId);
 				weapon.Weapon.AudioSource.PlayOneShot(sound);

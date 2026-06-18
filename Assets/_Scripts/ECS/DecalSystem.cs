@@ -53,7 +53,6 @@ namespace ECS
 			var requestFilter = world.Filter<RequestDecalComponent>().End();
 			foreach (var entity in requestFilter)
 			{
-				Debug.Log($"Try to spawn decal");
 				ref var request = ref requetDecalPool.Get(entity);
 
 				var config = decalHolder.Value.GetConfig(request.Id);
@@ -78,10 +77,6 @@ namespace ECS
 
 					effectComponent.Value = decal;
 					lifetimeComponent.Value = config.LifeTime;
-				}
-				else
-				{
-					Debug.Log("Debag is null");
 				}
 				world.DelEntity(entity);
 			}

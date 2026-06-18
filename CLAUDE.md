@@ -69,6 +69,8 @@ Top-down шутер на Unity с ECS-архитектурой. «Толпы» �
 - `Docs/ModifierSystem.md` — общая система модификаторов (баффы/дебаффы/DoT на любой сущности): модель `Modifier` и подтипы, `ModifiersSystem`, пути применения (прямой add vs `TryApplyModifierComponent`), потребители (`GetModifier<T>`), линковка с эффектами, плюс краткая сводка по бонусам. Читать вместо повторного обхода кода.
 - `Docs/GrenadeFeature.md` — система гранат (лут → бросок с зарядкой и прицеливанием → дуговой полёт → радиальный взрыв). Читать вместо повторного обхода кода.
 - `Docs/BonusFeature.md` — подбираемые бонусы (speed up, shield) поверх общей системы модификаторов: `BonusConfig`/`BonusConfigHolder` SO, `LootType.Bonus`, `BonusSystem`, бары speed/shield в `PlayerStats` с таймером. Читать вместо повторного обхода кода.
+- `Docs/MeleeMobFeature.md` — моб ближнего боя с телеграфированной атакой (как у игрока): фазы замах→удар→кулдаун в одной анимации `attack`, `MeleeMobConfig : MobConfig` + общий `MeleeConfig`, `MeleeAttackerComponent`/`MeleeAttackerSystem`, отключение контактного урона в `CollisionSystem`. Читать вместо повторного обхода кода.
+- `Docs/FailSequenceFeature.md` — кинематографичная концовка при гибели игрока: фазы блок управления → красная пелена → меню+пауза по 0.5с (`FailSequenceSystem`, `FailSequenceComponent`, `InputLockComponent`, рантайм-оверлей `FailScreenOverlay`), общий `GameOverActions.StopAllMoves`, рабочая кнопка рестарта. Читать вместо повторного обхода кода.
 
 ## Git
 

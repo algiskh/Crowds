@@ -25,7 +25,6 @@ namespace ECS
 				var fireRequestPool = world.GetPool<RequestFireComponent>();
 				if (playerInput.IsFiring)
 				{
-					Debug.Log($"Try to fire");
 					var fireEntity = world.NewEntity();
 					ref var requestFireComponent = ref fireRequestPool.Add(fireEntity);
 				}
@@ -33,7 +32,6 @@ namespace ECS
 				if (playerInput.IsMeleeing)
 				{
 					playerInput.MeleeCooldown = player.Value.MeleeConfig.Cooldown;
-					Debug.Log($"Try to melee");
 					var meleeEntity = world.NewEntity();
 					ref var requestMeleeComponent = ref world.GetPool<RequestMeleeComponent>().Add(meleeEntity);
 					requestMeleeComponent.Position = player.Value.transform.GetForwardPosition(player.Value.MeleeConfig.Range);

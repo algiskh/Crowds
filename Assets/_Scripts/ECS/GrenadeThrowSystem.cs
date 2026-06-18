@@ -20,7 +20,8 @@ namespace ECS
 			var world = systems.GetWorld();
 
 			ref var pauseState = ref world.GetAsSingleton<PauseStateComponent>();
-			if (pauseState.IsPaused)
+			ref var inputLock = ref world.GetAsSingleton<InputLockComponent>();
+			if (pauseState.IsPaused || inputLock.Locked)
 				return;
 
 			ref var inputActions = ref world.GetAsSingleton<InputActionsComponent>();

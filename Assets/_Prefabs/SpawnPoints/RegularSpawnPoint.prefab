@@ -72,3 +72,14 @@ MonoBehaviour:
       Cooldown: 15
     - DifficultyLevel: 4
       Cooldown: 2
+  - _mobId: Fatman
+    _weight: 0.4
+    _spawnPresets:
+    - DifficultyLevel: 1
+      Cooldown: 11
+    - DifficultyLevel: 3
+      Cooldown: 15
+    - DifficultyLevel: 4
+      Cooldown: 12
+    - DifficultyLevel: 5
+      Cooldown: 11

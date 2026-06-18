@@ -30,6 +30,7 @@ namespace ECS
 			var pathRecalculationPool = world.GetPool<PathRecalculation>();
 			var lookerPool = world.GetPool<LookerAtCamera>();
 			var grenadierPool = world.GetPool<GrenadierComponent>();
+			var meleeAttackerPool = world.GetPool<MeleeAttackerComponent>();
 
 			float recalcInterval = mainHolder.PathRecalculationInterval;
 			float now = Time.time;
@@ -93,6 +94,14 @@ namespace ECS
 					grenadier.State = GrenadierState.Chase;
 					grenadier.Timer = 0f;
 					grenadier.HasFleeTarget = false;
+				}
+				// Моб ближнего боя: тот же моб + телеграфированная атака (MeleeAttackerSystem).
+				else if (mobConfig is MeleeMobConfig meleeMobConfig)
+				{
+					ref var attacker = ref meleeAttackerPool.Add(mobEntity);
+					attacker.Config = meleeMobConfig;
+					attacker.State = MeleeAttackerState.Chase;
+					attacker.Timer = 0f;
 				}
 
 				InitializeMobGameObject(mob, mobConfig, playerPosition);

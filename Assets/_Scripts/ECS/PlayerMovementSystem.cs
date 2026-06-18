@@ -29,8 +29,6 @@ namespace ECS
 
 					var speedMod = modifierOwner.GetModifier<SpeedModifier>();
 					player.Value.transform.position += dir.normalized * movement.Speed * speedMod * Time.deltaTime;
-
-				Debug.Log($"Move player {entity} with dir {dir} and speed {movement.Speed * speedMod} with mod {speedMod}");
 				}
 			}
 		}

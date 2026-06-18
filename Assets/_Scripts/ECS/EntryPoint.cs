@@ -195,6 +195,9 @@ namespace ECS
 			ref var healthComponent = ref _world.GetPool<HealthComponent>().Add(playerEntity);
 			healthComponent.MaxHealth = _mainHolder.PlayerConfig.MaxHealth;
 			healthComponent.CurrentHealth = healthComponent.MaxHealth;
+			// Без этого health.TargetType = None, и любой урон по TargetType (ближняя атака мобов
+			// через MeleeSpawnSystem) проходит мимо игрока — ContainsFlags(None) всегда false.
+			healthComponent.TargetType = TargetType.Player;
 			_playerStats.SetHealthValue(healthComponent.CurrentHealth);
 
 			ref var playerModifiers = ref _world.GetPool<ModifierOwnerComponent>().Add(playerEntity);
@@ -269,6 +272,10 @@ namespace ECS
 
 			ref var grenadePool = ref _world.CreateSimpleEntity<GrenadePoolComponent>();
 			grenadePool.Value = new();
+			// Гранаты всегда складываем под выделенный родитель: если он не назначен в сцене,
+			// создаём его в рантайме, чтобы снаряды не плодились в корне иерархии.
+			if (_grenadeParent == null)
+				_grenadeParent = new GameObject("Grenades").transform;
 			grenadePool.Parent = _grenadeParent;
 
 			var grenadeAimVisualizer = FindFirstObjectByType<GrenadeAimVisualizer>();
@@ -320,6 +327,7 @@ namespace ECS
 				// Move and navigation systems
 				.Add(new MobPathfindingSystem())
 				.Add(new GrenadierSystem())
+				.Add(new MeleeAttackerSystem())
 				.Add(new MoveSystem())
 				.Add(new FollowSystem())
 				.Add(new LookAtCameraSystem())
@@ -350,6 +358,7 @@ namespace ECS
 				.Add(new PlayerSystem())
 				.Add(new PlayerMovementSystem())
 				.Add(new CheckEndSystem())
+				.Add(new FailSequenceSystem())
 				.Add(new SmartConditionSystem())
 				.Add(new AimVisualizerSystem())
 				.Add(new UISystem())

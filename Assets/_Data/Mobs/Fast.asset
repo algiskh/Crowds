@@ -45,7 +45,7 @@ MonoBehaviour:
     Count: 1
     Chance: 0.005
   - LootType: 3
-    Id: Greande
+    Id: Grenade
     Count: 1
     Chance: 0.005
   - LootType: 4
@@ -54,6 +54,7 @@ MonoBehaviour:
     Chance: 0.01
   _targetType: 1
   _attackModifiers: []
+  _damageDecals: []
   references:
     version: 2
     RefIds: []

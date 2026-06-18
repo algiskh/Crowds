@@ -24,8 +24,9 @@ MonoBehaviour:
     Id: Grenade
     Count: 1
     Chance: 0.25
-  _targetType: 0
+  _targetType: 1
   _attackModifiers: []
+  _damageDecals: []
   _throwMaxDistance: 10
   _throwMinDistance: 5
   _throwCooldown: 2

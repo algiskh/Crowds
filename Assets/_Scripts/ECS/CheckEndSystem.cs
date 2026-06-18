@@ -1,8 +1,12 @@
-﻿using Leopotam.EcsLite;
-using UnityEngine;
+using Leopotam.EcsLite;
 
 namespace ECS
 {
+	/// <summary>
+	/// Реакция на конец игры (EndGameComponent). Победа — останавливаемся и сразу показываем окно победы.
+	/// Поражение — запускаем кинематографичную концовку (FailSequenceSystem): блок управления → красная
+	/// пелена → меню+пауза, по 0.5с на фазу.
+	/// </summary>
 	public class CheckEndSystem : IEcsRunSystem
 	{
 		public void Run(IEcsSystems systems)
@@ -17,44 +21,33 @@ namespace ECS
 			foreach (var entity in endGameFilter)
 			{
 				var endGameComponent = endGamePool.Get(entity);
-				ref var requestPause = ref world.CreateSimpleEntity<RequestPauseComponent>();
-				requestPause.Source = SignalSource.EndGame;
 
-				ref var requestOpenWindow = ref world.CreateSimpleEntity<RequestOpenWindowComponent>();
-				requestOpenWindow.WindowType = endGameComponent.isWin ? WindowType.WinWindow : WindowType.FailWindow;
-				StopAllMoves(world, playerComponent);
+				if (endGameComponent.isWin)
+				{
+					ref var requestPause = ref world.CreateSimpleEntity<RequestPauseComponent>();
+					requestPause.Source = SignalSource.EndGame;
+
+					ref var requestOpenWindow = ref world.CreateSimpleEntity<RequestOpenWindowComponent>();
+					requestOpenWindow.WindowType = WindowType.WinWindow;
+
+					GameOverActions.StopAllMoves(world, playerComponent);
+				}
+				else
+				{
+					// Поражение — запускаем кинематографичную концовку (если ещё не идёт).
+					ref var seq = ref world.GetAsSingleton<FailSequenceComponent>();
+					if (seq.Phase == FailSequencePhase.Inactive)
+					{
+						seq.Phase = FailSequencePhase.BlockControls;
+						seq.Timer = FailSequenceSystem.PhaseDuration;
+
+						ref var inputLock = ref world.GetAsSingleton<InputLockComponent>();
+						inputLock.Locked = true;
+					}
+				}
+
 				world.DelEntity(entity);
 			}
-		}
-
-		private void StopAllMoves(EcsWorld world, PlayerComponent player)
-		{
-			var moveSystemPool = world.GetPool<MoveComponent>();
-			var mobPool = world.GetPool<MobComponent>();
-
-			var moveFilter = world.Filter<MoveComponent>()
-				.End();
-
-			foreach (var entity in moveFilter)
-			{
-				ref var moveComponent = ref moveSystemPool.Get(entity);
-				moveComponent.Speed = 0f; // Stop all movement
-				moveComponent.Direction = Vector2.zero; // Reset direction
-
-				//world.DelEntity(entity); // Optionally, remove the MoveComponent to prevent further processing
-			}
-
-			var mobFilter = world.Filter<MobComponent>()
-				.End();
-			foreach (var entity in mobFilter)
-			{
-				ref var mobComponent = ref mobPool.Get(entity);
-				mobComponent.Value.Animator.Pause();
-			}
-
-			player.Value.Animator.Pause();
-			ref var spawnRequest = ref world.GetAsSingleton<SpawnRequestComponent>();
-			spawnRequest.IsBlocked = true;
 		}
 	}
 }

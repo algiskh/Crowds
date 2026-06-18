@@ -15,7 +15,9 @@ public class MeleeConfig : ScriptableObject
     [SerializeReference, OdinSerialize] private Modifier[] _modifiers;
     [SerializeField] private TargetType _targetType;
 
+	[Tooltip("Замах: пауза перед нанесением урона (сек). Для мобов — фаза 'pre-attack' анимации.")]
 	[SerializeField] private float _delay;
+	[Tooltip("Восстановление после удара (сек). Для мобов — фаза кулдауна той же анимации; для игрока — задержка между ударами.")]
 	[SerializeField] private float _cooldown;
 
 	[SerializeReference, OdinSerialize] private Modifier[] _debuffs;

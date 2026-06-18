@@ -53,3 +53,8 @@ MonoBehaviour:
     HasDuration: 1
     Duration: 1
     IsChild: 0
+  - Id: FatmanMelee
+    Prefab: {fileID: 7970544682367293265, guid: c91dc444c76d55b4693e6cb9f0a1177b, type: 3}
+    HasDuration: 1
+    Duration: 1.5
+    IsChild: 0

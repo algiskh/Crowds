@@ -52,8 +52,13 @@ MonoBehaviour:
     Id: shield
     Count: 1
     Chance: 0.001
+  - LootType: 2
+    Id: Rifle
+    Count: 1
+    Chance: 0.04
   _targetType: 1
   _attackModifiers: []
+  _damageDecals: []
   references:
     version: 2
     RefIds: []

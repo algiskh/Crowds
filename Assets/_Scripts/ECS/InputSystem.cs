@@ -25,12 +25,14 @@ namespace ECS
 			var world = systems.GetWorld();
 			ref var input = ref world.GetAsSingleton<PlayerInputComponent>();
 
-			#region Check pause
+			#region Check pause / input lock
 			ref var pauseState = ref world.GetAsSingleton<PauseStateComponent>();
-			if (pauseState.IsPaused)
+			ref var inputLock = ref world.GetAsSingleton<InputLockComponent>();
+			if (pauseState.IsPaused || inputLock.Locked)
 			{
 				input.Move = Vector3.zero;
 				input.IsFiring = false;
+				input.IsMeleeing = false;
 				return;
 			}
 			#endregion

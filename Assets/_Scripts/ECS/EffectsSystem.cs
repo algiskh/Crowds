@@ -31,7 +31,6 @@ namespace ECS
 
 						if (!fx.IsChild)
 						{
-							Debug.Log($"Resetting position {fx.Effect.Id} from entity {fx.ModifierEntity}");
 							fx.Effect.transform.position = modifierOwner.Transform.position;
 						}
 
@@ -74,11 +73,8 @@ namespace ECS
 
 				var effect = SpawnEffect(effectMainPool, wrapper, request.Rotation);
 
-				Debug.Log($"Setting effect: Rotation is {request.Rotation}");
-
 				if (effect != null)
 				{
-					Debug.Log($"Setting effect: trying to apply effect {effect.Id}");
 					effect.Show();
 					var newEntity = world.NewEntity();
 					ref var effectComponent = ref effectPool.Add(newEntity);
@@ -88,7 +84,6 @@ namespace ECS
 					// Set modifier entity and damage type if they are specified in the request
 					if (request.Parent != null)
 					{
-						Debug.Log($"Setting effect: parent to {request.Parent.name}");
 						effect.transform.position = request.Parent.position;
 						effectComponent.IsChild = wrapper.IsChild;
 						if (wrapper.IsChild)

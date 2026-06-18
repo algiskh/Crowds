@@ -50,8 +50,6 @@ namespace ECS
 
 					if (IsInRadius(targetEntity, moveComponentPool, spawnRequest))
 					{
-						Debug.Log($"Melee: DO damage to {targetEntity}");
-
 						damageRequestPool.Add(world.NewEntity()) = new RequestDamageComponent
 						{
 							TargetEntity = targetEntity,
@@ -108,8 +106,6 @@ namespace ECS
 				ref var moveComponent = ref moveComponentPool.Get(targetEntity);
 
 				var distance = (moveComponent.Transform.position - meleeRequest.Position).magnitude;
-
-				Debug.Log($"Melee: Distance is {distance}. Radius is {meleeRequest.Config.Radius}");
 
 				if (distance <= meleeRequest.Config.Radius)
 				{

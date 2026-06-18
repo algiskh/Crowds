@@ -290,6 +290,47 @@ public struct EndGameComponent
 	public bool isWin;
 }
 
+#region FailSequence
+/// <summary>
+/// Фазы кинематографичной концовки при гибели игрока. Каждая длится FailSequenceSystem.PhaseDuration (0.5с):
+///  BlockControls — заблокировано только управление игроком (мир продолжает жить);
+///  RedScreen — поверх экрана плавно проявляется красная пелена;
+///  Menu — игра ставится на паузу и показывается окно поражения.
+/// Done — последовательность завершена.
+/// </summary>
+public enum FailSequencePhase : byte
+{
+	Inactive,
+	BlockControls,
+	RedScreen,
+	Menu,
+	Done
+}
+
+/// <summary>Singleton: состояние кинематографичной концовки (см. FailSequenceSystem).</summary>
+public struct FailSequenceComponent
+{
+	public FailSequencePhase Phase;
+	public float Timer;
+}
+
+/// <summary>Singleton-обёртка над рантайм-оверлеем красной пелены (создаётся лениво).</summary>
+public struct FailScreenOverlayComponent
+{
+	public FailScreenOverlay Value;
+}
+
+/// <summary>
+/// Singleton: блокировка пользовательского ввода игрока отдельно от общей паузы. Пока Locked=true,
+/// InputSystem/GrenadeThrowSystem игнорируют ввод, при этом остальной мир может продолжать жить
+/// (используется в фазах BlockControls/RedScreen концовки).
+/// </summary>
+public struct InputLockComponent
+{
+	public bool Locked;
+}
+#endregion
+
 public struct FollowTarget
 {
 	public Transform Target;
@@ -710,5 +751,34 @@ public struct GrenadierComponent
 	// Точка отхода (на NavMesh), выбранная в состоянии Flee.
 	public Vector3 FleeTarget;
 	public bool HasFleeTarget;
+}
+#endregion
+
+#region MeleeAttacker
+/// <summary>
+/// Состояние моба ближнего боя. Chase — подходит к игроку (обычный патфайндинг);
+/// Windup — стоит и замахивается (анимация "attack", фаза до удара); Cooldown — стоит
+/// в фазе восстановления той же анимации, пока не истечёт кулдаун, затем снова Chase.
+/// </summary>
+public enum MeleeAttackerState : byte
+{
+	Chase,
+	Windup,
+	Cooldown
+}
+
+/// <summary>
+/// Per-entity: моб, бьющий телеграфированной ближней атакой (как игрок), а не контактным уроном.
+/// Висит поверх обычного MobComponent. Дистанция атаки берётся из MeleeMobConfig, а параметры
+/// самого удара (урон/радиус/цель/замах/кулдаун) — из вложенного MeleeConfig. Все три фазы
+/// (замах → удар → восстановление) проигрываются одной анимацией "attack". Контактный урон для
+/// таких мобов отключён в CollisionSystem.
+/// </summary>
+public struct MeleeAttackerComponent
+{
+	public MeleeMobConfig Config;
+	public MeleeAttackerState State;
+	// В Windup — отсчёт замаха до удара; в Cooldown — отсчёт восстановления.
+	public float Timer;
 }
 #endregion

@@ -55,8 +55,6 @@ namespace ECS
 
 			bool isGamepad = CheckGamePad(ref aimInput);
 
-			Debug.Log($"IsGamepad: {isGamepad}, AimInput: {aimInput.Value}");
-
 			if (isGamepad)
 			{
 				if (aimInput.Value != Vector2.zero && aimInput.Value.sqrMagnitude >= STICK_DEAD_ZONE_SQR)

@@ -22,13 +22,19 @@ public class FailWindow : MonoBehaviour
 
 	private void OnPressRestart()
 	{
-		SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+		// Пауза у нас реализована флагом, а не timeScale, но сбрасываем на всякий случай,
+		// чтобы перезагруженная сцена точно стартовала «живой».
+		Time.timeScale = 1f;
+		SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
 	}
 
 	public void Show(int score = 0)
 	{
 		gameObject.SetActive(true);
 		_canvas.enabled = true;
+		// Рисуем окно поверх красной пелены концовки (её Canvas имеет sortingOrder 1000).
+		_canvas.overrideSorting = true;
+		_canvas.sortingOrder = 1001;
 		_scoreText.gameObject.SetActive(score > 0);
 		_scoreText.Text = $"Total: {score} kills";
 	}
