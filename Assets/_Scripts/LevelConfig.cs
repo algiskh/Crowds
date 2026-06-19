@@ -1,5 +1,7 @@
 using Sirenix.OdinInspector;
+#if UNITY_EDITOR
 using Sirenix.OdinInspector.Editor;
+#endif
 using Sirenix.Serialization;
 using System;
 using System.Collections.Generic;
@@ -39,8 +41,8 @@ public class AdditionalLootConfig
 public class LevelConfig : SerializedScriptableObject
 {
 	[SerializeField,
-	 ValidateInput(nameof(ValidateStages), "Difficulty stages must be in ascending order"),
-	 OnCollectionChanged(nameof(OnStagesChanged))]
+	 ValidateInput("ValidateStages", "Difficulty stages must be in ascending order"),
+	 OnCollectionChanged("OnStagesChanged")]
 	private List<DifficultyStage> _difficultyStages = new();
 
 	[OdinSerialize]
