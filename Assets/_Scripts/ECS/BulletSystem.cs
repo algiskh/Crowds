@@ -17,6 +17,7 @@ namespace ECS
 			ref var bulletPoolPool = ref world.GetAsSingleton<BulletPoolComponent>();
 			ref var reloading = ref world.GetAsSingleton<ReloadingComponent>();
 			var bulletRequestPool = world.GetPool<RequestSpawnBulletComponent>();
+			var mainHolder = world.GetAsSingleton<MainHolderComponent>().Value;
 
 			#endregion
 
@@ -45,24 +46,37 @@ namespace ECS
 			foreach (var entity in bulletFilter)
 			{
 				var bulletRequest = bulletRequestPool.Get(entity);
+				var projectilePrefab = ResolveProjectile(mainHolder, bulletRequest.GunConfig.Caliber);
 
 				for (var i = 0; i < bulletRequest.GunConfig.ProjectilesNumber; i++)
 				{
-					SpawnBullet(world, ref bulletPoolPool, bulletPool, movePool, disposePool, modifierPool, bulletRequest);
+					SpawnBullet(world, ref bulletPoolPool, bulletPool, movePool, disposePool, modifierPool, bulletRequest, projectilePrefab);
 				}
 			}
 
 			world.DeleteAllWith<RequestSpawnBulletComponent>();
 		}
 
+		// Projectile prefab for the gun's caliber, falling back to the global bullet prefab.
+		private Bullet ResolveProjectile(MainHolder mainHolder, Caliber caliber)
+		{
+			var ammoConfig = mainHolder.AmmoConfigHolder != null
+				? mainHolder.AmmoConfigHolder.GetConfig(caliber)
+				: null;
+			return ammoConfig != null && ammoConfig.ProjectilePrefab != null
+				? ammoConfig.ProjectilePrefab
+				: mainHolder.BulletPrefab;
+		}
+
 		private void SpawnBullet(
-			EcsWorld world, 
-			ref BulletPoolComponent bulletPoolPool, 
-			EcsPool<BulletComponent> bulletPool, 
+			EcsWorld world,
+			ref BulletPoolComponent bulletPoolPool,
+			EcsPool<BulletComponent> bulletPool,
 			EcsPool<MoveComponent> movePool,
 			EcsPool<DisposableComponent> disposePool,
 			EcsPool<ModifierOwnerComponent> modifierPool,
-			RequestSpawnBulletComponent bulletRequest
+			RequestSpawnBulletComponent bulletRequest,
+			Bullet projectilePrefab
 			)
 		{
 			Bullet bullet;
@@ -74,7 +88,7 @@ namespace ECS
 			else
 			{
 				bullet = Object.Instantiate(
-					bulletRequest.GunConfig.BulletPrefab,
+					projectilePrefab,
 					bulletPoolPool.Parent);
 			}
 

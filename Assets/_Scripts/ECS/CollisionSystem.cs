@@ -162,7 +162,10 @@ namespace ECS
 					switch (loot.LootType)
 					{
 						case LootType.Ammo:
-							muzzle.AmmoCount += loot.Count;
+							// Caliber from the loot; None means ammo for the current weapon.
+							var ammoInventory = world.GetAsSingleton<AmmoInventoryComponent>();
+							var ammoCaliber = loot.AmmoCaliber == Caliber.None ? muzzle.GunConfig.Caliber : loot.AmmoCaliber;
+							ammoInventory.Add(ammoCaliber, loot.Count);
 							world.CreateSimpleEntity<UpdateAmmoViewRequestComponent>();
 							break;
 						case LootType.Weapon:

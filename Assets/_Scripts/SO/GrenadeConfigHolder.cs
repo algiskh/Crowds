@@ -5,7 +5,7 @@ public class GrenadeConfigHolder : ScriptableObject
 {
 	[SerializeField] private GrenadeConfig[] _configs;
 
-	/// <summary>Первый конфиг — дефолт для стартовых гранат без явного Id.</summary>
+	/// <summary>First config - the default for starting grenades without an explicit Id.</summary>
 	public GrenadeConfig Default => _configs != null && _configs.Length > 0 ? _configs[0] : null;
 
 	public GrenadeConfig GetConfig(string id)

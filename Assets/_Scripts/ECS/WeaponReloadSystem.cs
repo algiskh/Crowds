@@ -80,10 +80,12 @@ namespace ECS
 
 		private void ReloadSingleAmmo(EcsWorld world, ref WeaponComponent weapon, ref ReloadingComponent reloading, int capacity, bool hasFireRequest, SoundHolderComponent soundHolder)
 		{
-			if (weapon.CurrentMagazineCount < capacity && weapon.AmmoCount > 0)
+			var inventory = world.GetAsSingleton<AmmoInventoryComponent>();
+			var caliber = weapon.GunConfig.Caliber;
+
+			if (weapon.CurrentMagazineCount < capacity && inventory.Get(caliber) > 0)
 			{
-				weapon.CurrentMagazineCount++;
-				weapon.AmmoCount--;
+				weapon.CurrentMagazineCount += inventory.Spend(caliber, 1);
 				reloading.ReloadTime = 0;
 			}
 			else
@@ -92,7 +94,7 @@ namespace ECS
 				return;
 			}
 
-			if (weapon.CurrentMagazineCount >= capacity || weapon.AmmoCount <= 0 || hasFireRequest)
+			if (weapon.CurrentMagazineCount >= capacity || inventory.Get(caliber) <= 0 || hasFireRequest)
 			{
 				StartShuttering(world, ref weapon, ref reloading, soundHolder);
 			}
@@ -105,12 +107,12 @@ namespace ECS
 
 		private void ReloadMagazine(EcsWorld world, ref WeaponComponent weapon, ref ReloadingComponent reloading, int capacity)
 		{
+			var inventory = world.GetAsSingleton<AmmoInventoryComponent>();
 			var ammoNeeded = capacity - weapon.CurrentMagazineCount;
 
-			var ammoToLoadCount = weapon.AmmoCount >= ammoNeeded ? ammoNeeded : weapon.AmmoCount;
+			var ammoToLoadCount = inventory.Spend(weapon.GunConfig.Caliber, ammoNeeded);
 
 			weapon.CurrentMagazineCount += ammoToLoadCount;
-			weapon.AmmoCount -= ammoToLoadCount;
 			reloading.ReloadTime = 0;
 			world.DeleteAllWith<RequestReloadComponent>();
 		}

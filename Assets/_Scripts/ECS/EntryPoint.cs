@@ -10,8 +10,13 @@ namespace ECS
 	public class EntryPoint : MonoBehaviour
 	{
 		#region FIELDS
-		[Title("Temporary")]
-		[SerializeField, BoxGroup("Temporary")] private LevelConfig _levelConfig;
+		[Title("Level")]
+		[SerializeField, BoxGroup("Level"),
+		 Tooltip("Уровень для прямого запуска геймплейной сцены (когда не выбран через меню/GameSession).")]
+		private LevelDefinition _fallbackLevel;
+		[SerializeField, BoxGroup("Level"),
+		 Tooltip("Запасной конфиг, если уровень не разрешён и в сцене нет LevelRoot.")]
+		private LevelConfig _levelConfig;
 
 		[Title("�������� ������")]
 		[SerializeField, Required, BoxGroup("Game References")] private MainHolder _mainHolder;
@@ -47,6 +52,10 @@ namespace ECS
 		private EcsWorld _world;
 		private EcsSystems _systems;
 
+		// Level (разрешается в LoadLevel)
+		private LevelRoot _levelRoot;
+		private LevelConfig _activeLevelConfig;
+
 		#endregion
 
 		#region UNITY EVENTS
@@ -56,6 +65,7 @@ namespace ECS
 			_world = new EcsWorld();
 			_systems = new EcsSystems(_world);
 
+			LoadLevel();
 			SetupSpawnData();
 			RegisterSystems();
 		}
@@ -90,6 +100,9 @@ namespace ECS
 
 			ref var navMeshManager = ref _world.CreateSimpleEntity<NavMeshManagerComponent>();
 			navMeshManager.Value = FindFirstObjectByType<NavMeshManager>();
+			// Скармливаем секторы из префаба уровня и запекаем navmesh (после инстанса префаба).
+			// Если уровень загружен из сцены без LevelRoot — Configure(null) использует ссылки из инспектора.
+			navMeshManager.Value.Configure(_levelRoot != null ? _levelRoot.Sectors : null);
 			ref var fragCount = ref _world.CreateSimpleEntity<FragCountComponent>();
 			fragCount.Value = 0;
 
@@ -245,11 +258,15 @@ namespace ECS
 			muzzle.Weapon = _player.Weapon;
 			muzzle.GunConfig = _mainHolder.GunConfigHolder.GetConfig("Pistol");
 			muzzle.CurrentMagazineCount = muzzle.GunConfig.MagazineCapacity;
-			muzzle.AmmoCount = _mainHolder.StartAmmo;
 			ref var reloadingComponent = ref _world.GetPool<ReloadingComponent>().Add(playerEntity);
 			reloadingComponent.ReloadTime = 0;
 
-			_weaponView.SetWeaponView(muzzle.GunConfig, muzzle.AmmoCount);
+			// --- Запас патронов по калибрам: стартовый запас идёт в калибр стартового оружия ---
+			ref var ammoInventory = ref _world.CreateSimpleEntity<AmmoInventoryComponent>();
+			ammoInventory.Ammo = new Dictionary<Caliber, int>();
+			ammoInventory.Add(muzzle.GunConfig.Caliber, _mainHolder.StartAmmo);
+
+			_weaponView.SetWeaponView(muzzle.GunConfig, ammoInventory.Get(muzzle.GunConfig.Caliber));
 
 			// --- Grenades ---
 			ref var grenadeState = ref _world.CreateSimpleEntity<GrenadeStateComponent>();
@@ -305,13 +322,40 @@ namespace ECS
 			ref var additionalLootSpawnComponent = ref _world.CreateSimpleEntity<AdditionalLootSpawnHolderComponent>();
 			additionalLootSpawnComponent.ActivePoints = dictionary;
 			additionalLootSpawnComponent.LootPointsPool = lootPointsPool;
-			additionalLootSpawnComponent.LootConfigs = _levelConfig.GetAdditionalLootConfigs();
+			additionalLootSpawnComponent.LootConfigs = _activeLevelConfig.GetAdditionalLootConfigs();
+		}
+
+		// Разрешает выбранный уровень и инстанциирует его префаб ДО SetupSpawnData,
+		// чтобы Find*-сканы (SpawnPoint / MapLoot / тег AdditionalSpawn) подхватили его контент.
+		private void LoadLevel()
+		{
+			var level = GameSession.SelectedLevel != null ? GameSession.SelectedLevel : _fallbackLevel;
+
+			if (level != null && level.LevelPrefab != null)
+			{
+				var instance = Instantiate(level.LevelPrefab);
+				_levelRoot = instance.GetComponentInChildren<LevelRoot>(true);
+				if (_levelRoot == null)
+					Debug.LogError($"[EntryPoint] Префаб уровня '{level.LevelPrefab.name}' без LevelRoot.");
+			}
+			else
+			{
+				// Прямой запуск геймплейной сцены без выбора уровня: контент уже лежит в сцене.
+				_levelRoot = FindFirstObjectByType<LevelRoot>(FindObjectsInactive.Include);
+			}
+
+			_activeLevelConfig = _levelRoot != null && _levelRoot.LevelConfig != null
+				? _levelRoot.LevelConfig
+				: _levelConfig;
+
+			if (_activeLevelConfig == null)
+				Debug.LogError("[EntryPoint] Не удалось разрешить LevelConfig (нет LevelRoot и нет запасного конфига).");
 		}
 
 		private void SetUpLevel()
 		{
 			ref var config = ref _world.CreateSimpleEntity<CurrentLevelConfigComponent>();
-			config.Value = _levelConfig;
+			config.Value = _activeLevelConfig;
 		}
 
 		private void RegisterSystems()

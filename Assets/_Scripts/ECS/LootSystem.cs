@@ -24,6 +24,7 @@ namespace ECS
 						LootType = loot.LootComponent.LootType,
 						Count = loot.LootComponent.Count,
 						Id = loot.LootComponent.Id,
+						AmmoCaliber = loot.LootComponent.AmmoCaliber,
 						Chance = 1f
 					}
 				};
@@ -135,11 +136,17 @@ namespace ECS
 					ref var collisionComponent = ref collisionPool.Add(lootEntity);
 					ref var disposableComponent = ref disposablePool.Add(lootEntity);
 
-					// Ensure LootComponent has LootType and Value properties  
+					// Ensure LootComponent has LootType and Value properties
 					lootComponent.LootType = selectedLoot.LootType;
 					lootComponent.Count = selectedLoot.Count;
 					lootComponent.Loot = loot;
 					lootComponent.Id = selectedLoot.Id;
+					// Ammo caliber is fixed at spawn: an unassigned (None) ammo loot becomes the
+					// current weapon's caliber (or the holder's first), so its icon and pickup match.
+					var resolvedAmmoCaliber = selectedLoot.AmmoCaliber;
+					if (selectedLoot.LootType == LootType.Ammo && resolvedAmmoCaliber == Caliber.None)
+						resolvedAmmoCaliber = ResolveAmmoCaliber(world, mainHolder.Value);
+					lootComponent.AmmoCaliber = resolvedAmmoCaliber;
 
 					if (loot.SpriteLooker != null)
 					{
@@ -161,6 +168,14 @@ namespace ECS
 									: null;
 								sprite = grenadeCfg != null && grenadeCfg.Preview != null
 									? grenadeCfg.Preview
+									: mainHolder.Value.SpriteHolder.GetSpriteById(selectedLoot.LootType.ToString());
+								break;
+							case LootType.Ammo:
+								var ammoCfg = mainHolder.Value.AmmoConfigHolder != null
+									? mainHolder.Value.AmmoConfigHolder.GetConfig(resolvedAmmoCaliber)
+									: null;
+								sprite = ammoCfg != null && ammoCfg.LootIcon != null
+									? ammoCfg.LootIcon
 									: mainHolder.Value.SpriteHolder.GetSpriteById(selectedLoot.LootType.ToString());
 								break;
 							case LootType.Bonus:
@@ -196,6 +211,19 @@ namespace ECS
 				world.DelEntity(entity); // delete request entity
 			}
 			#endregion
+		}
+
+		// Caliber for an unassigned ammo loot, decided at spawn: current weapon's caliber,
+		// or the first AmmoConfig in the holder when there's no weapon.
+		private Caliber ResolveAmmoCaliber(EcsWorld world, MainHolder mainHolder)
+		{
+			if (world.TryGetAsSingleton(out WeaponComponent weapon)
+				&& weapon.GunConfig != null
+				&& weapon.GunConfig.Caliber != Caliber.None)
+				return weapon.GunConfig.Caliber;
+
+			var firstAmmo = mainHolder.AmmoConfigHolder != null ? mainHolder.AmmoConfigHolder.First : null;
+			return firstAmmo != null ? firstAmmo.Caliber : Caliber.None;
 		}
 	}
 }

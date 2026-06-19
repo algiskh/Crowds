@@ -16,6 +16,7 @@ namespace ECS
 			ref var player = ref world.GetAsSingleton<PlayerComponent>();
 			ref var difficultyView = ref world.GetAsSingleton<DifficultyTimerUIComponent>();
 			ref var difficulty = ref world.GetAsSingleton<DifficultyComponent>();
+			var ammoInventory = world.GetAsSingleton<AmmoInventoryComponent>();
 
 			var healthPool = world.GetPool<HealthComponent>();
 			var requestPool = world.GetPool<RequestOpenWindowComponent>();
@@ -58,7 +59,7 @@ namespace ECS
 				foreach (var weaponRequestEntity in weaponRequestFilter)
 				{
 					ref var weaponRequest = ref world.GetPool<UpdateWeaponViewRequestComponent>().Get(weaponRequestEntity);
-					weaponView.Value.SetWeaponView(weapon.GunConfig, weapon.AmmoCount);
+					weaponView.Value.SetWeaponView(weapon.GunConfig, ammoInventory.Get(weapon.GunConfig.Caliber));
 				}
 			}
 
@@ -67,7 +68,7 @@ namespace ECS
 				foreach (var ammoRequestEntity in ammoRequestFilter)
 				{
 					ref var ammoRequest = ref world.GetPool<UpdateAmmoViewRequestComponent>().Get(ammoRequestEntity);
-					weaponView.Value.UpdateMagazine(weapon.CurrentMagazineCount, weapon.AmmoCount);
+					weaponView.Value.UpdateMagazine(weapon.CurrentMagazineCount, ammoInventory.Get(weapon.GunConfig.Caliber));
 				}
 			}
 

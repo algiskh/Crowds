@@ -24,38 +24,47 @@ MonoBehaviour:
     Id: 
     Count: 5
     Chance: 0.3
+    AmmoCaliber: 0
   - LootType: 0
     Id: 
     Count: 10
     Chance: 0.05
+    AmmoCaliber: 0
   - LootType: 0
     Id: 
     Count: 15
     Chance: 0.01
+    AmmoCaliber: 0
   - LootType: 1
     Id: 
     Count: 15
     Chance: 0.07
+    AmmoCaliber: 0
   - LootType: 2
     Id: SMG
     Count: 1
     Chance: 0.04
+    AmmoCaliber: 0
   - LootType: 2
     Id: AR
     Count: 1
     Chance: 0.015
+    AmmoCaliber: 0
   - LootType: 2
     Id: Shotgun
     Count: 1
     Chance: 0.02
+    AmmoCaliber: 0
   - LootType: 4
     Id: shield
     Count: 1
     Chance: 0.001
+    AmmoCaliber: 0
   - LootType: 2
     Id: Rifle
     Count: 1
-    Chance: 0.04
+    Chance: 0.03
+    AmmoCaliber: 0
   _targetType: 1
   _attackModifiers: []
   _damageDecals: []

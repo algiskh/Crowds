@@ -12,17 +12,17 @@ public class PlayerConfig : ScriptableObject
 
 	// Per-grenade stats (speed, damage, radius, effects) live in GrenadeConfig.
 	// Here only player-level throw mechanics: starting count, distance range, charge time.
-	[Header("Grenade — inventory")]
+	[Header("Grenade - inventory")]
 	[SerializeField] private int _startGrenades = 0;
-	[Tooltip("Id грэнад-конфига для стартовых гранат (из GrenadeConfigHolder). Пусто = первый в холдере.")]
+	[Tooltip("Grenade-config id for the starting grenades (from GrenadeConfigHolder). Empty = first in the holder.")]
 	[SerializeField] private string _startGrenadeId = "";
 
-	[Header("Grenade — throw")]
-	[Tooltip("Минимальная дальность броска (при мгновенном отпускании).")]
+	[Header("Grenade - throw")]
+	[Tooltip("Minimum throw distance (on instant release).")]
 	[SerializeField] private float _minThrowDistance = 3f;
-	[Tooltip("Максимальная дальность броска (при полном заряде).")]
+	[Tooltip("Maximum throw distance (at full charge).")]
 	[SerializeField] private float _maxThrowDistance = 10f;
-	[Tooltip("Время удержания Throw (сек) для набора полной дальности.")]
+	[Tooltip("How long Throw is held (sec) to reach full distance.")]
 	[SerializeField] private float _maxThrowChargeTime = 1.2f;
 
 	public int StartGrenades => _startGrenades;

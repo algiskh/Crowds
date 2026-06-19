@@ -5,6 +5,14 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum SectorMode
+{
+	// Infinite scroll: 3 sectors are recycled (objects are moved forward/back).
+	Recycling,
+	// Finite level: pre-placed sectors are enabled/disabled based on player position.
+	Sliding
+}
+
 [Serializable]
 public class DifficultyStage
 {
@@ -31,12 +39,21 @@ public class AdditionalLootConfig
 public class LevelConfig : SerializedScriptableObject
 {
 	[SerializeField,
-	 ValidateInput(nameof(ValidateStages), "Уровни сложности должны быть по возрастанию"),
+	 ValidateInput(nameof(ValidateStages), "Difficulty stages must be in ascending order"),
 	 OnCollectionChanged(nameof(OnStagesChanged))]
 	private List<DifficultyStage> _difficultyStages = new();
 
 	[OdinSerialize]
 	private List<AdditionalLootConfig> _AdditionalLootConfigs = new();
+
+	[SerializeField, BoxGroup("Sectors")]
+	private SectorMode _sectorMode = SectorMode.Recycling;
+	public SectorMode SectorMode => _sectorMode;
+
+	[SerializeField, BoxGroup("Sectors"), MinValue(0),
+	 Tooltip("Sliding mode: how many sectors to keep active on each side of the player (1 = a window of 3).")]
+	private int _activeSectorRadius = 1;
+	public int ActiveSectorRadius => _activeSectorRadius;
 
 	public DifficultyStage GetFirstStage(bool showTutorial = false)
 	{
@@ -68,10 +85,10 @@ public class LevelConfig : SerializedScriptableObject
 				if (i + 1 < _difficultyStages.Count)
 					return _difficultyStages[i + 1];
 
-				return null; // последний уровень
+				return null; // last stage
 			}
 		}
-		return null; // не найден
+		return null; // not found
 	}
 
 	public IEnumerable<AdditionalLootConfig> GetAdditionalLootConfigs()
@@ -99,7 +116,7 @@ public class LevelConfig : SerializedScriptableObject
 				var prevStage = _difficultyStages[_difficultyStages.Count - 2];
 				var nextLevel = prevStage.DifficultyLevel + 1;
 
-				// Если уровень не выходит за границы enum
+				// Only assign if it stays within the enum range.
 				if (Enum.IsDefined(typeof(DifficultyLevel), nextLevel))
 					newStage.DifficultyLevel = nextLevel;
 			}

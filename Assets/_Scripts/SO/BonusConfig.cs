@@ -26,6 +26,6 @@ public class BonusConfig : ScriptableObject
 	public BonusType Type => _type;
 	public Modifier Modifier => _modifier;
 
-	/// <summary>Свежий клон модификатора бонуса — каждый подбор получает свой инстанс с собственным Lifetime.</summary>
+	/// <summary>Fresh clone of the bonus modifier - each pickup gets its own instance with its own Lifetime.</summary>
 	public Modifier CreateModifierInstance() => _modifier?.Clone<Modifier>();
 }

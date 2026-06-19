@@ -4,7 +4,7 @@ using Sirenix.OdinInspector;
 [CreateAssetMenu(fileName = "GunConfig", menuName = "Scriptable Objects/GunConfig")]
 public class GunConfig : ScriptableObject
 {
-	[Title("Основное"), PropertyOrder(-10)]
+	[Title("Weapon"), PropertyOrder(-10)]
 	[GUIColor(0.8f, 0.9f, 1)]
 	[HorizontalGroup("Top", Width = 90)]
 	[PreviewField(70, ObjectFieldAlignment.Center), HideLabel]
@@ -14,72 +14,76 @@ public class GunConfig : ScriptableObject
 	[LabelText("ID"), PropertyOrder(-9), Delayed]
 	[SerializeField] private string _id;
 
+	[VerticalGroup("Top/Right")]
+	[LabelText("Caliber"), PropertyOrder(-8),
+	 Tooltip("Ammo type. Weapons with the same caliber share one ammo pool " +
+	         "(e.g. rifle and assault rifle = 7.62mm).")]
+	[SerializeField] private Caliber _caliber;
+
 	[Space]
-	[Title("Стрельба"), GUIColor(1, 0.95f, 0.7f)]
-	[LabelText("Огневая скорость (сек)"), MinValue(0.05f), SuffixLabel("сек", true)]
+	[Title("Firing"), GUIColor(1, 0.95f, 0.7f)]
+	[LabelText("Fire rate (sec)"), MinValue(0.05f), SuffixLabel("sec", true)]
 	[SerializeField] private float _fireRate = 0.2f;
 
-	[LabelText("Ёмкость магазина"), MinValue(1)]
+	[LabelText("Magazine capacity"), MinValue(1)]
 	[SerializeField] private int _magazineCapacity = 12;
 
-	[LabelText("ID звука выстрела")]
+	[LabelText("Fire sound ID")]
 	[SerializeField] private string _fireSoundId;
 
-	[LabelText("ID звука перезарядки")]
+	[LabelText("Reload sound ID")]
 	[SerializeField] private string _reloadSoundId;
 
-	[LabelText("ID звука конца перезарядки")]
+	[LabelText("Reload-end sound ID")]
 	[SerializeField] private string _reloadEndSoundId;
 
 	[Space]
-	[Title("Параметры пули"), GUIColor(0.95f, 1, 0.95f)]
-	[LabelText("Префаб пули")]
-	[PreviewField(50), HideLabel]
-	[SerializeField] private Bullet _bulletPrefab;
-
-	[LabelText("Тип проверки попадания")]
+	[Title("Bullet"), GUIColor(0.95f, 1, 0.95f)]
+	// Projectile prefab lives on AmmoConfig (per caliber), resolved in BulletSystem.
+	[LabelText("Bullet check type")]
 	[SerializeField] private BulletCheckType _bulletCheckType;
 
-	[LabelText("Количество снарядов"), MinValue(1)]
+	[LabelText("Projectiles per shot"), MinValue(1)]
 	[SerializeField] private int _projectilesNumber = 1;
 
-	[LabelText("Скорость пули"), MinValue(0.1f)]
+	[LabelText("Bullet speed"), MinValue(0.1f)]
 	[SerializeField] private float _bulletSpeed = 30f;
 
-	[LabelText("Урон пули"), MinValue(0f)]
+	[LabelText("Bullet damage"), MinValue(0f)]
 	[SerializeField] private float _bulletDamage = 10f;
 
-	[LabelText("Время жизни пули"), MinValue(0.01f), SuffixLabel("сек", true)]
+	[LabelText("Bullet lifetime"), MinValue(0.01f), SuffixLabel("sec", true)]
 	[SerializeField] private float _bulletLifeTime = 2f;
 
-	[LabelText("Радиус поражения"), MinValue(0f)]
+	[LabelText("Bullet radius"), MinValue(0f)]
 	[SerializeField] private float _radius = 0.1f;
 
-	[LabelText("Время перезарядки"), MinValue(0f)]
+	[LabelText("Reload time"), MinValue(0f)]
 	[SerializeField] private float _reloadTime = 1f;
 
-	[LabelText("Время взведения затвора"), MinValue(0f)]
+	[LabelText("Shutter time"), MinValue(0f)]
 	[SerializeField] private float _shutterTime = 0.1f;
 
-	[LabelText("Модификатор скорости"), MinValue(0.1f)]
+	[LabelText("Speed modifier"), MinValue(0.1f)]
 	[SerializeField] private float _speedModifier = 1f;
 
-	[LabelText("Точность"), MinValue(0.1f), MaxValue(1.0f)]
+	[LabelText("Accuracy"), MinValue(0.1f), MaxValue(1.0f)]
 	[SerializeField] private float _accuracy = 0.9f;
 
-	[LabelText("Одиночная зарядка")]
+	[LabelText("Single load (per-round reload)")]
 	[SerializeField] private bool _singleLoad;
 
-	[LabelText("Стрельба без кулдауна")]
+	[LabelText("Fire on demand")]
 	[SerializeField] private bool _fireOnDemand;
 
-	[LabelText("Дебаффы при стрельбе")]
+	[LabelText("On-shot debuffs")]
 	[SerializeField] private Modifier[] _shotDebuffs;
 
-	[LabelText("Дебаффы при перезарядке")]
+	[LabelText("On-reload debuffs")]
 	[SerializeField] private Modifier[] _reloadDebuffs;
 
 	public string Id => _id;
+	public Caliber Caliber => _caliber;
 	public Sprite Preview => _preview;
 	public float BulletSpeed => _bulletSpeed;
 	public float BulletDamage => _bulletDamage;
@@ -89,7 +93,6 @@ public class GunConfig : ScriptableObject
 	public string FireSoundId => _fireSoundId;
 	public string ReloadSoundId => _reloadSoundId;
 	public string ReloadEndSoundId => _reloadEndSoundId;
-	public Bullet BulletPrefab => _bulletPrefab;
 	public float BulletRadius => _radius;
 	public BulletCheckType BulletCheckType => _bulletCheckType;
 	public float ReloadTime => _reloadTime;

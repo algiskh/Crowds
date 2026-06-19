@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _preview: {fileID: 21300000, guid: cd60573031875df429b680f1aedbf25d, type: 3}
   _id: SawedOff
+  _caliber: 4
   _fireRate: 0.05
   _magazineCapacity: 2
   _fireSoundId: shotgun_fire
   _reloadSoundId: shotgun_reload
   _reloadEndSoundId: 
-  _bulletPrefab: {fileID: 3834319163352093731, guid: 9e2f0c5933c5bbd458e3c6b546641dae, type: 3}
   _bulletCheckType: 0
   _projectilesNumber: 20
   _bulletSpeed: 45

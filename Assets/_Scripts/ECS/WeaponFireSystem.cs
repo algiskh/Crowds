@@ -15,7 +15,10 @@ namespace ECS
 			ref var bulletPoolPool = ref world.GetAsSingleton<BulletPoolComponent>();
 			ref var reloading = ref world.GetAsSingleton<ReloadingComponent>();
 			var soundHolder = world.GetAsSingleton<SoundHolderComponent>();
+			var ammoInventory = world.GetAsSingleton<AmmoInventoryComponent>();
 			#endregion
+
+			var reserveAmmo = ammoInventory.Get(weapon.GunConfig.Caliber);
 
 			var isCoolDownPassed = weapon.CoolDown <= 0;
 
@@ -35,7 +38,7 @@ namespace ECS
 			if (hasRequest && weapon.CurrentMagazineCount <= 0 && isCoolDownPassed)
 			{
 				// Try to start reloading 
-				if (hasRequest && weapon.CurrentMagazineCount == 0 && weapon.AmmoCount > 0)
+				if (hasRequest && weapon.CurrentMagazineCount == 0 && reserveAmmo > 0)
 				{
 					ref var requestReload = ref world.CreateSimpleEntity<RequestReloadComponent>();
 				}

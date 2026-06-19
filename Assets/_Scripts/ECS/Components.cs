@@ -186,8 +186,36 @@ public struct WeaponComponent
 	public float CoolDown;
 	public bool IsFiring;
 	public int CurrentMagazineCount;
-	public int AmmoCount;
 	public float ReloadTime;
+}
+
+// Запас патронов игрока по калибрам. Оружие с одинаковым калибром делит один пул.
+// Магазин (CurrentMagazineCount) хранится в WeaponComponent, резерв — здесь.
+public struct AmmoInventoryComponent
+{
+	public Dictionary<Caliber, int> Ammo;
+
+	public int Get(Caliber caliber)
+		=> caliber != Caliber.None && Ammo.TryGetValue(caliber, out var value) ? value : 0;
+
+	public void Add(Caliber caliber, int amount)
+	{
+		if (caliber == Caliber.None || amount == 0)
+			return;
+		Ammo.TryGetValue(caliber, out var value);
+		Ammo[caliber] = Mathf.Max(0, value + amount);
+	}
+
+	// Spends up to amount rounds of the caliber. Returns how many were actually spent.
+	public int Spend(Caliber caliber, int amount)
+	{
+		if (caliber == Caliber.None || amount <= 0)
+			return 0;
+		Ammo.TryGetValue(caliber, out var value);
+		int spent = Mathf.Min(value, amount);
+		Ammo[caliber] = value - spent;
+		return spent;
+	}
 }
 
 public struct ReloadingComponent
@@ -239,6 +267,8 @@ public struct LootComponent
 	public string Id;
 	public float Radius;
 	public int Count;
+	// LootType.Ammo only: ammo caliber. None = "ammo for the current weapon".
+	public Caliber AmmoCaliber;
 }
 
 // For loot placed at map at the start of the level

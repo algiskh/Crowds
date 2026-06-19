@@ -5,40 +5,73 @@ namespace ECS
 {
 	public class CheckSectorSystem : IEcsRunSystem
 	{
+		// Защита от зацикливания, если игрок «перепрыгнул» сразу несколько секторов за кадр.
+		private const int MaxShiftsPerFrame = 8;
+
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
 			ref var player = ref world.GetAsSingleton<PlayerComponent>();
 			ref var navmeshManager = ref world.GetAsSingleton<NavMeshManagerComponent>();
+			var manager = navmeshManager.Value;
+
+			var levelConfig = world.GetAsSingleton<CurrentLevelConfigComponent>().Value;
+			if (levelConfig != null && levelConfig.SectorMode == SectorMode.Sliding)
+			{
+				RunSliding(player.Value, manager, levelConfig.ActiveSectorRadius);
+				return;
+			}
+
+			RunRecycling(world, ref player, manager);
+		}
+
+		// Конечный уровень: секторы заранее расставлены и просто включаются/выключаются по игроку.
+		private void RunSliding(Player player, NavMeshManager manager, int activeRadius)
+		{
+			var center = manager.UpdateActiveSectors(player.transform.position, activeRadius);
+			if (center != null && player.CurrentSector != center)
+				player.SetSector(center);
+		}
+
+		// Бесконечный скролл: 3 сектора переиспользуются, объекты на «заднем» секторе переносятся вперёд.
+		private void RunRecycling(EcsWorld world, ref PlayerComponent player, NavMeshManager manager)
+		{
 			ref var mainHolder = ref world.GetAsSingleton<MainHolderComponent>();
-			var mobPool = world.GetPool<MobComponent>();
-			var currentSector = navmeshManager.Value.CurrentSector;
 			var offset = mainHolder.Value.SectorUpdateOffset;
-			var backwardOffset = -mainHolder.Value.SectorUpdateOffset;
-			var distanceBetweenSectorsHalf = navmeshManager.Value.DistanceBetweenSectors / 2;
+			var distanceBetweenSectorsHalf = manager.DistanceBetweenSectors / 2;
+
 			if (player.Value.CurrentSector == null)
 			{
-				player.Value.SetSector(currentSector);
+				player.Value.SetSector(manager.CurrentSector);
 				return;
 			}
 
 			float playerZ = player.Value.transform.position.z;
-			float currentSectorZ = currentSector.transform.position.z;
 
-			// Проверка с гистерезисом
-			if (playerZ > currentSectorZ + distanceBetweenSectorsHalf +  offset)
+			// Проверка с гистерезисом. Цикл, чтобы за один кадр догнать быстрый перенос игрока
+			// (бонус скорости / низкий FPS), иначе игрок может выйти за пределы активного navmesh.
+			for (int i = 0; i < MaxShiftsPerFrame; i++)
 			{
-				// Движение вправо
-				player.Value.SetSector(navmeshManager.Value.RightSector);
-				MoveStaticObjects(true, world, navmeshManager.Value);
-				navmeshManager.Value.UpdateSectorsPosition(true);
-			}
-			else if (playerZ < currentSectorZ - distanceBetweenSectorsHalf - offset)
-			{
-				// Движение влево
-				player.Value.SetSector(navmeshManager.Value.LeftSector);
-				MoveStaticObjects(false, world, navmeshManager.Value);
-				navmeshManager.Value.UpdateSectorsPosition(false);
+				float currentSectorZ = manager.CurrentSector.transform.position.z;
+
+				if (playerZ > currentSectorZ + distanceBetweenSectorsHalf + offset)
+				{
+					// Движение вправо
+					player.Value.SetSector(manager.RightSector);
+					MoveStaticObjects(true, world, manager);
+					manager.UpdateSectorsPosition(true);
+				}
+				else if (playerZ < currentSectorZ - distanceBetweenSectorsHalf - offset)
+				{
+					// Движение влево
+					player.Value.SetSector(manager.LeftSector);
+					MoveStaticObjects(false, world, manager);
+					manager.UpdateSectorsPosition(false);
+				}
+				else
+				{
+					break;
+				}
 			}
 		}
 
@@ -88,7 +121,7 @@ namespace ECS
 				ref var mob = ref mobPool.Get(mobEntity);
 				ref var health = ref healthPool.Get(mobEntity);
 
-				if (health.CurrentHealth == 0)
+				if (health.CurrentHealth <= 0)
 					continue;
 
 				if (mob.Value.transform.position.IsWithinXZBoundsFromMeshes(sectorToMove))

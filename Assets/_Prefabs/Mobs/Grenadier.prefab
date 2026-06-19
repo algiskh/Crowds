@@ -573,7 +573,8 @@ PrefabInstance:
       value: Drunk Run Forward
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: -8391222552659086748, guid: 53812b45c16bb6a44a1829a5276eb2c3, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 53812b45c16bb6a44a1829a5276eb2c3, type: 3}
