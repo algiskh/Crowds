@@ -10,35 +10,35 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ed97113acaf40794a88d811961711d5e, type: 3}
-  m_Name: Fatman
+  m_Name: FatmanStrong
   m_EditorClassIdentifier: Assembly-CSharp::MeleeMobConfig
-  _id: Fatman
-  _health: 225
+  _id: FatmanStrong
+  _health: 500
   _speed: 2.5
   _damage: 0
   _collisionRadius: 0
   _hitCooldown: 0
-  _prefab: {fileID: 4635986969134950211, guid: 2e8c9396b84bd8646b285066b7800732, type: 3}
+  _prefab: {fileID: 4635986969134950211, guid: 38d3a71583a02c848a015f34f69561b0, type: 3}
   _possibleLoots:
   - LootType: 2
     Id: Rifle
     Count: 1
-    Chance: 0.08
+    Chance: 0.02
+    AmmoCaliber: 0
+  - LootType: 2
+    Id: MachineGun
+    Count: 1
+    Chance: 0.04
     AmmoCaliber: 0
   - LootType: 0
     Id: 
     Count: 1
-    Chance: 0.1
-    AmmoCaliber: 0
-  - LootType: 4
-    Id: Shield
-    Count: 1
-    Chance: 0.03
+    Chance: 0.2
     AmmoCaliber: 0
   _targetType: 0
   _attackModifiers: []
   _damageDecals: []
-  _attackRange: 2
+  _attackRange: 3
   _meleeConfig: {fileID: 11400000, guid: d73222c4e3bcfe94d8d45c553f01df34, type: 2}
   references:
     version: 2

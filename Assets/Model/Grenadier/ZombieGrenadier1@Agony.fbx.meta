@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 5e2c7b2fc3d3d4643a1f200e420941d3
+guid: 941c99cbe5c55b1468d3233a4594c6dd
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
@@ -31,7 +31,7 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: throw_cooldown
+      name: GrenadierAgony
       takeName: mixamo.com
       internalID: -203655887218126122
       firstFrame: 0
@@ -62,7 +62,7 @@ ModelImporter:
     isReadable: 0
   meshes:
     lODScreenPercentages: []
-    globalScale: 25
+    globalScale: 195
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
@@ -120,7 +120,7 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
-    globalScale: 25
+    globalScale: 195
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
