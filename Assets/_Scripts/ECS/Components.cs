@@ -513,6 +513,18 @@ public struct FragCountComponent
 {
 	public int Value;
 }
+
+// Holds the on-screen pickup/notification log view (VerticalLayoutGroup of text slots).
+public struct UILogViewComponent
+{
+	public UILogView Value;
+}
+
+// Generic "show this line in the UI log" request. Any system can raise it; UILogSystem dispatches it.
+public struct RequestUILogComponent
+{
+	public string Message;
+}
 #endregion
 
 public struct DifficultyComponent

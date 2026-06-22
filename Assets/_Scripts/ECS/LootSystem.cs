@@ -47,6 +47,7 @@ namespace ECS
 			var disposablePool = world.GetPool<DisposableComponent>();
 			var currentSectorPool = world.GetPool<CurrentSectorComponent>();
 			var lookerPool = world.GetPool<LookerAtCamera>();
+			var lifetimePool = world.GetPool<LifeTimeComponent>();
 
 			#region CheckingDisposed
 			// Check disposed loots and return them to the pool
@@ -66,6 +67,40 @@ namespace ECS
 					effectRequest.Position = loot.Loot.transform.position;
 
 					world.DelEntity(disposedEntity); // delete entity
+				}
+			}
+			#endregion
+
+			#region CountingLifeTime
+			// Mob-dropped loot carries a LifeTimeComponent. When it runs out, the loot is
+			// silently returned to the pool (no "collect" effect — it wasn't picked up).
+			var lifetimeFilter = world.Filter<LootComponent>().Inc<LifeTimeComponent>().Inc<DisposableComponent>().End();
+			foreach (var lootEntity in lifetimeFilter)
+			{
+				ref var disposable = ref disposablePool.Get(lootEntity);
+				if (disposable.IsDisposed)
+					continue; // already picked up this frame; handled by CheckingDisposed above
+
+				ref var lifetime = ref lifetimePool.Get(lootEntity);
+				lifetime.Value -= Time.deltaTime;
+				if (lifetime.Value <= 0)
+				{
+					ref var loot = ref lootPool.Get(lootEntity);
+					loot.Loot.gameObject.SetActive(false);
+					lootMainPool.Value.Push(loot.Loot);
+					world.DelEntity(lootEntity);
+				}
+				else
+				{
+					// Pulse the icon toward the warning color over the last seconds before despawn.
+					float warningTime = mainHolder.Value.LootDespawnWarningTime;
+					if (warningTime > 0 && lifetime.Value <= warningTime)
+					{
+						ref var loot = ref lootPool.Get(lootEntity);
+						// Sine over the remaining time → smooth 0..1 ping-pong, fully self-contained.
+						float pulse = 0.5f * (1f + Mathf.Sin(lifetime.Value * mainHolder.Value.LootDespawnWarningPulseSpeed));
+						loot.Loot.SetWarningTint(mainHolder.Value.LootDespawnWarningColor, pulse);
+					}
 				}
 			}
 			#endregion
@@ -126,10 +161,13 @@ namespace ECS
 					}
 					else
 					{
-						loot = Object.Instantiate( // Fixed ambiguous reference  
+						loot = Object.Instantiate( // Fixed ambiguous reference
 							mainHolder.Value.LootPrefab,
 							lootMainPool.Parent);
 					}
+
+					// Pooled loot may carry a leftover warning tint from a previous life — clear it.
+					loot.ResetColor();
 
 					var lootEntity = world.NewEntity();
 					ref var lootComponent = ref lootPool.Add(lootEntity);
@@ -194,6 +232,18 @@ namespace ECS
 						}
 
 						loot.SetSprite(sprite);
+					}
+
+					// Mob-dropped loot despawns after a per-type, configurable timer.
+					// Loot from other sources (map loot, additional spawns) stays until picked up.
+					if (requestLootSpawn.Source == RequestSpawnSource.Mob)
+					{
+						float lifetime = mainHolder.Value.GetMobLootLifetime(lootComponent.LootType);
+						if (lifetime > 0)
+						{
+							ref var lifetimeComponent = ref lifetimePool.Add(lootEntity);
+							lifetimeComponent.Value = lifetime;
+						}
 					}
 
 					disposableComponent.IsDisposed = false;

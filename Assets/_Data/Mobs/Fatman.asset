@@ -31,7 +31,7 @@ MonoBehaviour:
     Chance: 0.1
     AmmoCaliber: 0
   - LootType: 4
-    Id: Shield
+    Id: shield
     Count: 1
     Chance: 0.03
     AmmoCaliber: 0

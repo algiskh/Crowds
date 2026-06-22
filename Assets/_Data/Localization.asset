@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _defaultLanguage: 0
   _entries:
-  - Key: 
-    Text: 
-    RuText: 
-    PoText: 
+  - Key: 9mm
+    Text: 9mm
+    RuText: "9\u043C\u043C"
+    PoText: 9mm

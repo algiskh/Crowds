@@ -17,6 +17,13 @@ namespace Localization
 		Language DefaultLanguage { get; }
 		string GetKey(string key, Language language);
 
+		/// <summary>
+		/// Non-logging lookup: returns true and the localized text when the key exists and has a
+		/// non-empty translation; otherwise returns false and leaves <paramref name="value"/> = key.
+		/// Use this for optional/fallback text (e.g. loot names) so a missing key doesn't spam errors.
+		/// </summary>
+		bool TryGetKey(string key, Language language, out string value);
+
 #if UNITY_EDITOR
 		void ApplyParsedData(string data);
 #endif
@@ -89,13 +96,41 @@ namespace Localization
 			};
 		}
 
+		public bool TryGetKey(string key, Language language, out string value)
+		{
+			value = key;
+			if (string.IsNullOrEmpty(key) || _entries == null)
+				return false;
+
+			foreach (var entry in _entries)
+			{
+				if (entry.Key != key)
+					continue;
+
+				var text = language switch
+				{
+					Language.Russian => entry.RuText,
+					Language.Portuguese => entry.PoText,
+					_ => entry.Text,
+				};
+
+				if (string.IsNullOrEmpty(text))
+					return false;
+
+				value = text;
+				return true;
+			}
+
+			return false;
+		}
+
 #if UNITY_EDITOR
 		[Button("Apply Parsed Data", ButtonSizes.Large)]
 		[ShowIf("@UnityEditor.EditorApplication.isPlaying == false")]
 		[PropertySpace(15)]
 		public void ApplyParsedData(string data)
 		{
-			// Логика применения данных из csv/json
+			// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ csv/json
 			UnityEditor.EditorUtility.SetDirty(this);
 		}
 #endif

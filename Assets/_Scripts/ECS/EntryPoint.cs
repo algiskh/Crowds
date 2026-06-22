@@ -44,6 +44,7 @@ namespace ECS
 		[SerializeField, Required, BoxGroup("UI")] private WinWindow _winWindow;
 		[SerializeField, Required, BoxGroup("UI")] private DifficultyTimerView _difficultyTimerView;
 		[SerializeField, Required, BoxGroup("UI")] private GrenadeCounter _grenadeCounter;
+		[SerializeField, Required, BoxGroup("UI")] private UILogView _uiLogView;
 
 		[Title("Input")]
 		[SerializeField, Required, BoxGroup("Input")] private InputActionReference _aimAction;
@@ -124,6 +125,9 @@ namespace ECS
 
 			ref var difficultyTimerUIComponent = ref _world.CreateSimpleEntity<DifficultyTimerUIComponent>();
 			difficultyTimerUIComponent.Value = _difficultyTimerView;
+
+			ref var uiLogViewComponent = ref _world.CreateSimpleEntity<UILogViewComponent>();
+			uiLogViewComponent.Value = _uiLogView;
 
 			// --- ����� ������ ---
 			var spawnPointPool = _world.GetPool<SpawnPointComponent>();
@@ -406,6 +410,7 @@ namespace ECS
 				.Add(new SmartConditionSystem())
 				.Add(new AimVisualizerSystem())
 				.Add(new UISystem())
+				.Add(new UILogSystem())
 				.Add(new PauseSystem())
 				.Init();
 			#endregion

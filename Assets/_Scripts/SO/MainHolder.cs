@@ -1,4 +1,5 @@
 using ECS;
+using Localization;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -14,6 +15,7 @@ public class MainHolder : ScriptableObject
 	[SerializeField, BoxGroup("Configs")] private GrenadeConfigHolder _grenadeConfigHolder;
 	[SerializeField, BoxGroup("Configs")] private BonusConfigHolder _bonusConfigHolder;
 	[SerializeField, BoxGroup("Configs")] private AmmoConfigHolder _ammoConfigHolder;
+	[SerializeField, BoxGroup("Configs")] private LocalizationHolder _localizationHolder;
 
 	[SerializeField,BoxGroup("Prefabs")] private Mob _prefab;
 	[SerializeField, BoxGroup("Prefabs")] private Loot _lootPrefab;
@@ -31,6 +33,16 @@ public class MainHolder : ScriptableObject
 	[SerializeField, BoxGroup("GameplayParameters")] private float _lootRadius = 0.5f;
 	[SerializeField, BoxGroup("GameplayParameters")] private float _sectorUpdateOffset = 5f;
 	[SerializeField, BoxGroup("GameplayParameters")] private int _startAmmo = 10;
+
+	[Tooltip("Despawn time (sec) for loot dropped by mobs, per loot type. <= 0 means the loot never despawns. Types not listed fall back to Default.")]
+	[SerializeField, BoxGroup("LootLifetime")] private float _defaultMobLootLifetime = 10f;
+	[SerializeField, BoxGroup("LootLifetime")] private LootLifetimeEntry[] _mobLootLifetimes;
+
+	[Tooltip("Seconds before despawn when mob loot starts pulsing toward the warning color. <= 0 disables the warning.")]
+	[SerializeField, BoxGroup("LootLifetime")] private float _lootDespawnWarningTime = 3f;
+	[Tooltip("Pulse speed of the despawn warning tint (radians/sec of the sine).")]
+	[SerializeField, BoxGroup("LootLifetime")] private float _lootDespawnWarningPulseSpeed = 8f;
+	[SerializeField, BoxGroup("LootLifetime")] private Color _lootDespawnWarningColor = Color.red;
 
 	[SerializeField, BoxGroup("DifficultyParameters")] private float _difficultyIncreaseTime = 60f;
 	[SerializeField, BoxGroup("DifficultyParameters")] private int _activeMobLimit = 60;
@@ -78,4 +90,33 @@ public class MainHolder : ScriptableObject
 	public GrenadeConfigHolder GrenadeConfigHolder => _grenadeConfigHolder;
 	public BonusConfigHolder BonusConfigHolder => _bonusConfigHolder;
 	public AmmoConfigHolder AmmoConfigHolder => _ammoConfigHolder;
+	public LocalizationHolder Localization => _localizationHolder;
+
+	/// <summary>
+	/// Despawn time (seconds) for mob-dropped loot of the given type. Returns the per-type
+	/// override if configured, otherwise the default. A value &lt;= 0 means "never despawn".
+	/// </summary>
+	public float GetMobLootLifetime(LootType type)
+	{
+		if (_mobLootLifetimes != null)
+		{
+			for (int i = 0; i < _mobLootLifetimes.Length; i++)
+			{
+				if (_mobLootLifetimes[i].LootType == type)
+					return _mobLootLifetimes[i].Lifetime;
+			}
+		}
+		return _defaultMobLootLifetime;
+	}
+
+	public float LootDespawnWarningTime => _lootDespawnWarningTime;
+	public float LootDespawnWarningPulseSpeed => _lootDespawnWarningPulseSpeed;
+	public Color LootDespawnWarningColor => _lootDespawnWarningColor;
+}
+
+[System.Serializable]
+public class LootLifetimeEntry
+{
+	public LootType LootType;
+	[Min(0f)] public float Lifetime = 10f;
 }

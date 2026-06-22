@@ -159,6 +159,10 @@ namespace ECS
 				if ((playerTransform.position - loot.Loot.transform.position).sqrMagnitude <= lootRadiusSqr)
 				{
 					disposable.IsDisposed = true;
+
+					ref var logRequest = ref world.CreateSimpleEntity<RequestUILogComponent>();
+					logRequest.Message = LootLogFormatter.Format(loot, muzzle, mainHolder.Value);
+
 					switch (loot.LootType)
 					{
 						case LootType.Ammo:
