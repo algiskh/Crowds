@@ -21,6 +21,7 @@ MonoBehaviour:
   _targetType: 6
   _delay: 0.85
   _cooldown: 0.65
+  _attackSoundId: whoosh
   _debuffs: []
   references:
     version: 2

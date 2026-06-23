@@ -68,6 +68,7 @@ MonoBehaviour:
   _targetType: 1
   _attackModifiers: []
   _damageDecals: []
+  _deathEffectId: zombie_dead
   references:
     version: 2
     RefIds: []

@@ -20,6 +20,7 @@ MonoBehaviour:
   _targetType: 5
   _delay: 0.2
   _cooldown: 1
+  _attackSoundId: melee1
   _debuffs:
   - rid: 2646365630254809158
   references:
@@ -29,7 +30,8 @@ MonoBehaviour:
       type: {class: SpeedModifier, ns: , asm: Assembly-CSharp}
       data:
         Id: SpeedMeleeDebuff
-        ReadyToDelete: 0
         Source: 6
         Value: 0.25
         Lifetime: 0.25
+        HasEffect: 0
+        EffectId: 

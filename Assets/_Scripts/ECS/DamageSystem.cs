@@ -117,9 +117,10 @@ namespace ECS
 
 
 
-					//Request Effect
+					//Request Effect (per-mob-type death effect, fallback to the shared "zombie_dead")
+					var deathEffectId = mobComponent.Config != null ? mobComponent.Config.DeathEffectId : null;
 					ref var effectRequest = ref world.CreateSimpleEntity<RequestEffectComponent>();
-					effectRequest.EffectId = "zombie_dead";
+					effectRequest.EffectId = string.IsNullOrEmpty(deathEffectId) ? "zombie_dead" : deathEffectId;
 					effectRequest.Position = position;
 
 					world.DelEntity(mobEntity);

@@ -33,3 +33,5 @@ MonoBehaviour:
     Clip: {fileID: 8300000, guid: 290ed0221e861d84f9666ab8743b344c, type: 3}
   - Id: melee1
     Clip: {fileID: 8300000, guid: ba218f580d4c32040b5968d22998f859, type: 3}
+  - Id: whoosh
+    Clip: {fileID: 8300000, guid: fc77493a55ff9b04ca6d5d2e51f188d8, type: 3}

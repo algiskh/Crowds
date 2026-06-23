@@ -44,7 +44,7 @@ Registered in `EntryPoint.RegisterSystems()`, right next to the grenadier:
 | System | File | Responsibility |
 |--------|------|----------------|
 | `MeleeAttackerSystem` | `ECS/MeleeAttackerSystem.cs` | The Chase/Windup/Cooldown state machine. On windup end emits a `RequestMeleeComponent` (in front of the mob, toward the player, `Delay=0`). Drives the `attack`/`run` animations via `AnimationStateComponent`. |
-| `MeleeSpawnSystem` | `ECS/MeleeSpawnSystem.cs` | **Unchanged.** Ticks `RequestMeleeComponent.Delay`, then deals `MeleeConfig.Damage` to every `HealthComponent` of matching `TargetType` within `Radius` of `Position`, applies on-hit modifiers/debuffs, spawns the hit effect (`MeleeConfig.Id`) and a damage decal. |
+| `MeleeSpawnSystem` | `ECS/MeleeSpawnSystem.cs` | Ticks `RequestMeleeComponent.Delay`, then deals `MeleeConfig.Damage` to every `HealthComponent` of matching `TargetType` within `Radius` of `Position`, applies on-hit modifiers/debuffs, spawns the hit effect (`MeleeConfig.Id`), a damage decal, and plays `MeleeConfig.AttackSoundId` (if set) at the strike point. |
 
 ## The three phases live in one animation
 
@@ -93,6 +93,7 @@ Already existed for the player; now also used by mobs. Phase timings clarified w
 | `Debuffs` | modifiers applied to the **attacker** (self-buffs on swing) |
 | `Delay` | **windup / pre-attack** seconds before damage |
 | `Cooldown` | **recovery** seconds after the strike (player: gap between swings) |
+| `AttackSoundId` | sound id (in `SoundHolder`) played at the strike, mirroring weapon sound ids. Empty = silent. Played positionally via `AudioSource.PlayClipAtPoint` (works for both player and mobs, which have no shared `AudioSource`). |
 
 ## Components (`ECS/Components.cs`, `#region MeleeAttacker`)
 

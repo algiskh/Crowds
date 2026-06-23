@@ -24,21 +24,27 @@ MonoBehaviour:
     Id: 
     Count: 15
     Chance: 0.01
+    AmmoCaliber: 0
   - LootType: 1
     Id: 
     Count: 25
     Chance: 0.07
+    AmmoCaliber: 0
   - LootType: 2
     Id: Shotgun
     Count: 1
     Chance: 0.02
+    AmmoCaliber: 0
   - LootType: 4
     Id: shield
     Count: 1
     Chance: 0.01
+    AmmoCaliber: 0
   _targetType: 1
   _attackModifiers:
   - rid: 2646365703343439942
+  _damageDecals: []
+  _deathEffectId: zombie_dead_poison
   references:
     version: 2
     RefIds:

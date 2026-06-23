@@ -1,3 +1,4 @@
+using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using System.Collections;
 using System.Collections.Generic;
@@ -20,6 +21,10 @@ public class MeleeConfig : ScriptableObject
 	[Tooltip("Recovery after the hit (sec). For mobs - the cooldown phase of the same animation; for the player - the delay between hits.")]
 	[SerializeField] private float _cooldown;
 
+	[LabelText("Attack sound ID")]
+	[Tooltip("Sound (from SoundHolder) played at the strike, like weapon fire sounds. Empty = silent.")]
+	[SerializeField] private string _attackSoundId;
+
 	[SerializeReference, OdinSerialize] private Modifier[] _debuffs;
 
 	public string Id => _id;
@@ -32,6 +37,7 @@ public class MeleeConfig : ScriptableObject
 
 	public float Delay => _delay;
 	public float Cooldown => _cooldown;
+	public string AttackSoundId => _attackSoundId;
 
 	public IEnumerable<Modifier> GetAllModifiersAsCopies(bool isDebuffs = false)
 	{

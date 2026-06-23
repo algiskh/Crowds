@@ -11,6 +11,8 @@ namespace ECS
 		{
 			var world = systems.GetWorld();
 
+			var soundHolder = world.GetAsSingleton<SoundHolderComponent>();
+
 			var meleeSpawnPool = world.GetPool<RequestMeleeComponent>();
 			var healthPool = world.GetPool<HealthComponent>();
 			var moveComponentPool = world.GetPool<MoveComponent>();
@@ -35,6 +37,16 @@ namespace ECS
 				effectRequest.EffectId = spawnRequest.Config.Id;
 				effectRequest.Position = spawnRequest.Position;
 				effectRequest.Rotation = spawnRequest.Rotation;
+
+				// Звук удара (настраивается в MeleeConfig, как звуки оружия). Позиционный, т.к.
+				// у атакующего (моб/игрок) нет общего AudioSource; ближний бой редкий — без оверхеда.
+				var soundId = spawnRequest.Config.AttackSoundId;
+				if (!string.IsNullOrEmpty(soundId))
+				{
+					var clip = soundHolder.Value.GetClip(soundId);
+					if (clip != null)
+						AudioSource.PlayClipAtPoint(clip, spawnRequest.Position);
+				}
 
 				TryApplyDebuffs(modifierPool, spawnRequest);
 

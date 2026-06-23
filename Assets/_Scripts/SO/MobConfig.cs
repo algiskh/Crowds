@@ -1,6 +1,8 @@
 
+using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
@@ -36,6 +38,8 @@ public class MobConfig: ScriptableObject
 	[SerializeReference, OdinSerialize] private Modifier[] _attackModifiers;
 	// Decal pools per damage source (bullet/melee/explosion). Empty -> fallback to the shared "Blood".
 	[SerializeField] private DamageDecalSet[] _damageDecals;
+	// Effect spawned on death (from EffectsHolder). Empty -> fallback to the shared "zombie_dead".
+	[SerializeField, ValueDropdown(nameof(GetEffectIds))] private string _deathEffectId;
 	public string Id => _id;
 	public float Health => _health;
 	public float Speed => _speed;
@@ -46,6 +50,7 @@ public class MobConfig: ScriptableObject
 	public float Damage => _damage;
 	public TargetType TargetType => _targetType;
 	public Modifier[] AttackModifiers => _attackModifiers;
+	public string DeathEffectId => _deathEffectId;
 
 	/// <summary>
 	/// Random decal id for the given damage source, or null if no pool is configured
@@ -61,5 +66,18 @@ public class MobConfig: ScriptableObject
 				return _damageDecals[i].GetRandomId();
 		}
 		return null;
+	}
+
+	private IEnumerable<string> GetEffectIds()
+	{
+		var holder = EffectsHolder.Instance;
+
+		if (holder == null)
+			yield break;
+
+		foreach (var fx in holder.GetAll())
+		{
+			yield return fx.Id;
+		}
 	}
 }

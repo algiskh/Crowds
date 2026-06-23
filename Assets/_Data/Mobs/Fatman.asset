@@ -38,6 +38,7 @@ MonoBehaviour:
   _targetType: 0
   _attackModifiers: []
   _damageDecals: []
+  _deathEffectId: zombie_dead_fatman
   _attackRange: 2
   _meleeConfig: {fileID: 11400000, guid: d73222c4e3bcfe94d8d45c553f01df34, type: 2}
   references:
