@@ -111,6 +111,11 @@ namespace ECS
 			{
 				ref var requestLootSpawn = ref requestLootSpawnPool.Get(entity);
 
+				// Снимаем поля запроса в локали: спаун лута создаёт новые сущности и
+				// может инвалидировать ссылку requestLootSpawn (resize пулов).
+				var requestSource = requestLootSpawn.Source;
+				var requestSourceEntity = requestLootSpawn.SourceEntity;
+
 				var possibleLoots = requestLootSpawn.PossibleLoots;
 				PossibleLoot selectedLoot = null;
 
@@ -126,7 +131,10 @@ namespace ECS
 
 					if (roll > totalChance)
 					{
-						// Выпал "пустой" сектор вне суммарного шанса.
+						// Выпал "пустой" сектор вне суммарного шанса. Лут не появился, но
+						// AdditionalSpawn-observer обязан узнать результат, иначе он навсегда
+						// зависнет в Requesting (отсюда «нет лута при выполненном условии»).
+						EmitSpawnResult(world, requestSource, requestSourceEntity, -1);
 						world.DelEntity(entity);
 						continue;
 					}
@@ -253,14 +261,31 @@ namespace ECS
 					collisionComponent.CollisionType = CollisionType.Loot;
 					//collisionComponent.Radius = mainHolder.Value.DefaultCollisionRadius;
 
-					ref var finishEvent = ref world.CreateSimpleEntity<LootSpawnedEventComponent>();
-					finishEvent.Source = requestLootSpawn.Source;
-					finishEvent.SourceEntity = requestLootSpawn.SourceEntity;
-					finishEvent.LootEntity = lootEntity;
+					EmitSpawnResult(world, requestSource, requestSourceEntity, lootEntity);
+				}
+				else
+				{
+					// Лут не выбран (пустая таблица) — всё равно сообщаем результат observer'у.
+					EmitSpawnResult(world, requestSource, requestSourceEntity, -1);
 				}
 				world.DelEntity(entity); // delete request entity
 			}
 			#endregion
+		}
+
+		// Сообщает результат спауна обратно запросившему AdditionalSpawn-observer'у.
+		// Событие нужно только этому источнику (единственный потребитель), поэтому для
+		// прочих источников ничего не создаём — иначе события копились бы без удаления.
+		// lootEntity < 0 означает «лут не появился» (пустой розыгрыш дроп-таблицы).
+		private void EmitSpawnResult(EcsWorld world, RequestSpawnSource source, int sourceEntity, int lootEntity)
+		{
+			if (source != RequestSpawnSource.AdditionalSpawn)
+				return;
+
+			ref var finishEvent = ref world.CreateSimpleEntity<LootSpawnedEventComponent>();
+			finishEvent.Source = source;
+			finishEvent.SourceEntity = sourceEntity;
+			finishEvent.LootEntity = lootEntity;
 		}
 
 		// Caliber for an unassigned ammo loot, decided at spawn: current weapon's caliber,

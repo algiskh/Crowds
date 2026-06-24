@@ -66,6 +66,9 @@ namespace ECS
 			_world = new EcsWorld();
 			_systems = new EcsSystems(_world);
 
+			QualitySettings.vSyncCount = 0;
+			Application.targetFrameRate = 60;
+			
 			LoadLevel();
 			SetupSpawnData();
 			RegisterSystems();
@@ -171,6 +174,10 @@ namespace ECS
 			mobPoolComponent.Value = new();
 			mobPoolComponent.Pools = new Dictionary<string, Stack<Mob>>();
 			mobPoolComponent.Parent = _mobParent;
+
+			// Заранее наполняем пул неактивными клонами каждого типа мобов уровня,
+			// чтобы Instantiate не давал хитчи во время волн (spawnPoints найдены выше).
+			PrewarmMobPool(spawnPoints);
 
 			ref var bulletPool = ref _world.CreateSimpleEntity<BulletPoolComponent>();
 			bulletPool.Value = new();
@@ -319,7 +326,7 @@ namespace ECS
 			var additionalSpawnTransforms = GameObject.FindGameObjectsWithTag("AdditionalSpawn")
 			   .Select(go => go.transform);
 
-			Dictionary<Transform, int> dictionary = new();
+			Dictionary<Transform, Leopotam.EcsLite.EcsPackedEntity> dictionary = new();
 			List<Transform> lootPointsPool = new(additionalSpawnTransforms);
 
 			// -- additional loot --
@@ -331,6 +338,59 @@ namespace ECS
 
 		// Разрешает выбранный уровень и инстанциирует его префаб ДО SetupSpawnData,
 		// чтобы Find*-сканы (SpawnPoint / MapLoot / тег AdditionalSpawn) подхватили его контент.
+		// Заранее создаёт неактивные клоны каждого типа мобов, который может появиться
+		// на уровне (по MobId всех SpawnPoint'ов), и кладёт их в пул. Так первые волны
+		// берут мобов через Pop() вместо Instantiate и не дают хитчей.
+		// Кол-во на тип берётся из MainHolder.MobPrewarmPerType (0 = выключено),
+		// и не превышает ActiveMobLimit — больше мобов одновременно всё равно не живёт.
+		private void PrewarmMobPool(SpawnPoint[] spawnPoints)
+		{
+			int perType = _mainHolder.MobPrewarmPerType;
+			if (perType <= 0 || spawnPoints == null || _mainHolder.MobConfigHolder == null)
+				return;
+
+			perType = Mathf.Min(perType, _mainHolder.ActiveMobLimit);
+			if (perType <= 0)
+				return;
+
+			ref var mobPool = ref _world.GetAsSingleton<MobPoolComponent>();
+			mobPool.Pools ??= new Dictionary<string, Stack<Mob>>();
+
+			var warmed = new HashSet<string>();
+			foreach (var spawnPoint in spawnPoints)
+			{
+				var configs = spawnPoint != null ? spawnPoint.SpawnConfigs : null;
+				if (configs == null)
+					continue;
+
+				foreach (var spawnConfig in configs)
+				{
+					var id = spawnConfig.MobId;
+					// Каждый тип греем один раз, даже если он встречается на нескольких точках.
+					if (string.IsNullOrEmpty(id) || !warmed.Add(id))
+						continue;
+
+					var mobConfig = _mainHolder.MobConfigHolder.GetConfigById(id);
+					if (mobConfig == null || mobConfig.Prefab == null)
+						continue;
+
+					if (!mobPool.Pools.TryGetValue(id, out var stack))
+					{
+						stack = new Stack<Mob>();
+						mobPool.Pools[id] = stack;
+					}
+
+					for (int i = stack.Count; i < perType; i++)
+					{
+						var mob = Object.Instantiate(mobConfig.Prefab, mobPool.Parent);
+						mob.SetId(id);
+						mob.gameObject.SetActive(false);
+						stack.Push(mob);
+					}
+				}
+			}
+		}
+
 		private void LoadLevel()
 		{
 			var level = GameSession.SelectedLevel != null ? GameSession.SelectedLevel : _fallbackLevel;

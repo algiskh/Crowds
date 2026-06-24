@@ -24,10 +24,11 @@ namespace ECS
 				{
 					continue;
 				}
-				if (!smartCondition.Value.IsFulfilled)
-				{
-					smartCondition.Value.Iterate();
-				}
+				// Всегда переоцениваем: «живые» условия (NoAmmoAround) должны уметь
+				// снова стать false, иначе IsFulfilled залипает в true навсегда и
+				// observer бесконечно доспаунивает лут. Условия-аккумуляторы
+				// (FragsCondition) сами защищены внутренним guard'ом и остаются true.
+				smartCondition.Value.Iterate();
 			}
 		}
 	}

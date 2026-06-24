@@ -603,7 +603,10 @@ public struct AimInputComponent
 
 public struct AdditionalLootSpawnHolderComponent
 {
-	public Dictionary<Transform, int> ActivePoints; // lootComponent entity as a key
+	// point -> packed loot entity. Packed (not raw int) because the loot entity is
+	// deleted on pickup/despawn and its id recycled — a raw int would make pool.Has
+	// throw "Cant touch destroyed entity".
+	public Dictionary<Transform, Leopotam.EcsLite.EcsPackedEntity> ActivePoints;
 	public IEnumerable<AdditionalLootConfig> LootConfigs;
 	public List<Transform> LootPointsPool;
 	public float CooldownMax;
@@ -615,7 +618,6 @@ public struct AdditionalLootObserverComponent
 	public PossibleLoot[] PossibleLoot;
 	public SpawnProcess Process;
 	public Transform ProcessingPoint;
-	public Dictionary<int, int> ProcessingRequests;
 	public float Cooldown;
 }
 

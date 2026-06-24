@@ -47,6 +47,12 @@ public class MainHolder : ScriptableObject
 	[SerializeField, BoxGroup("DifficultyParameters")] private float _difficultyIncreaseTime = 60f;
 	[SerializeField, BoxGroup("DifficultyParameters")] private int _activeMobLimit = 60;
 
+	[SerializeField, BoxGroup("DifficultyParameters"), MinValue(0),
+	 Tooltip("Сколько неактивных клонов каждого типа мобов уровня заранее создать в пуле при старте, " +
+		"чтобы убрать хитчи от Instantiate во время волн. 0 = выключено (ленивое создание). " +
+		"На тип не превышает ActiveMobLimit.")]
+	private int _mobPrewarmPerType = 10;
+
 	[Header("Camera presets")]
 	[SerializeField] private FollowTarget FollowTarget;
 
@@ -86,6 +92,7 @@ public class MainHolder : ScriptableObject
 	public int StartAmmo => _startAmmo;
 	public float DifficultyIncreaseTime => _difficultyIncreaseTime;
 	public int ActiveMobLimit => _activeMobLimit;
+	public int MobPrewarmPerType => _mobPrewarmPerType;
 	public MobConfigHolder MobConfigHolder => _mobConfigHolder;
 	public GrenadeConfigHolder GrenadeConfigHolder => _grenadeConfigHolder;
 	public BonusConfigHolder BonusConfigHolder => _bonusConfigHolder;

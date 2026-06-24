@@ -4,7 +4,7 @@ using UnityEngine.AI;
 
 public class Mob: MonoBehaviour
 {
-	[SerializeField] private ValueBar _valueBar;
+	[SerializeField] private MeshHealthBar _valueBar;
 	[SerializeField] private Collider _collider;
 	[SerializeField] private SimpleAnimator _animator;
 	public Vector2 Position => transform.position;
