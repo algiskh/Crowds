@@ -147,6 +147,17 @@ namespace ECS
 			ref var spawnPointsComponent = ref _world.CreateSimpleEntity<SpawnPointsComponent>();
 			spawnPointsComponent.Value = _spawnPoints;
 
+			// --- Точки спауна отрядов в строю (GroupSpawnPoint) ---
+			var groupSpawnPointPool = _world.GetPool<GroupSpawnPointComponent>();
+			var groupSpawnPoints = FindObjectsByType<GroupSpawnPoint>(FindObjectsSortMode.None);
+			foreach (var groupSpawnPoint in groupSpawnPoints)
+			{
+				int groupEntity = _world.NewEntity();
+				ref var gsp = ref groupSpawnPointPool.Add(groupEntity);
+				gsp.Value = groupSpawnPoint;
+				gsp.Timer = groupSpawnPoint.Config != null ? groupSpawnPoint.Config.InitialDelay : 0f;
+			}
+
 			// --- ������� ������ ---
 			ref var spawnRequest = ref _world.CreateSimpleEntity<SpawnRequestComponent>();
 			spawnRequest.MaxCoolDown = _mainHolder.MaxSpawnCoolDown;
@@ -432,8 +443,10 @@ namespace ECS
 				.Add(new AdditionalLootSpawnSystem())
 				// Mob systems
 				.Add(new MobSpawnSystem())
+				.Add(new GroupSpawnSystem())
 				// Move and navigation systems
 				.Add(new MobPathfindingSystem())
+				.Add(new FormationSystem())
 				.Add(new GrenadierSystem())
 				.Add(new MeleeAttackerSystem())
 				.Add(new MoveSystem())

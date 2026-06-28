@@ -65,28 +65,34 @@ MonoBehaviour:
       Cooldown: 5
     - DifficultyLevel: 5
       Cooldown: 3
+    - DifficultyLevel: 6
+      Cooldown: 2
   - _mobId: Grenadier
     _weight: 1
     _spawnPresets:
     - DifficultyLevel: 3
       Cooldown: 15
     - DifficultyLevel: 4
-      Cooldown: 2
+      Cooldown: 11
+    - DifficultyLevel: 5
+      Cooldown: 10
+    - DifficultyLevel: 6
+      Cooldown: 12
   - _mobId: Fatman
     _weight: 0.4
     _spawnPresets:
-    - DifficultyLevel: 1
-      Cooldown: 11
     - DifficultyLevel: 3
       Cooldown: 15
     - DifficultyLevel: 4
       Cooldown: 12
     - DifficultyLevel: 5
       Cooldown: 11
+    - DifficultyLevel: 6
+      Cooldown: 10
   - _mobId: FatmanStrong
     _weight: 0.2
     _spawnPresets:
     - DifficultyLevel: 5
       Cooldown: 16
-    - DifficultyLevel: 1
-      Cooldown: 18
+    - DifficultyLevel: 6
+      Cooldown: 15

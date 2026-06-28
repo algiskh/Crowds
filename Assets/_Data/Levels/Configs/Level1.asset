@@ -73,6 +73,9 @@ MonoBehaviour:
     - Name: Chance
       Entry: 4
       Data: 0.5
+    - Name: AmmoCaliber
+      Entry: 3
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -91,6 +94,9 @@ MonoBehaviour:
     - Name: Chance
       Entry: 4
       Data: 0.25
+    - Name: AmmoCaliber
+      Entry: 3
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -150,9 +156,23 @@ MonoBehaviour:
     InterSpawnCooldown: 0.24
     EndConditions: []
     ShowTimer: 1
+  - DifficultyLevel: 6
+    DifficultyTimer: 60
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.24
+    EndConditions: []
+    ShowTimer: 1
+  - DifficultyLevel: 7
+    DifficultyTimer: 45
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.5
+    EndConditions: []
+    ShowTimer: 1
   - DifficultyLevel: 13
     DifficultyTimer: 0
     SpeedMultiplier: 1
     InterSpawnCooldown: 0.5
     EndConditions: []
     ShowTimer: 1
+  _sectorMode: 0
+  _activeSectorRadius: 1

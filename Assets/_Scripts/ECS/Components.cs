@@ -826,3 +826,30 @@ public struct MeleeAttackerComponent
 	public float Timer;
 }
 #endregion
+
+#region Formation
+/// <summary>
+/// Per-entity: моб-ведомый, идущий в строю за ведущим. Висит поверх обычного MobComponent.
+/// Ведущий — обычный моб, который патфайндит к игроку; ведомый каждый кадр считает мировую
+/// позицию своего «слота» от позиции/поворота ведущего и рулит к ней (FormationSystem,
+/// без navmesh — прямое движение через MoveComponent.Direction). Ссылка на ведущего —
+/// EcsPackedEntity, а не Transform: при гибели ведущего поколение сущности меняется и Unpack
+/// вернёт false, даже если GameObject ведущего успели переиспользовать из пула.
+/// </summary>
+public struct FormationFollowerComponent
+{
+	public Leopotam.EcsLite.EcsPackedEntity Leader;
+	public Vector3 SlotOffset; // локальный офсет от ведущего (x — вправо, z — вперёд), посчитан при спауне
+	public bool InFormation;   // гистерезис из §7c: попал в слот — держаться легче
+}
+
+/// <summary>
+/// Точка спауна группы (отряда) мобов в строю. По кулдауну GroupSpawnSystem разом спаунит
+/// ведущего + ведомых по GroupSpawnConfig и связывает их в строй. Таймер — отсчёт до спауна.
+/// </summary>
+public struct GroupSpawnPointComponent
+{
+	public float Timer;
+	public GroupSpawnPoint Value;
+}
+#endregion

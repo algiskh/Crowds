@@ -69,6 +69,7 @@ namespace ECS
 				decal.transform.rotation = Quaternion.LookRotation(request.Direction, Vector3.up).TiltDown90();
 				if (decal != null)
 				{
+					decal.ApplyVariation(config);
 					decal.Show();
 					var newEntity = world.NewEntity();
 					ref var effectComponent = ref decalPool.Add(newEntity);
@@ -77,6 +78,7 @@ namespace ECS
 
 					effectComponent.Value = decal;
 					lifetimeComponent.Value = config.LifeTime;
+					disposableComponent.IsDisposed = false; // EcsLite не сбрасывает переиспользованный компонент
 				}
 				world.DelEntity(entity);
 			}
