@@ -10,7 +10,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f8391b5a9b51eba4bb2e5148c66ca574, type: 3}
-  m_Name: LevelLibrary
+  m_Name: SurvivalLibrary
   m_EditorClassIdentifier: Assembly-CSharp::LevelLibrary
-  _levels:
-  - {fileID: 11400000, guid: 9d71a63b11de28a4293b3310033fa6f5, type: 2}
+  _levels: []
