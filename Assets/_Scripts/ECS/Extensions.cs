@@ -137,7 +137,7 @@ namespace ECS
 		/// Ничего не делает, если итоговый id пуст.
 		/// </summary>
 		public static void RequestDamageDecal(this EcsWorld world, MobConfig config, DamageSourceType source,
-			Vector3 position, Vector3 direction, string fallbackId = "Blood")
+			Vector3 position, Vector3 direction, string fallbackId = "Blood", bool alignToDirection = false)
 		{
 			string id = config != null ? config.GetDecalId(source) : null;
 			if (string.IsNullOrEmpty(id))
@@ -153,6 +153,7 @@ namespace ECS
 			decal.Position = position;
 			decal.Id = id;
 			decal.Direction = direction;
+			decal.AlignToDirection = alignToDirection;
 		}
 	}
 }

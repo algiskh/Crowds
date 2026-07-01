@@ -105,19 +105,12 @@ public sealed class LoadingScreen : MonoBehaviour
         var labelGo = new GameObject("Label");
         labelGo.transform.SetParent(transform, false);
         _label = labelGo.AddComponent<UniText>();
-        // Шрифт/оформление у компонента, созданного в рантайме, не назначаются автоматически
-        // (авто-подстановка дефолтов — только в редакторе), поэтому берём их из настроек проекта.
-        if (UniTextSettings.DefaultFontStack != null)
-            _label.FontStack = UniTextSettings.DefaultFontStack;
-        // Appearance-сеттер обращается к внутреннему fontProvider, который у только что
-        // добавленного компонента ещё null (создаётся при первом ребилде). Присваиваемое значение
-        // всё равно записывается в поле ДО обращения к провайдеру, и провайдер подхватит его при
-        // инициализации — поэтому ожидаемый NRE здесь безопасно проглатываем.
-        if (UniTextSettings.DefaultAppearance != null)
-        {
-            try { _label.Appearance = UniTextSettings.DefaultAppearance; }
-            catch (System.NullReferenceException) { /* провайдер ещё не создан — это ок */ }
-        }
+        // Шрифт/оформление у компонента, созданного в рантайме, не назначаются автоматически:
+        // авто-подстановка дефолтов (UniTextSettings.DefaultFontStack/DefaultAppearance) живёт
+        // под #if UNITY_EDITOR и в плеер-билде отсутствует (иначе CS0117 при сборке). Поэтому
+        // «одалживаем» шрифт и оформление у уже существующего в загруженной сцене UniText —
+        // и меню, и геймплейная сцена всегда содержат текстовые метки на дефолтном шрифте.
+        AssignFontFromSceneTemplate();
         _label.FontSize = 48f;
         _label.HorizontalAlignment = HorizontalAlignment.Center;
         _label.VerticalAlignment = VerticalAlignment.Middle;
@@ -143,6 +136,43 @@ public sealed class LoadingScreen : MonoBehaviour
         _barFillRect.pivot = new Vector2(0f, 0.5f);
         _barFillRect.anchoredPosition = Vector2.zero;
         ApplyProgress(0f);
+    }
+
+    // Копирует шрифт и оформление в наш рантайм-лейбл с любого другого UniText, уже
+    // присутствующего в загруженной сцене. Работает и в редакторе, и в билде (в отличие от
+    // UniTextSettings.Default*, доступных только под #if UNITY_EDITOR). Если подходящего
+    // «донора» не нашлось — в редакторе падаем на дефолты из настроек проекта.
+    private void AssignFontFromSceneTemplate()
+    {
+        var candidates = FindObjectsByType<UniText>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (var candidate in candidates)
+        {
+            if (candidate == _label || candidate.FontStack == null)
+                continue;
+
+            _label.FontStack = candidate.FontStack;
+            // Appearance-сеттер обращается к внутреннему fontProvider, который у только что
+            // добавленного компонента ещё null (создаётся при первом ребилде). Значение всё
+            // равно записывается в поле ДО обращения к провайдеру и подхватывается при
+            // инициализации — поэтому ожидаемый NRE здесь безопасно проглатываем.
+            if (candidate.Appearance != null)
+            {
+                try { _label.Appearance = candidate.Appearance; }
+                catch (System.NullReferenceException) { /* провайдер ещё не создан — это ок */ }
+            }
+            return;
+        }
+
+#if UNITY_EDITOR
+        // Фолбэк для редактора (напр. если занавес показан на пустой сцене без других UniText).
+        if (UniTextSettings.DefaultFontStack != null)
+            _label.FontStack = UniTextSettings.DefaultFontStack;
+        if (UniTextSettings.DefaultAppearance != null)
+        {
+            try { _label.Appearance = UniTextSettings.DefaultAppearance; }
+            catch (System.NullReferenceException) { /* провайдер ещё не создан — это ок */ }
+        }
+#endif
     }
 
     private static Image CreateImage(string name, Transform parent, Color color)

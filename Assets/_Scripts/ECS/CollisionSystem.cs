@@ -79,7 +79,7 @@ namespace ECS
 					ref var move = ref movePool.Get(bulletEntity);
 					var hitMobConfig = mobPool.Get(mobEntity).Config;
 
-					world.RequestDamageDecal(hitMobConfig, DamageSourceType.Bullet, bulletTransform.position, move.Direction);
+					world.RequestDamageDecal(hitMobConfig, DamageSourceType.Bullet, bulletTransform.position, move.Direction, alignToDirection: true);
 
 					ref var bloodEffect = ref world.CreateSimpleEntity<RequestEffectComponent>();
 					bloodEffect.EffectId = "blood";
@@ -139,6 +139,7 @@ namespace ECS
 					bloodDecal.Position = playerPos;
 					bloodDecal.Id = "Blood";
 					bloodDecal.Direction = playerTransform.forward;
+					bloodDecal.AlignToDirection = false; // EcsLite не сбрасывает переиспользованный компонент
 				}
 				else if (mob.Cooldown > 0)
 				{

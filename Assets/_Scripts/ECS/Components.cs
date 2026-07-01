@@ -436,6 +436,8 @@ public struct RequestDecalComponent
 	public string Id;
 	public Vector3 Direction;
 	public Vector3 Position;
+	// Ориентировать декаль строго по Direction (напр. по траектории пули), без случайного разворота.
+	public bool AlignToDirection;
 }
 #endregion
 

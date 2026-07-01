@@ -69,7 +69,7 @@ namespace ECS
 				decal.transform.rotation = Quaternion.LookRotation(request.Direction, Vector3.up).TiltDown90();
 				if (decal != null)
 				{
-					decal.ApplyVariation(config);
+					decal.ApplyVariation(config, request.AlignToDirection);
 					decal.Show();
 					var newEntity = world.NewEntity();
 					ref var effectComponent = ref decalPool.Add(newEntity);
