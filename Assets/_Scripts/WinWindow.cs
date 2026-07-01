@@ -22,7 +22,9 @@ public class WinWindow : MonoBehaviour
 
 	private void OnPressRestart()
 	{
-		SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+		// Занавес загрузки на время перезапуска уровня (EntryPoint снимет его, когда сцена готова).
+		LoadingScreen.Show();
+		SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().name);
 	}
 
 	public void Show(int score = 0)

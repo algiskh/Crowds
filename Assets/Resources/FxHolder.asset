@@ -68,6 +68,16 @@ MonoBehaviour:
     HasDuration: 1
     Duration: 1
     IsChild: 0
+  - Id: shield
+    Prefab: {fileID: 7970544682367293265, guid: 2d9deb5aa8924654ab131137e13103e1, type: 3}
+    HasDuration: 0
+    Duration: 0
+    IsChild: 1
+  - Id: speedup
+    Prefab: {fileID: 7970544682367293265, guid: 294bbfe0a03d9ce41a950402cadb8e67, type: 3}
+    HasDuration: 0
+    Duration: 0
+    IsChild: 1
   - Id: FatmanMelee
     Prefab: {fileID: 7970544682367293265, guid: c91dc444c76d55b4693e6cb9f0a1177b, type: 3}
     HasDuration: 1

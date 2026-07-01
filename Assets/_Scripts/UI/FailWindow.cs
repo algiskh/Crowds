@@ -25,7 +25,9 @@ public class FailWindow : MonoBehaviour
 		// Пауза у нас реализована флагом, а не timeScale, но сбрасываем на всякий случай,
 		// чтобы перезагруженная сцена точно стартовала «живой».
 		Time.timeScale = 1f;
-		SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+		// Занавес загрузки на время перезапуска уровня (EntryPoint снимет его, когда сцена готова).
+		LoadingScreen.Show();
+		SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
 	}
 
 	public void Show(int score = 0)

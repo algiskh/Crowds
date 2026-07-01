@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 using Unity.AI.Navigation;
 
 public class NavMeshManager : MonoBehaviour
@@ -24,7 +25,9 @@ public class NavMeshManager : MonoBehaviour
 
 	// Принимает секторы уровня (из LevelRoot) и запекает navmesh.
 	// sectors == null/пусто → используем уже назначенные в инспекторе ссылки (прямой запуск сцены).
-	public void Configure(FloorSector[] sectors)
+	// bake == false → только расставляет секторы/шаг, а запекание оставляет вызывающему
+	// (EntryPoint печёт navmesh асинхронно на загрузке — RebuildNavMeshAsync).
+	public void Configure(FloorSector[] sectors, bool bake = true)
 	{
 		if (sectors != null && sectors.Length > 0)
 		{
@@ -54,7 +57,22 @@ public class NavMeshManager : MonoBehaviour
 		else if (_currentSector != null && _leftSector != null && _currentSector != _leftSector)
 			_distanceBetweenSectors = _currentSector.DistanceTo(_leftSector);
 
-		RebuildNavMesh();
+		if (bake)
+			RebuildNavMesh();
+	}
+
+	// Асинхронное первичное запекание navmesh: не блокирует кадр, поэтому занавес загрузки
+	// продолжает анимироваться. Пустой NavMeshData создаётся и добавляется на surface, а затем
+	// целиком «обновляется» (UpdateNavMesh перестраивает все изменившиеся регионы — здесь весь меш).
+	public AsyncOperation RebuildNavMeshAsync()
+	{
+		if (_navMeshSurface.navMeshData == null)
+		{
+			_navMeshSurface.navMeshData = new NavMeshData();
+			_navMeshSurface.AddData();
+		}
+
+		return _navMeshSurface.UpdateNavMesh(_navMeshSurface.navMeshData);
 	}
 
 	// Находит сектор, в границах которого находится точка, иначе ближайший по Z.

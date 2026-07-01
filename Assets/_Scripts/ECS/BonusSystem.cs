@@ -21,6 +21,8 @@ namespace ECS
 			ref var player = ref world.GetAsSingleton<PlayerComponent>();
 			ref var playerStats = ref world.GetAsSingleton<PlayerStatsComponent>();
 			ref var activeBonuses = ref world.GetAsSingleton<ActiveBonusesComponent>();
+			ref var effectPool = ref world.GetAsSingleton<EffectPoolComponent>();
+			var effectsHolder = world.GetAsSingleton<EffectsHolderComponent>();
 
 			if (activeBonuses.Value == null)
 				activeBonuses.Value = new List<ActiveBonus>();
@@ -33,7 +35,8 @@ namespace ECS
 			foreach (var entity in world.Filter<RequestApplyBonusComponent>().End())
 			{
 				ref var request = ref requestPool.Get(entity);
-				ApplyBonus(world, mainHolder.Value, playerEntity, modifierPool, ref activeBonuses, request.ConfigId);
+				ApplyBonus(mainHolder.Value, playerEntity, modifierPool,
+					ref activeBonuses, ref effectPool, effectsHolder.Value, request.ConfigId);
 				world.DelEntity(entity);
 			}
 			#endregion
@@ -48,6 +51,9 @@ namespace ECS
 				if (remaining <= 0f)
 				{
 					playerStats.Value.ClearBonus(bonus.Type);
+					// Сопровождающий VFX закончился вместе с бонусом — возвращаем в пул.
+					if (bonus.Effect != null)
+						effectPool.Pool(bonus.Effect);
 					list.RemoveAt(i);
 					continue;
 				}
@@ -60,8 +66,9 @@ namespace ECS
 			#endregion
 		}
 
-		private void ApplyBonus(EcsWorld world, MainHolder mainHolder, int playerEntity,
-			EcsPool<ModifierOwnerComponent> modifierPool, ref ActiveBonusesComponent activeBonuses, string configId)
+		private void ApplyBonus(MainHolder mainHolder, int playerEntity,
+			EcsPool<ModifierOwnerComponent> modifierPool, ref ActiveBonusesComponent activeBonuses,
+			ref EffectPoolComponent effectPool, EffectsHolder effectsHolder, string configId)
 		{
 			var holder = mainHolder.BonusConfigHolder;
 			if (holder == null)
@@ -87,31 +94,60 @@ namespace ECS
 
 			// Refresh: убираем уже активный бонус того же типа (его модификатор + запись).
 			// Бар не сбрасываем — новый бонус того же типа тут же его перерисует в UI-проходе.
+			// Сопровождающий VFX не пересоздаём, а ПЕРЕИСПОЛЬЗУЕМ — чтобы не было дублей при
+			// повторном подборе того же типа. Пул трогаем только при истечении бонуса.
+			SceneEffect reusedEffect = null;
 			var list = activeBonuses.Value;
 			for (int i = list.Count - 1; i >= 0; i--)
 			{
 				if (list[i].Type != config.Type)
 					continue;
 				modifierOwner.Modifiers.Remove(list[i].Modifier);
+				if (list[i].Effect != null)
+					reusedEffect = list[i].Effect;
 				list.RemoveAt(i);
 			}
 
 			modifierOwner.Modifiers.Add(modifier);
+
+			// Сопровождающий игрока VFX: переиспользуем от предыдущего бонуса того же типа,
+			// иначе берём из пула и парентим к игроку — эффект едет за ним всё время действия.
+			SceneEffect effect = reusedEffect;
+			if (effect == null && modifier.HasEffect && !string.IsNullOrEmpty(modifier.EffectId))
+				effect = SpawnFollowEffect(ref effectPool, effectsHolder, modifier.EffectId, modifierOwner.Transform);
+
 			list.Add(new ActiveBonus
 			{
 				Type = config.Type,
 				Modifier = modifier,
-				TotalDuration = modifier.Lifetime
+				TotalDuration = modifier.Lifetime,
+				Effect = effect
 			});
+		}
 
-			// Опциональный VFX подбора (как в ModifiersSystem для модификаторов с эффектом).
-			if (modifier.HasEffect && !string.IsNullOrEmpty(modifier.EffectId))
-			{
-				ref var fx = ref world.CreateSimpleEntity<RequestEffectComponent>();
-				fx.EffectId = modifier.EffectId;
-				fx.Parent = modifierOwner.Transform;
-				fx.ModifierEntity = playerEntity;
-			}
+		/// <summary>
+		/// Достаёт VFX из пула эффектов и парентит его к игроку, чтобы он сопровождал персонажа
+		/// всё время действия бонуса. Возврат в пул делает BonusSystem при истечении бонуса.
+		/// </summary>
+		private SceneEffect SpawnFollowEffect(ref EffectPoolComponent effectPool,
+			EffectsHolder effectsHolder, string effectId, Transform player)
+		{
+			if (effectsHolder == null || player == null)
+				return null;
+
+			var wrapper = effectsHolder.GetEffect(effectId);
+			if (wrapper == null)
+				return null;
+
+			var effect = effectPool.SpawnFromPool(wrapper);
+			if (effect == null)
+				return null;
+
+			effect.SetParent(player);
+			effect.transform.localPosition = Vector3.zero;
+			effect.transform.localEulerAngles = Vector3.zero;
+			effect.Show();
+			return effect;
 		}
 	}
 }

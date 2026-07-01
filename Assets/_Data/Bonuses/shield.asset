@@ -27,6 +27,6 @@ MonoBehaviour:
         Source: 6
         Value: 0.33
         Lifetime: 15
-        HasEffect: 0
-        EffectId: 
+        HasEffect: 1
+        EffectId: shield
         ImmuneType: 1

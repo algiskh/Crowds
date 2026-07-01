@@ -16,11 +16,13 @@ RequestApplyBonusComponent { ConfigId }
    ▼
 look up BonusConfig → clone its Modifier → (refresh: drop existing bonus of same type)
    → add modifier to player ModifierOwnerComponent.Modifiers
-   → register ActiveBonus { Type, Modifier, TotalDuration = Lifetime }
+   → spawn/reuse the follow-VFX (parented to the player) and store it on the record
+   → register ActiveBonus { Type, Modifier, TotalDuration = Lifetime, Effect }
    ▼
 each frame:  ModifiersSystem ticks Modifier.Lifetime down (and removes it at 0)
              BonusSystem reads Lifetime → PlayerStats bar fill = Lifetime/TotalDuration,
                                           UniText = ceil(seconds left); prunes at 0
+                                          and returns the follow-VFX to the pool on expiry
 ```
 
 The **effect** of each bonus is whatever its modifier already does in the common system:
@@ -34,7 +36,8 @@ The **effect** of each bonus is whatever its modifier already does in the common
 
 **Refresh, one bonus per `BonusType`.** Picking up a bonus while one of the same type is active
 removes the old modifier + record and applies the new one (timer/value reset). Keeps the single
-bar/timer unambiguous.
+bar/timer unambiguous. The follow-VFX is **reused** across the refresh (the previous effect instance
+is carried over onto the new record), so re-picking the same bonus never stacks a second effect.
 
 ## Per-bonus config — `BonusConfig` (SO)
 
@@ -56,7 +59,7 @@ pattern as `MobConfig.AttackModifiers`.
 | Struct | Kind | Fields |
 |--------|------|--------|
 | `RequestApplyBonusComponent` | request | `string ConfigId` — emitted by `CollisionSystem` on pickup |
-| `ActiveBonus` | plain struct | `BonusType Type; Modifier Modifier; float TotalDuration;` |
+| `ActiveBonus` | plain struct | `BonusType Type; Modifier Modifier; float TotalDuration; SceneEffect Effect;` (`Effect` = the follow-VFX, owned by `BonusSystem`) |
 | `ActiveBonusesComponent` | singleton | `List<ActiveBonus> Value;` — created in `EntryPoint` |
 
 ## System — `BonusSystem` (`ECS/BonusSystem.cs`)
@@ -65,11 +68,22 @@ Registered in `EntryPoint.RegisterSystems()` **right after `DamageSystem`** (so 
 pickup request emitted by `CollisionSystem` the same frame, and reads `Lifetime` values already
 ticked by `ModifiersSystem` earlier in the frame). Two passes per frame:
 1. **Apply** every `RequestApplyBonusComponent`: refresh same-type, clone+add the modifier, register
-   an `ActiveBonus`, optionally spawn the pickup VFX.
+   an `ActiveBonus`, and (if the modifier `HasEffect`) attach the follow-VFX — reusing the same-type
+   bonus's existing effect on refresh, otherwise `SpawnFromPool` + parent it to the player.
 2. **Drive UI / prune**: for each `ActiveBonus`, `PlayerStats.SetBonus(type, Lifetime/TotalDuration,
-   Lifetime)`; at `Lifetime <= 0` call `ClearBonus(type)` and drop the record.
+   Lifetime)`; at `Lifetime <= 0` call `ClearBonus(type)`, `Pool()` the follow-VFX, and drop the record.
 
 `Modifier.Lifetime` is the single source of truth — ticked/removed by `ModifiersSystem`, read here.
+
+### Follow-VFX lifecycle
+
+The bonus VFX is **owned directly by `BonusSystem`** (the `SpawnFromPool`/`Pool` pattern used by
+`GrenadeLauncher`), not the deferred `RequestEffectComponent` + DamageType-linkage path — bonuses
+carry `SpeedModifier`/`ShieldModifier` (no `DamageType`), so that linkage never matched them and the
+effect used to leak (never pooled) and could stack on re-pickup. Now on pickup the effect is pulled
+from the effect pool, **parented to the player** (so it follows for the whole duration), reused across
+same-type refreshes (no doubling), and returned to the pool when the bonus expires. Author the VFX as
+a **looping** particle so it lasts the bonus duration; its `FxWrapper.Duration` is irrelevant here.
 
 ## UI
 

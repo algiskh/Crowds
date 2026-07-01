@@ -661,6 +661,9 @@ public struct ActiveBonus
 	public BonusType Type;
 	public Modifier Modifier;
 	public float TotalDuration;
+	// Сопровождающий игрока VFX (запарентен к игроку). BonusSystem владеет его жизненным циклом:
+	// переиспользует при рефреше того же типа (без дублей) и возвращает в пул при истечении.
+	public SceneEffect Effect;
 }
 
 // Singleton: список активных бонусов игрока. BonusSystem прунит протухшие и гонит UI.

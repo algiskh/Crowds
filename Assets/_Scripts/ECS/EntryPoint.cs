@@ -1,7 +1,9 @@
+using Cysharp.Threading.Tasks;
 using Leopotam.EcsLite;
 using Sirenix.OdinInspector;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -57,6 +59,11 @@ namespace ECS
 		private LevelRoot _levelRoot;
 		private LevelConfig _activeLevelConfig;
 
+		// NavMesh-менеджер уровня (кэшируется в SetupSpawnData для асинхронного запекания).
+		private NavMeshManager _navMeshManager;
+		// Пока false — уровень ещё грузится, системы не крутятся (см. Update).
+		private bool _initialized;
+
 		#endregion
 
 		#region UNITY EVENTS
@@ -68,15 +75,55 @@ namespace ECS
 
 			QualitySettings.vSyncCount = 0;
 			Application.targetFrameRate = 60;
-			
-			LoadLevel();
-			SetupSpawnData();
-			RegisterSystems();
+
+			// Занавес загрузки обычно уже показан из меню/окна рестарта перед сменой сцены.
+			// На случай прямого запуска геймплейной сцены (из редактора) показываем его здесь —
+			// вызов идемпотентный.
+			LoadingScreen.Show();
+
+			// Тяжёлую инициализацию разносим по кадрам, чтобы занавес отрисовывался и анимировался,
+			// а самый крупный хитч (запекание navmesh) ушёл в асинхронную операцию.
+			InitializeAsync(this.GetCancellationTokenOnDestroy()).Forget();
 		}
 
 		private void Update()
 		{
+			if (!_initialized)
+				return;
+
 			_systems?.Run();
+		}
+
+		// Пошаговый асинхронный бут уровня. Между шагами уступаем кадр, чтобы занавес обновлялся;
+		// navmesh печём асинхронно; занавес снимаем только после того, как камера отрисует
+		// первый настоящий кадр уровня.
+		private async UniTaskVoid InitializeAsync(CancellationToken token)
+		{
+			// 1) Инстанс префаба уровня (весь контент сцены должен существовать до Find*-сканов).
+			LoadLevel();
+			LoadingScreen.SetProgress(0.2f);
+			await UniTask.Yield(PlayerLoopTiming.Update, token);
+
+			// 2) Данные сцены: пулы, игрок, UI, точки спауна. NavMesh здесь НЕ печём (bake:false).
+			SetupSpawnData();
+			LoadingScreen.SetProgress(0.5f);
+			await UniTask.Yield(PlayerLoopTiming.Update, token);
+
+			// 3) Асинхронное запекание navmesh — не блокирует кадр.
+			if (_navMeshManager != null)
+				await _navMeshManager.RebuildNavMeshAsync().ToUniTask(cancellationToken: token);
+			LoadingScreen.SetProgress(0.8f);
+
+			// 4) Регистрируем системы и разрешаем их прогон.
+			RegisterSystems();
+			_initialized = true;
+			LoadingScreen.SetProgress(1f);
+
+			// 5) Даём кадр отработать системам (позиционирование камеры и т.п.) и дожидаемся конца
+			//    кадра — уровень уже отрисован камерой. Затем плавно снимаем занавес.
+			await UniTask.Yield(PlayerLoopTiming.Update, token);
+			await UniTask.WaitForEndOfFrame(this, token);
+			LoadingScreen.HideAndDestroy();
 		}
 
 		private void OnDestroy()
@@ -104,9 +151,12 @@ namespace ECS
 
 			ref var navMeshManager = ref _world.CreateSimpleEntity<NavMeshManagerComponent>();
 			navMeshManager.Value = FindFirstObjectByType<NavMeshManager>();
-			// Скармливаем секторы из префаба уровня и запекаем navmesh (после инстанса префаба).
+			// Скармливаем секторы из префаба уровня, но НЕ печём navmesh здесь: запекание крупное
+			// и уходит в асинхронную операцию (InitializeAsync → RebuildNavMeshAsync), чтобы не
+			// подвешивать кадр под занавесом загрузки.
 			// Если уровень загружен из сцены без LevelRoot — Configure(null) использует ссылки из инспектора.
-			navMeshManager.Value.Configure(_levelRoot != null ? _levelRoot.Sectors : null);
+			navMeshManager.Value.Configure(_levelRoot != null ? _levelRoot.Sectors : null, bake: false);
+			_navMeshManager = navMeshManager.Value;
 			ref var fragCount = ref _world.CreateSimpleEntity<FragCountComponent>();
 			fragCount.Value = 0;
 

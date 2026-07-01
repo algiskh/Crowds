@@ -155,7 +155,10 @@ public class MainMenuController : MonoBehaviour
 
 		GameSession.Select(_currentMode, level);
 		Time.timeScale = 1f;
-		SceneManager.LoadScene(_gameplaySceneName);
+		// Показываем занавес и грузим сцену асинхронно: занавес успевает отрисоваться поверх меню
+		// и накрывает переход, а EntryPoint снимет его, когда уровень готов и отрисован.
+		LoadingScreen.Show();
+		SceneManager.LoadSceneAsync(_gameplaySceneName);
 	}
 	#endregion
 
