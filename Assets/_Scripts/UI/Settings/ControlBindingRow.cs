@@ -41,6 +41,8 @@ namespace Game.Settings
 		private int _gamepadBindingIndex = -1;
 		private Action _onChanged;
 		private InputActionRebindingExtensions.RebindingOperation _rebind;
+		private bool _actionWasEnabled;
+		private int _lastFinishFrame = -1;
 
 		private Graphic Highlight => _listeningTarget != null ? _listeningTarget : _keyboardButton?.targetGraphic;
 		private Color _restColor;
@@ -101,14 +103,11 @@ namespace Game.Settings
 		#region REBIND
 		private void ToggleRebind()
 		{
-			// Повторный клик по «слушающему» слоту — отмена.
+			// Повторный клик по «слушающему» слоту — отмена (слот вернётся к показу текущей клавиши).
 			if (_rebind != null)
-			{
-				_rebind.Cancel();
-				return;
-			}
-
-			StartRebind();
+				CancelRebind();
+			else
+				StartRebind();
 		}
 
 		private void StartRebind()
@@ -116,15 +115,21 @@ namespace Game.Settings
 			if (_action == null || _keyboardBindingIndex < 0)
 				return;
 
+			// Защита от повторного onClick в том же кадре (двойное событие клика): не даём
+			// заново войти в режим ожидания в кадре, где перепривязку только что отменили.
+			if (Time.frameCount == _lastFinishFrame)
+				return;
+
 			// Прервать перепривязку, начатую в другой строке.
 			if (s_active != null && s_active != this)
-				s_active._rebind?.Cancel();
+				s_active.CancelRebind();
 
 			s_active = this;
 
-			// На время интерактивной перепривязки экшен должен быть отключён
-			// (Start() делает это сам, но зафиксируем прежнее состояние для восстановления).
-			bool wasEnabled = _action.enabled;
+			// На время интерактивной перепривязки экшен ОБЯЗАН быть отключён:
+			// PerformInteractiveRebinding().Start() кидает InvalidOperationException, если он enabled.
+			_actionWasEnabled = _action.enabled;
+			_action.Disable();
 
 			EnterListeningState();
 
@@ -134,32 +139,47 @@ namespace Game.Settings
 				.WithControlsExcluding("<Mouse>/position")
 				.WithControlsExcluding("<Mouse>/delta")
 				.WithControlsExcluding("<Mouse>/scroll")
+				// ЛКМ — это клик, которым открывают слот. Если её не исключить, тот же клик
+				// сразу «ловится» перепривязкой (слот не входит в режим ожидания с первого раза).
+				.WithControlsExcluding("<Mouse>/leftButton")
 				.WithCancelingThrough("<Keyboard>/escape")
-				.OnComplete(op =>
+				.OnComplete(_ =>
 				{
-					FinishRebind(wasEnabled);
-					Refresh();
+					FinishRebind();
 					_onChanged?.Invoke();
 				})
-				.OnCancel(op =>
-				{
-					FinishRebind(wasEnabled);
-					Refresh();
-				})
+				.OnCancel(_ => FinishRebind())
 				.Start();
 		}
 
-		private void FinishRebind(bool reEnableAction)
+		// Явная отмена (повторный клик по слоту / переход к другому слоту): гасим операцию и
+		// синхронно возвращаем слот к показу текущей клавиши, не полагаясь только на колбэк.
+		private void CancelRebind()
+		{
+			if (_rebind == null)
+				return;
+
+			var op = _rebind;
+			_rebind = null; // чтобы OnCancel-колбэк не пошёл по второму кругу
+			op.Cancel();
+			op.Dispose();
+			FinishRebind();
+		}
+
+		private void FinishRebind()
 		{
 			_rebind?.Dispose();
 			_rebind = null;
 			if (s_active == this)
 				s_active = null;
 
-			if (reEnableAction && _action != null)
+			if (_actionWasEnabled && _action != null)
 				_action.Enable();
 
+			_lastFinishFrame = Time.frameCount;
+
 			ExitListeningState();
+			Refresh(); // всегда возвращаем надпись к актуальной клавише
 		}
 
 		private void EnterListeningState()
@@ -198,15 +218,9 @@ namespace Game.Settings
 
 		private void OnDisable()
 		{
-			// Не оставляем висящую операцию, если строку выключили/уничтожили во время перепривязки.
-			if (_rebind != null)
-			{
-				_rebind.Dispose();
-				_rebind = null;
-				if (s_active == this)
-					s_active = null;
-				ExitListeningState();
-			}
+			// Не оставляем висящую операцию (и отключённый экшен), если строку выключили/уничтожили
+			// во время перепривязки.
+			CancelRebind();
 		}
 	}
 }

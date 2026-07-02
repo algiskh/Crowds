@@ -86,6 +86,11 @@ namespace Game.Settings
 					if (!IsKeyboardMouse(binding.effectivePath))
 						continue;
 
+					// Оси-«движения» (Look -> Mouse delta, position, scroll) не перепривязываются
+					// как клавиши — их из списка исключаем.
+					if (IsPointerMotion(binding.effectivePath))
+						continue;
+
 					// Ключ группировки: часть композита — по её имени (up/down/left/right),
 					// одиночный биндинг — все в одну группу экшена.
 					string key = binding.isPartOfComposite ? "part:" + binding.name : "single";
@@ -158,6 +163,10 @@ namespace Game.Settings
 		private static bool IsKeyboardMouse(string path) =>
 			path.StartsWith("<Keyboard>") || path.StartsWith("<Mouse>") ||
 			path.StartsWith("<Pointer>") || path.StartsWith("<Pen>");
+
+		// Непривязываемые оси указателя: движение мыши (Look), скролл, позиция.
+		private static bool IsPointerMotion(string path) =>
+			path.EndsWith("/delta") || path.EndsWith("/position") || path.EndsWith("/scroll");
 
 		private static bool IsGamepad(string path) =>
 			path.StartsWith("<Gamepad>") || path.StartsWith("<XInputController>") ||

@@ -44,7 +44,10 @@
 3. `Esc` или повторный клик по слоту → отмена, слот возвращается к прежнему цвету/тексту.
 
 Ввод ограничен клавиатурой/мышью через `WithControlsExcluding("<Gamepad>")` (+ исключение
-`position`/`delta`/`scroll` мыши); отмена — `WithCancelingThrough("<Keyboard>/escape")`.
+`position`/`delta`/`scroll` и **`leftButton`** мыши — ЛКМ используется для клика по слоту,
+иначе тот же клик сразу ловится перепривязкой); отмена — `WithCancelingThrough("<Keyboard>/escape")`.
+Перед `Start()` экшен обязательно `Disable()` (иначе `InvalidOperationException`), после —
+`Enable()` при необходимости.
 Поля подсветки (`_listeningTarget`, `_listeningColor`, `_listeningText`) опциональны:
 если `_listeningTarget` не задан, берётся `targetGraphic` кнопки.
 
