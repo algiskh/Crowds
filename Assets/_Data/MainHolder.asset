@@ -31,7 +31,7 @@ MonoBehaviour:
   _cameraSpeed: 4.1
   _minSpawnCoolDown: 1
   _maxSpawnCoolDown: 10
-  _lootRadius: 0.5
+  _lootRadius: 1
   _sectorUpdateOffset: 5
   _startAmmo: 0
   _defaultMobLootLifetime: 30
@@ -49,6 +49,7 @@ MonoBehaviour:
   _lootDespawnWarningColor: {r: 1, g: 0, b: 0, a: 1}
   _difficultyIncreaseTime: 240
   _activeMobLimit: 100
+  _mobPrewarmPerType: 10
   _playerConfig: {fileID: 11400000, guid: e76d675ca41bc2a4a9e6a9a2efd51893, type: 2}
   _gunConfigHolder: {fileID: 11400000, guid: ec2dc9cc0e8b712428c4a63f67295746, type: 2}
   _soundHolder: {fileID: 11400000, guid: 729264cdb4e2fb743802d88da75cc8e0, type: 2}

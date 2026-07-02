@@ -162,6 +162,8 @@ namespace ECS
 
 			ref var inputActions = ref _world.CreateSimpleEntity<InputActionsComponent>();
 			inputActions.Value = _inputActions;
+			// Наложить кастомные биндинги игрока (из настроек управления) до чтения инпута.
+			Game.Settings.ControlSettings.Apply(_inputActions);
 
 			// --- UI ���������� ---
 			ref var weaponViewComponent = ref _world.CreateSimpleEntity<WeaponUIViewComponent>();
