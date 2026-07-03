@@ -69,7 +69,10 @@ namespace ECS
 			}
 
 			if (stage.EndConditions == null || stage.EndConditions.Length == 0)
+			{
+				difficulty.Conditions = System.Array.Empty<ISmartCondition>();
 				return;
+			}
 
 			difficulty.Conditions = new ISmartCondition[stage.EndConditions.Length];
 

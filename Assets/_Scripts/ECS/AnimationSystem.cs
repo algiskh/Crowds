@@ -16,9 +16,14 @@ namespace ECS
 			var world = systems.GetWorld();
 			var mobPool = world.GetPool<MobComponent>();
 			var animPool = world.GetPool<AnimationStateComponent>();
+			var crowdPool = world.GetPool<CrowdInstanceComponent>();
 
 			foreach (var entity in world.Filter<MobComponent>().End())
 			{
+				// Crowd mobs have no live Animator — CrowdRenderSystem reconciles their animation instead.
+				if (crowdPool.Has(entity))
+					continue;
+
 				ref var mob = ref mobPool.Get(entity);
 
 				if (mob.Value == null || mob.Value.Animator == null)

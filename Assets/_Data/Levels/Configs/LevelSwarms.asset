@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3734ec2c50bdc2f4b8869a485acd283e, type: 3}
+  m_Name: LevelSwarms
+  m_EditorClassIdentifier: 
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: _AdditionalLootConfigs
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[AdditionalLootConfig, Assembly-CSharp]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  _difficultyStages:
+  - DifficultyLevel: 1
+    DifficultyTimer: 30
+    SpeedMultiplier: 1.2
+    InterSpawnCooldown: 1.5
+    EndConditions: []
+    ShowTimer: 1
+  - DifficultyLevel: 2
+    DifficultyTimer: 40
+    SpeedMultiplier: 2
+    InterSpawnCooldown: 0.7
+    EndConditions: []
+    ShowTimer: 1
+  - DifficultyLevel: 3
+    DifficultyTimer: 50
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.25
+    EndConditions: []
+    ShowTimer: 1
+  - DifficultyLevel: 4
+    DifficultyTimer: 60
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.3
+    EndConditions: []
+    ShowTimer: 1
+  - DifficultyLevel: 5
+    DifficultyTimer: 60
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.24
+    EndConditions: []
+    ShowTimer: 1
+  - DifficultyLevel: 6
+    DifficultyTimer: 60
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.24
+    EndConditions: []
+    ShowTimer: 1
+  - DifficultyLevel: 7
+    DifficultyTimer: 45
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.5
+    EndConditions: []
+    ShowTimer: 1
+  - DifficultyLevel: 13
+    DifficultyTimer: 0
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.5
+    EndConditions: []
+    ShowTimer: 1
+  _sectorMode: 1
+  _activeSectorRadius: 1

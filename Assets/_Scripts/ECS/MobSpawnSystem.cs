@@ -104,8 +104,36 @@ namespace ECS
 				attacker.Timer = 0f;
 			}
 
+			// Crowd rendering: this mob is drawn GPU-instanced from a baked VAT (CrowdRenderSystem)
+			// instead of its SkinnedMeshRenderer+Animator, which we switch off here.
+			if (mobConfig.CrowdLibrary != null)
+			{
+				ref var crowd = ref world.GetPool<CrowdInstanceComponent>().Add(mobEntity);
+				crowd.Library = mobConfig.CrowdLibrary;
+				crowd.CurrentClip = Scene.Animation.AnimationType.Run;
+				crowd.ClipTime = 0f;
+				crowd.Initialized = false;
+				DisableSkinnedView(mob);
+			}
+
 			InitializeMobGameObject(mob, mobConfig, playerPosition);
 			return mobEntity;
+		}
+
+		/// <summary>
+		/// Turns off the skinned renderer(s) and Animator so a crowd mob costs nothing to skin/animate on
+		/// the CPU — CrowdRenderSystem draws its baked pose instead. The health bar (separate MeshRenderer)
+		/// is untouched. Stays off across pool reuse, so calling it again on a pooled mob is a cheap no-op.
+		/// </summary>
+		private static void DisableSkinnedView(Mob mob)
+		{
+			var skinned = mob.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+			for (int i = 0; i < skinned.Length; i++)
+				skinned[i].enabled = false;
+
+			var animators = mob.GetComponentsInChildren<Animator>(true);
+			for (int i = 0; i < animators.Length; i++)
+				animators[i].enabled = false;
 		}
 
 		/// <summary>

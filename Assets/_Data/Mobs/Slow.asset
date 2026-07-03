@@ -69,6 +69,7 @@ MonoBehaviour:
   _attackModifiers: []
   _damageDecals: []
   _deathEffectId: zombie_dead
+  _crowdLibrary: {fileID: 11400000, guid: fcd70593489576a49a7991c8262d0497, type: 2}
   references:
     version: 2
     RefIds: []

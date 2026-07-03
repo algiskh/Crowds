@@ -85,6 +85,20 @@ public struct AnimationStateComponent
 	public bool HasCurrent;
 }
 
+/// <summary>
+/// Marks a mob as rendered by <see cref="ECS.CrowdRenderSystem"/> via GPU-instanced Vertex Animation
+/// Textures instead of a SkinnedMeshRenderer+Animator. Added at spawn when the mob's config has a
+/// <see cref="Scene.Animation.CrowdAnimationLibrary"/>. The render system reconciles the requested
+/// <see cref="AnimationStateComponent"/> into a baked clip and advances <see cref="ClipTime"/>.
+/// </summary>
+public struct CrowdInstanceComponent
+{
+	public Scene.Animation.CrowdAnimationLibrary Library;
+	public Scene.Animation.AnimationType CurrentClip;
+	public float ClipTime;      // seconds elapsed inside the current clip
+	public bool Initialized;    // false until the first clip is applied
+}
+
 public struct MoveComponent
 {
 	public Transform Transform;

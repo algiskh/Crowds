@@ -57,8 +57,31 @@ public class NavMeshManager : MonoBehaviour
 		else if (_currentSector != null && _leftSector != null && _currentSector != _leftSector)
 			_distanceBetweenSectors = _currentSector.DistanceTo(_leftSector);
 
+		// Fallback для конечных/односекторных уровней (Sliding): без соседнего сектора шаг измерить
+		// нечем, и производный от него диапазон дистанции спауна схлопывается в 0 — тогда системы
+		// спауна (SpawnPointSystem/GroupSpawnSystem) отбраковывают ВСЕ точки. Берём собственный
+		// размер сектора (больший из габаритов по X/Z) — это совпадает с семантикой Recycling, где
+		// шаг равен длине одного сектора.
+		if (_distanceBetweenSectors <= 0f && _currentSector != null)
+			_distanceBetweenSectors = GetSectorFootprint(_currentSector);
+
 		if (bake)
 			RebuildNavMesh();
+	}
+
+	// Больший из мировых габаритов сектора по X/Z. Считаем по Renderer.bounds (мировые, не зависят
+	// от FloorSector.Awake) — пол доминирует над мелким декором/лутом, объединение даёт его футпринт.
+	private static float GetSectorFootprint(FloorSector sector)
+	{
+		var renderers = sector.GetComponentsInChildren<Renderer>();
+		if (renderers.Length == 0)
+			return 0f;
+
+		var bounds = renderers[0].bounds;
+		for (int i = 1; i < renderers.Length; i++)
+			bounds.Encapsulate(renderers[i].bounds);
+
+		return Mathf.Max(bounds.size.x, bounds.size.z);
 	}
 
 	// Асинхронное первичное запекание navmesh: не блокирует кадр, поэтому занавес загрузки

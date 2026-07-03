@@ -43,5 +43,24 @@ namespace Scene.Animation
 
 		public static int ToHash(this AnimationType type) => _hashes[(int)type];
 		public static string ToStateName(this AnimationType type) => _names[(int)type];
+
+		/// <summary>
+		/// Maps an Animator state name (e.g. "run", "throw_cooldown") back to its <see cref="AnimationType"/>.
+		/// Case-insensitive. Used by the VAT baker to label baked clips by animation type.
+		/// </summary>
+		public static bool TryFromStateName(string stateName, out AnimationType type)
+		{
+			for (int i = 0; i < _names.Length; i++)
+			{
+				if (string.Equals(_names[i], stateName, System.StringComparison.OrdinalIgnoreCase))
+				{
+					type = (AnimationType)i;
+					return true;
+				}
+			}
+
+			type = default;
+			return false;
+		}
 	}
 }

@@ -507,6 +507,7 @@ namespace ECS
 				.Add(new LookAtCursorSystem())
 			
 				.Add(new AnimationSystem())
+				.Add(new CrowdRenderSystem())
 				.Add(new ModifiersSystem())
 
 				// Fire and Reload Systems

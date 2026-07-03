@@ -40,6 +40,9 @@ public class MobConfig: ScriptableObject
 	[SerializeField] private DamageDecalSet[] _damageDecals;
 	// Effect spawned on death (from EffectsHolder). Empty -> fallback to the shared "zombie_dead".
 	[SerializeField, ValueDropdown(nameof(GetEffectIds))] private string _deathEffectId;
+	// Optional: baked GPU-instanced crowd animation. When set, the mob is rendered by CrowdRenderSystem
+	// (SkinnedMeshRenderer + Animator are disabled at spawn). Null -> classic skinned rendering.
+	[SerializeField] private Scene.Animation.CrowdAnimationLibrary _crowdLibrary;
 	public string Id => _id;
 	public float Health => _health;
 	public float Speed => _speed;
@@ -51,6 +54,7 @@ public class MobConfig: ScriptableObject
 	public TargetType TargetType => _targetType;
 	public Modifier[] AttackModifiers => _attackModifiers;
 	public string DeathEffectId => _deathEffectId;
+	public Scene.Animation.CrowdAnimationLibrary CrowdLibrary => _crowdLibrary;
 
 	/// <summary>
 	/// Random decal id for the given damage source, or null if no pool is configured

@@ -12,4 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8391b5a9b51eba4bb2e5148c66ca574, type: 3}
   m_Name: SurvivalLibrary
   m_EditorClassIdentifier: Assembly-CSharp::LevelLibrary
-  _levels: []
+  _levels:
+  - {fileID: 11400000, guid: 1f7ccb1f5d9afeb49a60dbf435aeeb5e, type: 2}
