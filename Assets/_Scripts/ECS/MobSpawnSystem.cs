@@ -48,6 +48,9 @@ namespace ECS
 
 			Mob mob = SpawnMob(ref mobPool, mobConfig);
 			mob.transform.position = position;
+			// Per-config size: one prefab can back many configs of different scale. Applied every spawn,
+			// so pooled reuse always re-establishes the right size. Scales render + collider together.
+			mob.transform.localScale = Vector3.one * mobConfig.Scale;
 
 			var mobEntity = world.NewEntity();
 
@@ -103,6 +106,14 @@ namespace ECS
 				attacker.State = MeleeAttackerState.Chase;
 				attacker.Timer = 0f;
 			}
+			// Моб-стрелок: тот же моб + телеграфированный выстрел (RangedAttackerSystem).
+			else if (mobConfig is RangedMobConfig rangedMobConfig)
+			{
+				ref var ranged = ref world.GetPool<RangedAttackerComponent>().Add(mobEntity);
+				ranged.Config = rangedMobConfig;
+				ranged.State = RangedAttackerState.Chase;
+				ranged.Timer = 0f;
+			}
 
 			// Crowd rendering: this mob is drawn GPU-instanced from a baked VAT (CrowdRenderSystem)
 			// instead of its SkinnedMeshRenderer+Animator, which we switch off here.
@@ -113,11 +124,44 @@ namespace ECS
 				crowd.CurrentClip = Scene.Animation.AnimationType.Run;
 				crowd.ClipTime = 0f;
 				crowd.Initialized = false;
+				crowd.Tint = mobConfig.Tint; // fed to CrowdVat _InstColor in CrowdRenderSystem
 				DisableSkinnedView(mob);
+			}
+			else
+			{
+				// Classic skinned mob: tint via MaterialPropertyBlock (no material instances, keeps batching).
+				ApplySkinnedTint(mob, mobConfig.Tint);
 			}
 
 			InitializeMobGameObject(mob, mobConfig, playerPosition);
 			return mobEntity;
+		}
+
+		private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+		private static MaterialPropertyBlock _tintMpb;
+
+		/// <summary>
+		/// Tints a classic skinned mob by multiplying each SkinnedMeshRenderer's material _BaseColor by the
+		/// config tint via a shared MaterialPropertyBlock — no per-mob material instances, so instancing/
+		/// batching is preserved. Multiply semantics match the VAT path (white tint = unchanged). Health bar
+		/// (a separate MeshRenderer) is untouched. Assumes a URP-Lit-style _BaseColor property.
+		/// </summary>
+		private static void ApplySkinnedTint(Mob mob, Color tint)
+		{
+			var renderers = mob.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+			if (renderers.Length == 0)
+				return;
+
+			_tintMpb ??= new MaterialPropertyBlock();
+			for (int i = 0; i < renderers.Length; i++)
+			{
+				var r = renderers[i];
+				var mat = r.sharedMaterial;
+				Color baseColor = mat != null && mat.HasProperty(BaseColorId) ? mat.GetColor(BaseColorId) : Color.white;
+				r.GetPropertyBlock(_tintMpb);
+				_tintMpb.SetColor(BaseColorId, baseColor * tint);
+				r.SetPropertyBlock(_tintMpb);
+			}
 		}
 
 		/// <summary>

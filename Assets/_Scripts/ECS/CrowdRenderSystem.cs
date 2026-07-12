@@ -32,8 +32,9 @@ namespace ECS
 
 		public CrowdRenderSystem()
 		{
-			// _InstColor is a per-instance prop that defaults to 0 (=> black) if never set, so keep a
-			// white buffer to hand DrawMeshInstanced. Per-instance tint (hit flash) can override later.
+			// _InstColor defaults to 0 (=> black) if never set. Each frame we overwrite [0..n) from the
+			// batch's per-instance tints (MobConfig.Tint); this white seed just keeps any untouched tail
+			// slots harmless.
 			for (int i = 0; i < _drawColors.Length; i++)
 				_drawColors[i] = Vector4.one;
 		}
@@ -42,11 +43,13 @@ namespace ECS
 		{
 			public readonly List<Matrix4x4> Matrices = new();
 			public readonly List<float> Frames = new();
+			public readonly List<Vector4> Colors = new();
 
 			public void Clear()
 			{
 				Matrices.Clear();
 				Frames.Clear();
+				Colors.Clear();
 			}
 		}
 
@@ -100,6 +103,9 @@ namespace ECS
 
 				b.Matrices.Add(mob.Value.transform.localToWorldMatrix);
 				b.Frames.Add(frame);
+				// Per-config tint (MobConfig.Tint). White => unchanged. Zero (unset) would be black,
+				// but MobSpawnSystem always seeds Tint from the config, which defaults to white.
+				b.Colors.Add(crowd.Tint);
 			}
 
 			_mpb ??= new MaterialPropertyBlock();
@@ -115,6 +121,7 @@ namespace ECS
 					int n = Mathf.Min(BatchSize, count - start);
 					b.Matrices.CopyTo(start, _drawMatrices, 0, n);
 					b.Frames.CopyTo(start, _drawFrames, 0, n);
+					b.Colors.CopyTo(start, _drawColors, 0, n);
 
 					_mpb.Clear();
 					_mpb.SetFloat(VatWId, library.TextureWidth);

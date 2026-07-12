@@ -15,6 +15,7 @@ public class MainHolder : ScriptableObject
 	[SerializeField, BoxGroup("Configs")] private GrenadeConfigHolder _grenadeConfigHolder;
 	[SerializeField, BoxGroup("Configs")] private BonusConfigHolder _bonusConfigHolder;
 	[SerializeField, BoxGroup("Configs")] private AmmoConfigHolder _ammoConfigHolder;
+	[SerializeField, BoxGroup("Configs")] private BreakableConfigHolder _breakableConfigHolder;
 	[SerializeField, BoxGroup("Configs")] private LocalizationHolder _localizationHolder;
 
 	[SerializeField,BoxGroup("Prefabs")] private Mob _prefab;
@@ -67,6 +68,13 @@ public class MainHolder : ScriptableObject
 	[SerializeField, BoxGroup("GameplayParameters")] private LayerMask _mobLayerMask = ~0;
 	public LayerMask MobLayerMask => _mobLayerMask;
 
+	[Tooltip("Layer(s) of breakable environment objects. Included in damage overlap queries so bullets/explosions can hit them.")]
+	[SerializeField, BoxGroup("GameplayParameters")] private LayerMask _breakableLayerMask = 0;
+	public LayerMask BreakableLayerMask => _breakableLayerMask;
+
+	// Mask used by damage overlap queries (bullets, explosions): mobs + breakables.
+	public int DamageableLayerMask => _mobLayerMask.value | _breakableLayerMask.value;
+
 	public MobConfig MobConfig => _mobConfig;
 	public Mob Prefab => _prefab;
 	public Loot LootPrefab => _lootPrefab;
@@ -97,6 +105,7 @@ public class MainHolder : ScriptableObject
 	public GrenadeConfigHolder GrenadeConfigHolder => _grenadeConfigHolder;
 	public BonusConfigHolder BonusConfigHolder => _bonusConfigHolder;
 	public AmmoConfigHolder AmmoConfigHolder => _ammoConfigHolder;
+	public BreakableConfigHolder BreakableConfigHolder => _breakableConfigHolder;
 	public LocalizationHolder Localization => _localizationHolder;
 
 	/// <summary>

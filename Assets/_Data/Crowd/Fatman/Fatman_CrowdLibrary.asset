@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e994f1007505d9144be5c3386ef5d9e3, type: 3}
+  m_Name: Fatman_CrowdLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::Scene.Animation.CrowdAnimationLibrary
+  _renderMesh: {fileID: 4300000, guid: 33003b76df72f514e9cae954b7d151e8, type: 2}
+  _positionMap: {fileID: 2800000, guid: cd2b17c3e16ce434aabf85c8b848aa3e, type: 2}
+  _normalMap: {fileID: 2800000, guid: 77b96041101ccdc4eb6d554d9e4045de, type: 2}
+  _material: {fileID: 2100000, guid: 3777983cddabe9a428e8f0d74bdfd4cf, type: 2}
+  _vertexCount: 27769
+  _frameCount: 194
+  _textureWidth: 8192
+  _textureHeight: 658
+  _bakeFps: 30
+  _clips:
+  - Type: 0
+    StartFrame: 0
+    FrameCount: 86
+    Loop: 1
+  - Type: 2
+    StartFrame: 86
+    FrameCount: 44
+    Loop: 1
+  - Type: 3
+    StartFrame: 130
+    FrameCount: 64
+    Loop: 0

@@ -21,6 +21,7 @@ namespace ECS
 			var bulletPool = world.GetPool<BulletComponent>();
 			var lootPool = world.GetPool<LootComponent>();
 			var mobPool = world.GetPool<MobComponent>();
+			var breakablePool = world.GetPool<BreakableComponent>();
 
 			ref var player = ref world.GetAsSingleton<PlayerComponent>();
 			var playerTransform = player.Value.transform;
@@ -46,6 +47,11 @@ namespace ECS
 			foreach (var bulletEntity in bulletFilter)
 			{
 				ref var bulletComponent = ref bulletPool.Get(bulletEntity);
+				// Только Player-пули бьют мобов. Enemy-пули (мобы-стрелки) сюда не заходят
+				// (у них пустой MobHits) — их попадание по игроку разбирается в BulletVsPlayer.
+				if (bulletComponent.Team != BulletTeam.Player)
+					continue;
+
 				ref var overlap = ref bulletOverlapPool.Get(bulletEntity);
 				ref var disposed = ref disposedPool.Get(bulletEntity);
 
@@ -75,6 +81,7 @@ namespace ECS
 					ref var damage = ref world.CreateSimpleEntity<RequestDamageComponent>();
 					damage.TargetEntity = mobEntity;
 					damage.Damage = bulletComponent.Damage;
+					damage.DamageModifiers = BuildShotDebuffs(bulletComponent.Modifiers);
 
 					ref var move = ref movePool.Get(bulletEntity);
 					var hitMobConfig = mobPool.Get(mobEntity).Config;
@@ -90,14 +97,86 @@ namespace ECS
 			}
 			#endregion
 
+			#region BulletVsBreakable
+			// Пуля попадает в разрушаемый объект: если тот принимает урон от пуль — наносим урон и
+			// гасим пулю (block & consume — объект работает как укрытие). Bullet map строит BulletOverlapSystem.
+			foreach (var bulletEntity in bulletFilter)
+			{
+				ref var disposed = ref disposedPool.Get(bulletEntity);
+				if (disposed.IsDisposed) continue;
+
+				ref var overlap = ref bulletOverlapPool.Get(bulletEntity);
+				int hitsLen = overlap.BreakableHits.Length;
+				if (hitsLen == 0) continue;
+
+				ref var bulletComponent = ref bulletPool.Get(bulletEntity);
+
+				for (int i = 0; i < hitsLen; i++)
+				{
+					int breakableEntity = overlap.BreakableHits[i];
+					if (!breakablePool.Has(breakableEntity)) continue;
+
+					ref var breakable = ref breakablePool.Get(breakableEntity);
+					if (breakable.Config == null || !breakable.Config.CanBeDamagedBy(BreakableDamageSources.Bullet))
+						continue;
+
+					ref var damage = ref world.CreateSimpleEntity<RequestDamageComponent>();
+					damage.TargetEntity = breakableEntity;
+					damage.Damage = bulletComponent.Damage;
+
+					// Solid prop — пуля останавливается на нём.
+					disposed.IsDisposed = true;
+					break;
+				}
+			}
+			#endregion
+
+			#region BulletVsPlayer
+			// Enemy-пули (мобы-стрелки, RangedAttackerSystem): попадание по игроку — урон + гашение пули.
+			// PlayerHit проставляет BulletOverlapSystem по дистанции (у игрока нет коллайдер-карты).
+			foreach (var bulletEntity in bulletFilter)
+			{
+				ref var bulletComponent = ref bulletPool.Get(bulletEntity);
+				if (bulletComponent.Team != BulletTeam.Enemy)
+					continue;
+
+				ref var disposed = ref disposedPool.Get(bulletEntity);
+				if (disposed.IsDisposed)
+					continue;
+
+				ref var overlap = ref bulletOverlapPool.Get(bulletEntity);
+				if (!overlap.PlayerHit)
+					continue;
+
+				ref var damage = ref world.CreateSimpleEntity<RequestDamageComponent>();
+				damage.TargetEntity = player.Value.Entity;
+				damage.Damage = bulletComponent.Damage;
+				damage.DamageModifiers = BuildShotDebuffs(bulletComponent.Modifiers);
+
+				ref var effectRequest = ref world.CreateSimpleEntity<RequestEffectComponent>();
+				effectRequest.EffectId = "playerHit";
+				effectRequest.Position = bulletComponent.Bullet.transform.position;
+
+				ref var bloodDecal = ref world.CreateSimpleEntity<RequestDecalComponent>();
+				bloodDecal.Position = playerPos;
+				bloodDecal.Id = "Blood";
+				bloodDecal.Direction = playerTransform.forward;
+				bloodDecal.AlignToDirection = false; // EcsLite не сбрасывает переиспользованный компонент
+
+				// Enemy-пуля гасится на игроке (без пробития).
+				disposed.IsDisposed = true;
+			}
+			#endregion
+
 			#region PlayerVsMob
 			var meleeAttackerPool = world.GetPool<MeleeAttackerComponent>();
+			var rangedAttackerPool = world.GetPool<RangedAttackerComponent>();
 			var mobFilter = world.Filter<MobComponent>().End();
 			foreach (var mobEntity in mobFilter)
 			{
-				// Мобы ближнего боя (MeleeAttackerSystem) наносят урон телеграфированной атакой,
-				// а не контактом — иначе урон по игроку удвоился бы.
-				if (meleeAttackerPool.Has(mobEntity))
+				// Мобы ближнего боя (MeleeAttackerSystem) и стрелки (RangedAttackerSystem) наносят урон
+				// своей телеграфированной атакой/выстрелом, а не контактом — иначе урон по игроку удвоился бы.
+				if (meleeAttackerPool.Has(mobEntity) || rangedAttackerPool.Has(mobEntity))
 					continue;
 
 				ref var mob = ref mobPool.Get(mobEntity);
@@ -212,6 +291,25 @@ namespace ECS
 				}
 			}
 			#endregion
+		}
+
+		/// <summary>
+		/// Клонирует on-shot debuff'ы пули (GunConfig.ShotDebuffs) в свежий список для RequestDamage.
+		/// DamageSystem применит их к цели через TryApplyModifierComponent. Клон обязателен — Modifier'ы
+		/// это shared SO-инстансы, а модель урона может быть stateful (DoT-таймеры). Пустой набор → null.
+		/// </summary>
+		private static List<Modifier> BuildShotDebuffs(Modifier[] shotDebuffs)
+		{
+			if (shotDebuffs == null || shotDebuffs.Length == 0)
+				return null;
+
+			var result = new List<Modifier>(shotDebuffs.Length);
+			for (int i = 0; i < shotDebuffs.Length; i++)
+			{
+				if (shotDebuffs[i] != null)
+					result.Add(shotDebuffs[i].Clone<Modifier>());
+			}
+			return result.Count > 0 ? result : null;
 		}
 	}
 }

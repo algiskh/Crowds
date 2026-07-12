@@ -17,6 +17,7 @@ namespace ECS
 
 		private readonly Collider[] _overlapBuffer = new Collider[BUFFER_SIZE];
 		private readonly Dictionary<Collider, int> _mobColliderMap = new Dictionary<Collider, int>(64);
+		private readonly Dictionary<Collider, int> _breakableColliderMap = new Dictionary<Collider, int>(32);
 
 		public void Run(IEcsSystems systems)
 		{
@@ -33,9 +34,10 @@ namespace ECS
 
 			int layerMask = ~0;
 			if (world.TryGetAsSingleton<MainHolderComponent>(out var mainHolder) && mainHolder.Value != null)
-				layerMask = mainHolder.Value.MobLayerMask.value;
+				layerMask = mainHolder.Value.DamageableLayerMask;
 
 			var mobPool = world.GetPool<MobComponent>();
+			var breakablePool = world.GetPool<BreakableComponent>();
 			var colliderPool = world.GetPool<ColliderComponent>();
 
 			// collider → mob entity (строим один раз за кадр, когда есть взрывы).
@@ -46,6 +48,16 @@ namespace ECS
 				ref var col = ref colliderPool.Get(mobEntity);
 				if (col.CollisionType == CollisionType.Mob && col.Value != null)
 					_mobColliderMap[col.Value] = mobEntity;
+			}
+
+			// collider → breakable entity (разрушаемое окружение в радиусе взрыва).
+			_breakableColliderMap.Clear();
+			var breakableFilter = world.Filter<BreakableComponent>().Inc<ColliderComponent>().End();
+			foreach (var breakableEntity in breakableFilter)
+			{
+				ref var col = ref colliderPool.Get(breakableEntity);
+				if (col.CollisionType == CollisionType.Breakable && col.Value != null)
+					_breakableColliderMap[col.Value] = breakableEntity;
 			}
 
 			foreach (var entity in filter)
@@ -74,22 +86,41 @@ namespace ECS
 					{
 						var col = _overlapBuffer[i];
 						if (col == null) continue;
-						if (!_mobColliderMap.TryGetValue(col, out var mobEntity)) continue;
-						if (!mobPool.Has(mobEntity)) continue;
 
-						ref var mob = ref mobPool.Get(mobEntity);
-						float dist = Vector3.Distance(request.Position, mob.Value.transform.position);
-						float t = Mathf.Clamp01(dist / request.Radius);
-						float damage = Mathf.Lerp(request.MaxDamage, request.MinDamage, t) * request.MobDamageScale;
+						if (_mobColliderMap.TryGetValue(col, out var mobEntity))
+						{
+							if (!mobPool.Has(mobEntity)) continue;
 
-						var mobPos = mob.Value.transform.position;
-						var mobConfig = mob.Config;
+							ref var mob = ref mobPool.Get(mobEntity);
+							float dist = Vector3.Distance(request.Position, mob.Value.transform.position);
+							float t = Mathf.Clamp01(dist / request.Radius);
+							float damage = Mathf.Lerp(request.MaxDamage, request.MinDamage, t) * request.MobDamageScale;
 
-						ref var damageRequest = ref world.CreateSimpleEntity<RequestDamageComponent>();
-						damageRequest.TargetEntity = mobEntity;
-						damageRequest.Damage = damage;
+							var mobPos = mob.Value.transform.position;
+							var mobConfig = mob.Config;
 
-						world.RequestDamageDecal(mobConfig, DamageSourceType.Explosion, mobPos, mobPos - request.Position);
+							ref var damageRequest = ref world.CreateSimpleEntity<RequestDamageComponent>();
+							damageRequest.TargetEntity = mobEntity;
+							damageRequest.Damage = damage;
+
+							world.RequestDamageDecal(mobConfig, DamageSourceType.Explosion, mobPos, mobPos - request.Position);
+						}
+						else if (_breakableColliderMap.TryGetValue(col, out var breakableEntity))
+						{
+							if (!breakablePool.Has(breakableEntity)) continue;
+
+							ref var breakable = ref breakablePool.Get(breakableEntity);
+							if (breakable.Config == null || !breakable.Config.CanBeDamagedBy(BreakableDamageSources.Explosion))
+								continue;
+
+							float dist = Vector3.Distance(request.Position, breakable.Value.transform.position);
+							float t = Mathf.Clamp01(dist / request.Radius);
+							float damage = Mathf.Lerp(request.MaxDamage, request.MinDamage, t) * request.MobDamageScale;
+
+							ref var damageRequest = ref world.CreateSimpleEntity<RequestDamageComponent>();
+							damageRequest.TargetEntity = breakableEntity;
+							damageRequest.Damage = damage;
+						}
 					}
 				}
 

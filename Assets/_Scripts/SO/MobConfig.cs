@@ -43,6 +43,19 @@ public class MobConfig: ScriptableObject
 	// Optional: baked GPU-instanced crowd animation. When set, the mob is rendered by CrowdRenderSystem
 	// (SkinnedMeshRenderer + Animator are disabled at spawn). Null -> classic skinned rendering.
 	[SerializeField] private Scene.Animation.CrowdAnimationLibrary _crowdLibrary;
+
+	[Title("Appearance")]
+	// Per-config visual variation applied at spawn, so one Mob prefab can back many configs. Tint
+	// multiplies the mob's colours (white = unchanged; e.g. (1,0.6,0.6) = redder, (0.6,1,0.6) = greener).
+	// VAT mobs: fed to the CrowdVat _InstColor per-instance prop. Skinned mobs: MaterialPropertyBlock _BaseColor.
+	[SerializeField, Tooltip("Multiplies the mob's colours. White = unchanged, more red/green/blue tints it.")]
+	private Color _tint = Color.white;
+
+	// Uniform scale of the mob transform (scales the render + collider). Keep moderate — very large
+	// scales can desync the NavMeshAgent radius and the health-bar offset. Set HitRadius per config too.
+	[SerializeField, MinValue(0.05f), Tooltip("Uniform size multiplier. 1 = prefab default.")]
+	private float _scale = 1f;
+
 	public string Id => _id;
 	public float Health => _health;
 	public float Speed => _speed;
@@ -55,6 +68,8 @@ public class MobConfig: ScriptableObject
 	public Modifier[] AttackModifiers => _attackModifiers;
 	public string DeathEffectId => _deathEffectId;
 	public Scene.Animation.CrowdAnimationLibrary CrowdLibrary => _crowdLibrary;
+	public Color Tint => _tint;
+	public float Scale => _scale;
 
 	/// <summary>
 	/// Random decal id for the given damage source, or null if no pool is configured

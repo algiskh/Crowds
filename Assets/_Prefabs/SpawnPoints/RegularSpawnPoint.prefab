@@ -96,3 +96,12 @@ MonoBehaviour:
       Cooldown: 16
     - DifficultyLevel: 6
       Cooldown: 15
+  - _mobId: SlowStrong
+    _weight: 1
+    _spawnPresets:
+    - DifficultyLevel: 5
+      Cooldown: 11
+    - DifficultyLevel: 6
+      Cooldown: 8
+    - DifficultyLevel: 7
+      Cooldown: 7

@@ -57,8 +57,19 @@ MonoBehaviour:
     - DifficultyLevel: 4
       Cooldown: 5
     - DifficultyLevel: 5
-      Cooldown: 4
+      Cooldown: 5
     - DifficultyLevel: 6
-      Cooldown: 4
+      Cooldown: 6
     - DifficultyLevel: 7
-      Cooldown: 3
+      Cooldown: 8
+  - _mobId: SlowStrong
+    _weight: 1
+    _spawnPresets:
+    - DifficultyLevel: 4
+      Cooldown: 10
+    - DifficultyLevel: 5
+      Cooldown: 9
+    - DifficultyLevel: 0
+      Cooldown: 6
+    - DifficultyLevel: 7
+      Cooldown: 4

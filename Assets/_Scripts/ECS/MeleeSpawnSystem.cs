@@ -18,6 +18,7 @@ namespace ECS
 			var moveComponentPool = world.GetPool<MoveComponent>();
 			var modifierPool = world.GetPool<ModifierOwnerComponent>();
 			var mobPool = world.GetPool<MobComponent>();
+			var breakablePool = world.GetPool<BreakableComponent>();
 
 			var damageRequestPool = world.GetPool<RequestDamageComponent>();
 
@@ -85,6 +86,28 @@ namespace ECS
 							}
 						}
 					}
+				}
+
+				// Разрушаемое окружение: у breakable нет MoveComponent (не участвует в общем цикле выше),
+				// поэтому проверяем радиус по его трансформу и разрешённый источник урона на самом объекте.
+				var breakableFilter = world.Filter<BreakableComponent>().Inc<HealthComponent>().End();
+				foreach (var breakableEntity in breakableFilter)
+				{
+					ref var breakable = ref breakablePool.Get(breakableEntity);
+					if (breakable.Config == null || !breakable.Config.CanBeDamagedBy(BreakableDamageSources.Melee))
+						continue;
+					if (breakable.Value == null)
+						continue;
+
+					var distance = (breakable.Value.transform.position - spawnRequest.Position).magnitude;
+					if (distance > spawnRequest.Config.Radius)
+						continue;
+
+					damageRequestPool.Add(world.NewEntity()) = new RequestDamageComponent
+					{
+						TargetEntity = breakableEntity,
+						Damage = spawnRequest.Config.Damage
+					};
 				}
 				meleeSpawnPool.Del(entity);
 			}

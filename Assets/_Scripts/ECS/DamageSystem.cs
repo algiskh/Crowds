@@ -87,6 +87,10 @@ namespace ECS
 					}
 				}
 
+				// Чистим managed-ссылку перед возвратом слота в пул: EcsLite не обнуляет переиспользуемые
+				// struct'ы, иначе следующий RequestDamage, не выставивший DamageModifiers, унаследовал бы
+				// чужой список модификаторов.
+				requestDamagePool.Get(requestEntity).DamageModifiers = null;
 				requestDamagePool.Del(requestEntity);
 			}
 			#endregion

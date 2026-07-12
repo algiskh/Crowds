@@ -155,5 +155,26 @@ namespace ECS
 			decal.Direction = direction;
 			decal.AlignToDirection = alignToDirection;
 		}
+
+		/// <summary>
+		/// Запрашивает спаун разрушаемого объекта окружения по id (резолвится через
+		/// MainHolder.BreakableConfigHolder). Обрабатывается BreakableSpawnSystem.
+		/// </summary>
+		public static void RequestSpawnBreakable(this EcsWorld world, string id, Vector3 position, float rotation = 0f)
+		{
+			ref var request = ref world.CreateSimpleEntity<RequestSpawnBreakableComponent>();
+			request.Id = id;
+			request.Position = position;
+			request.Rotation = rotation;
+		}
+
+		/// <summary>Запрашивает спаун разрушаемого объекта по готовому конфигу (в обход holder-lookup).</summary>
+		public static void RequestSpawnBreakable(this EcsWorld world, BreakableConfig config, Vector3 position, float rotation = 0f)
+		{
+			ref var request = ref world.CreateSimpleEntity<RequestSpawnBreakableComponent>();
+			request.Config = config;
+			request.Position = position;
+			request.Rotation = rotation;
+		}
 	}
 }

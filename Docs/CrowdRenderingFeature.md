@@ -18,7 +18,7 @@ navmesh, health bars, death and pooling are untouched — only the *visual* laye
 | `CrowdClip` (struct) | same file — one baked clip: `Type`, `StartFrame`, `FrameCount`, `Loop` |
 | `CrowdVat` shader | `Shader/CrowdVat.shader` — URP instanced; ForwardLit + ShadowCaster. Vertex stage reads the pose from `_PositionMap`. |
 | `VatBakerWindow` | `_Scripts/Editor/CrowdVat/VatBakerWindow.cs` — the baker (**Tools ▸ Crowds ▸ VAT Baker**) |
-| `CrowdInstanceComponent` | `ECS/Components.cs` — marks a VAT mob: `Library`, `CurrentClip`, `ClipTime`, `Initialized` |
+| `CrowdInstanceComponent` | `ECS/Components.cs` — marks a VAT mob: `Library`, `CurrentClip`, `ClipTime`, `Initialized`, `Tint` (per-config `_InstColor`) |
 | `CrowdRenderSystem` | `ECS/CrowdRenderSystem.cs` — batches VAT mobs per library, advances clips, issues `DrawMeshInstanced` |
 | `MobConfig.CrowdLibrary` | `SO/MobConfig.cs` — optional `CrowdAnimationLibrary`; null ⇒ classic skinned path |
 | `AnimationType` / `AnimationTypes` | `Animation/AnimationType.cs` — `TryFromStateName()` maps an Animator state name → `AnimationType` for the baker |
@@ -98,7 +98,30 @@ transforms are current for the frame. Order matters: it must run after movement.
   example that should NOT get a `CrowdLibrary`.
 - **No cross-fade.** Clip changes are a hard cut, not a Mecanim blend. Fine for run→attack→die.
 - **One-shot clips** (attack/die/throw) clamp on the last frame; looping clips (idle/walk/run) wrap.
-- **Per-instance tint.** `_InstColor` is plumbed (defaults to white in `CrowdRenderSystem`); a hit-flash
-  would set a per-instance color here.
+- **Per-instance tint.** `_InstColor` is fed per-instance from `CrowdInstanceComponent.Tint` (seeded from
+  `MobConfig.Tint` at spawn — see *Per-config variants* below). White = unchanged. A future hit-flash would
+  compose on top of this base tint.
 - **Culling** is per-instance via the render mesh bounds (baked to cover all frames). Good enough for
   top-down; there is no GPU culling yet.
+
+## Per-config variants (tint & scale)
+
+One Mob prefab (or one VAT bake) can back **many `MobConfig`s** that differ only in colour and size — a
+cheap way to get "red brute", "green runt", "big boss" without new art. Two `MobConfig` fields, both
+applied by `MobSpawnSystem.CreateMob` every spawn (so pooled reuse re-establishes them):
+
+| Field | Effect |
+|-------|--------|
+| `Tint` (Color, default white) | **Multiplies** the mob's colours. White = unchanged; `(1,0.6,0.6)` = redder, `(0.6,1,0.6)` = greener. VAT mobs: written to `CrowdInstanceComponent.Tint` → the `_InstColor` per-instance array (still one draw call — tint does **not** split batches). Skinned mobs: a `MaterialPropertyBlock` multiplies `_BaseColor` (no material instances). |
+| `Scale` (float, default 1) | `mob.transform.localScale = Vector3.one * Scale`. Free for VAT (goes through the per-instance `localToWorldMatrix`) and scales the collider so bullet hits stay correct. |
+
+Notes:
+- **Pooling is keyed by `MobConfig.Id`.** Give each variant its own `Id` so variants pool separately and
+  never mix a red instance into a green pool. (Tint/scale are re-applied every spawn regardless, so even a
+  shared `Id` self-corrects — separate ids are just cleaner.)
+- `HitRadius`, health, speed, loot etc. are already per-config — a bigger visual variant should usually bump
+  `HitRadius` to match.
+- Very large `Scale` can desync the NavMeshAgent radius and enlarge/offset the health bar (it's a child of
+  the scaled root). Keep scales moderate, or compensate on the prefab if you go extreme.
+- Skinned tint assumes a URP-Lit-style `_BaseColor` property; a mob on a custom shader without it is left
+  untinted (VAT path is unaffected — `CrowdVat` always has `_InstColor`).

@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c2d9e09feaaf6446ac4865de6c00e9c, type: 3}
+  m_Name: Crate
+  m_EditorClassIdentifier: Assembly-CSharp::BreakableConfig
+  _id: Crate
+  _prefab: {fileID: 2794079212485023147, guid: 479d570381777244c89b32dff2de376d, type: 3}
+  _maxHealth: 100
+  _damageableBy: 7
+  _destructionEffects:
+  - EffectId: explosion
+    Delay: 0
+    PointIndex: -1
+  _damageOnDestruction: 0
+  _damageRadius: 3
+  _maxDamage: 40
+  _minDamage: 10
+  _mobDamageScale: 1
+  _playerDamageScale: 1
+  _damageEffectId: 
+  _lootTable:
+  - LootType: 0
+    Id: 1
+    Count: 30
+    Chance: 0.2
+    AmmoCaliber: 3
+  - LootType: 0
+    Id: 
+    Count: 30
+    Chance: 0.2
+    AmmoCaliber: 2
+  - LootType: 3
+    Id: 
+    Count: 3
+    Chance: 0.2
+    AmmoCaliber: 0
+  - LootType: 0
+    Id: 20
+    Count: 0
+    Chance: 0.2
+    AmmoCaliber: 4
+  - LootType: 0
+    Id: 
+    Count: 50
+    Chance: 1
+    AmmoCaliber: 1
+  _lootCount: 3
+  _lootSpread: 1
+  _afterDestruction: 0
+  _debrisKeepsObstacle: 1

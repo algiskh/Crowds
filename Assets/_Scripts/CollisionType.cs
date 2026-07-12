@@ -6,5 +6,6 @@ public enum CollisionType
     Mob,
     Bullet,
     Loot,
-	Border
+	Border,
+	Breakable
 }

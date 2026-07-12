@@ -219,7 +219,7 @@ Transform:
   m_GameObject: {fileID: 51972089}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4.73, y: 0, z: -13.28}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1421,6 +1421,7 @@ MonoBehaviour:
   _decalParent: {fileID: 741162645}
   _lootParent: {fileID: 1656501483}
   _grenadeParent: {fileID: 1148061070}
+  _breakableParent: {fileID: 940031845}
   _spawnPoints: []
   _additionalLootPoints: []
   _playerStats: {fileID: 1650746173}
@@ -2664,6 +2665,37 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!1 &940031844
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 940031845}
+  m_Layer: 0
+  m_Name: _BreakableParent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &940031845
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 940031844}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!224 &1064528474 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6840242710096445535, guid: 40bd9db23b78b6a46bff34045b8793d0, type: 3}
@@ -6352,6 +6384,7 @@ SceneRoots:
   - {fileID: 487575901}
   - {fileID: 1333412183}
   - {fileID: 51972090}
+  - {fileID: 940031845}
   - {fileID: 330585546}
   - {fileID: 410087041}
   - {fileID: 880825470}

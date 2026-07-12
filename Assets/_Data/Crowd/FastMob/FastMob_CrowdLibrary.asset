@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e994f1007505d9144be5c3386ef5d9e3, type: 3}
+  m_Name: FastMob_CrowdLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::Scene.Animation.CrowdAnimationLibrary
+  _renderMesh: {fileID: 4300000, guid: 80fb9eca5f2f74143ac7583863ce1ef4, type: 2}
+  _positionMap: {fileID: 2800000, guid: 402104728c2e70748a942bf6dda1ff3a, type: 2}
+  _normalMap: {fileID: 2800000, guid: 50f2afe4b89a09a4b94b6ac4f57dc9a9, type: 2}
+  _material: {fileID: 2100000, guid: 1ad94a3b6811a6c4bbf8ee199466437b, type: 2}
+  _vertexCount: 6089
+  _frameCount: 301
+  _textureWidth: 8192
+  _textureHeight: 224
+  _bakeFps: 30
+  _clips:
+  - Type: 2
+    StartFrame: 0
+    FrameCount: 22
+    Loop: 1
+  - Type: 0
+    StartFrame: 22
+    FrameCount: 279
+    Loop: 1

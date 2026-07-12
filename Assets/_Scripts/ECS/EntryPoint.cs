@@ -33,6 +33,7 @@ namespace ECS
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _decalParent;
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _lootParent;
 		[SerializeField, BoxGroup("Parents")] private Transform _grenadeParent;
+		[SerializeField, BoxGroup("Parents")] private Transform _breakableParent;
 		[Space]
 		[Title("����� ������ �����")]
 		[SerializeField, Required, ListDrawerSettings, BoxGroup("Spawn Points")]
@@ -262,13 +263,43 @@ namespace ECS
 
 			if (mapLoots != null && mapLoots.Length > 0)
 			{
-				
+
 				foreach (var mapLoot in mapLoots)
 				{
 					Debug.Log($"mapLoot Add loot {mapLoot.name}");
 					mapLootPool.Value.Add(mapLoot);
 				}
 			}
+
+			// --- Разрушаемое окружение (Breakable) ---
+			// Пул рантайм-объектов (RequestSpawnBreakable кладёт/берёт инстансы по id конфига).
+			// Если родитель не назначен в сцене — создаём в рантайме, чтобы инстансы не плодились в корне.
+			if (_breakableParent == null)
+				_breakableParent = new GameObject("Breakables").transform;
+			ref var breakablePoolComponent = ref _world.CreateSimpleEntity<BreakablePoolComponent>();
+			breakablePoolComponent.Pools = new Dictionary<string, Stack<Breakable>>();
+			breakablePoolComponent.Parent = _breakableParent;
+
+			// Сценовые объекты (уже расставлены в префабе уровня, найдены как SpawnPoint/MapLoot).
+			// Регистрируем их ECS-состояние тем же путём, что и рантайм-спаун — RegisterBreakable(pooled:false).
+			var breakables = FindObjectsByType<Breakable>(FindObjectsSortMode.None);
+			foreach (var breakable in breakables)
+			{
+				if (breakable == null || breakable.Config == null || breakable.Collider == null)
+				{
+					if (breakable != null)
+						Debug.LogWarning($"[EntryPoint] Breakable '{breakable.name}' без Config/Collider — пропущен.");
+					continue;
+				}
+
+				BreakableSpawnSystem.RegisterBreakable(_world, breakable, breakable.Config, pooled: false);
+			}
+
+			// Сценовые скрипт-события уровня (пустые объекты со списком записей). LevelEventSystem.Init
+			// построит из них observer'ы. Холдер создаём всегда — даже пустой (система сама no-op'ит).
+			var levelEventTriggers = FindObjectsByType<LevelEventTrigger>(FindObjectsSortMode.None);
+			ref var levelEventHolder = ref _world.CreateSimpleEntity<LevelEventHolderComponent>();
+			levelEventHolder.Triggers = new List<LevelEventTrigger>(levelEventTriggers);
 
 				// --- ����� ---
 
@@ -493,14 +524,17 @@ namespace ECS
 				.Add(new DifficultySystem())
 				.Add(new SpawnPointSystem())
 				.Add(new AdditionalLootSpawnSystem())
+				.Add(new LevelEventSystem())
 				// Mob systems
 				.Add(new MobSpawnSystem())
 				.Add(new GroupSpawnSystem())
+				.Add(new BreakableSpawnSystem())
 				// Move and navigation systems
 				.Add(new MobPathfindingSystem())
 				.Add(new FormationSystem())
 				.Add(new GrenadierSystem())
 				.Add(new MeleeAttackerSystem())
+				.Add(new RangedAttackerSystem())
 				.Add(new MoveSystem())
 				.Add(new FollowSystem())
 				.Add(new LookAtCameraSystem())
@@ -521,6 +555,7 @@ namespace ECS
 				.Add(new GrenadeProjectileSystem())
 				.Add(new ExplosionSystem())
 				.Add(new DamageSystem())
+				.Add(new BreakableSystem())
 				.Add(new BonusSystem())
 				// Other spawning systems
 				.Add(new LootSystem())

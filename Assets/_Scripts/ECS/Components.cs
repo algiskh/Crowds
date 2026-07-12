@@ -97,6 +97,9 @@ public struct CrowdInstanceComponent
 	public Scene.Animation.AnimationType CurrentClip;
 	public float ClipTime;      // seconds elapsed inside the current clip
 	public bool Initialized;    // false until the first clip is applied
+	// Per-config multiply tint fed to the CrowdVat _InstColor prop. Set from MobConfig.Tint at spawn.
+	// Must default to white (1,1,1,1) — a zero vector would render the mob black.
+	public Vector4 Tint;
 }
 
 public struct MoveComponent
@@ -242,6 +245,17 @@ public struct RequestFireComponent
 {
 }
 
+/// <summary>
+/// Кто выпустил пулю — определяет, кого она может ранить. Player-пули бьют мобов/разрушаемое
+/// окружение (как раньше), Enemy-пули (мобы-стрелки, RangedAttackerSystem) — игрока.
+/// default = Player: старый путь стрельбы игрока остаётся корректным без явной установки.
+/// </summary>
+public enum BulletTeam : byte
+{
+	Player,
+	Enemy
+}
+
 public struct BulletComponent
 {
 	public Bullet Bullet;
@@ -249,6 +263,7 @@ public struct BulletComponent
 	public float LifeTime;
 	public float Radius;
 	public BulletCheckType CheckType;
+	public BulletTeam Team;
 	public Modifier[] Modifiers;
 	public FixedList32Bytes<int> PiercedTargets;
 }
@@ -261,6 +276,19 @@ public struct BulletOverlapComponent
 	/// Никаких managed-аллокаций: FixedList — inline value-type.
 	/// </summary>
 	public Unity.Collections.FixedList128Bytes<int> MobHits;
+
+	/// <summary>
+	/// Breakable entity-ids hit this frame (destructible environment). Filled in BulletOverlapSystem,
+	/// consumed in CollisionSystem (BulletVsBreakable). Inline value-type, no managed allocations.
+	/// </summary>
+	public Unity.Collections.FixedList128Bytes<int> BreakableHits;
+
+	/// <summary>
+	/// True если Enemy-пуля дотянулась до игрока в этом кадре (единственная цель — проверяется
+	/// по дистанции, а не по коллайдер-карте). Заполняется в BulletOverlapSystem, читается в
+	/// CollisionSystem (BulletVsPlayer).
+	/// </summary>
+	public bool PlayerHit;
 }
 #endregion
 
@@ -327,6 +355,9 @@ public struct RequestEffectComponent
 	public Transform Parent;
 	public DamageType DamageType;
 	public int ModifierEntity;
+	// Optional fuse (sec): while > 0 the effect is deferred (counted down in EffectsSystem)
+	// before it spawns. 0 (default) = spawn immediately. Used for staggered destruction bursts.
+	public float Delay;
 }
 
 public struct EndGameComponent
@@ -592,6 +623,8 @@ public struct RequestSpawnBulletComponent
 	public Vector3 Position;
 	public Vector3 Direction;
 	public GunConfig GunConfig;
+	// Кто стреляет: Player (WeaponFireSystem) или Enemy (RangedAttackerSystem). default = Player.
+	public BulletTeam Team;
 }
 
 public struct SmartConditionComponent
@@ -642,6 +675,27 @@ public struct LootSpawnedEventComponent
 	public RequestSpawnSource Source;
 	public int SourceEntity;  // entity that requested loot spawn
 	public int LootEntity;    // lootComponent entity
+}
+
+// --- Level events (scene-scripted stage-start actions) ---
+
+// Singleton: разложенные в сцене LevelEventTrigger'ы (найдены EntryPoint через FindObjectsByType).
+// LevelEventSystem.Init строит из них observer-сущности. См. Docs/LevelEventsFeature.md.
+public struct LevelEventHolderComponent
+{
+	public List<LevelEventTrigger> Triggers;
+}
+
+// Рантайм-состояние одной записи (LevelEventEntry): вооружается на старте нужного стейджа сложности,
+// затем при выполнении опциональных smart-условий выполняет спаун breakable'ов.
+public struct LevelEventObserverComponent
+{
+	public LevelEventEntry Entry;
+	public Transform Origin;              // трансформ триггера (фолбэк-точка спауна)
+	public DifficultyLevel Level;         // стейдж, на старте которого запись вооружается
+	public ISmartCondition[] Conditions;  // инстансы-копии условий (вооружены); null = не вооружено / без гейта
+	public bool Armed;
+	public bool Fired;
 }
 
 public struct ModifierOwnerComponent
@@ -846,6 +900,29 @@ public struct MeleeAttackerComponent
 }
 #endregion
 
+#region RangedAttacker
+public enum RangedAttackerState : byte
+{
+	Chase,
+	Windup,
+	Cooldown
+}
+
+/// <summary>
+/// Per-entity: моб-стрелок. Поверх обычного MobComponent — телеграфированная дальняя атака (как у
+/// игрока: замах → выстрел → восстановление, одна анимация "attack"). Дистанция боя и параметры
+/// выстрела берутся из RangedMobConfig (вложенный GunConfig — тот же тип, что у оружия игрока).
+/// Добавляется MobSpawnSystem только когда MobConfig is RangedMobConfig. Поведение — RangedAttackerSystem.
+/// </summary>
+public struct RangedAttackerComponent
+{
+	public RangedMobConfig Config;
+	public RangedAttackerState State;
+	// В Windup — отсчёт замаха до выстрела; в Cooldown — отсчёт восстановления.
+	public float Timer;
+}
+#endregion
+
 #region Formation
 /// <summary>
 /// Per-entity: моб-ведомый, идущий в строю за ведущим. Висит поверх обычного MobComponent.
@@ -870,5 +947,44 @@ public struct GroupSpawnPointComponent
 {
 	public float Timer;
 	public GroupSpawnPoint Value;
+}
+#endregion
+
+#region Breakable
+/// <summary>
+/// Per-entity: разрушаемый объект окружения. Висит на сущности вместе с HealthComponent (HP) и
+/// ColliderComponent (CollisionType.Breakable, для попаданий). Урон принимают только источники,
+/// разрешённые в <see cref="BreakableConfig"/>; при HP<=0 BreakableSystem проигрывает эффекты,
+/// сыплет лут и применяет исход (Vanish/Debris), после чего удаляет сущность.
+/// ContactCooldown — троттлинг урона от контакта мобов (источник MobContact).
+/// </summary>
+public struct BreakableComponent
+{
+	public Breakable Value;
+	public BreakableConfig Config;
+	public float ContactCooldown;
+	// true — объект создан в рантайме из пула (RequestSpawnBreakable) и при Vanish возвращается в пул;
+	// false — расставлен в сцене (scene-placed), при Vanish просто деактивируется.
+	public bool Pooled;
+}
+
+// Singleton: пул разрушаемых объектов по id конфига (как MobPool/EffectPool).
+public struct BreakablePoolComponent
+{
+	public Dictionary<string, Stack<Breakable>> Pools;
+	public Transform Parent;
+}
+
+/// <summary>
+/// Request: заспаунить разрушаемый объект окружения в заданной точке. Конфиг задаётся либо напрямую
+/// (Config), либо по id (Id, резолвится через MainHolder.BreakableConfigHolder). Rotation — поворот
+/// вокруг Y (град). Обрабатывается BreakableSpawnSystem.
+/// </summary>
+public struct RequestSpawnBreakableComponent
+{
+	public BreakableConfig Config;
+	public string Id;
+	public Vector3 Position;
+	public float Rotation;
 }
 #endregion

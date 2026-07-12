@@ -100,7 +100,13 @@ namespace ECS
 			bulletComponent.Bullet = bullet;
 			bulletComponent.Damage = bulletRequest.GunConfig.BulletDamage;
 			bulletComponent.LifeTime = bulletRequest.GunConfig.BulletLifeTime;
+			// Радиус берётся из конфига: без него OverlapSphere/OverlapBox в BulletOverlapSystem
+			// работали бы с радиусом стаблового значения (EcsLite не обнуляет переиспользуемые struct'ы).
+			bulletComponent.Radius = bulletRequest.GunConfig.BulletRadius;
 			bulletComponent.CheckType = bulletRequest.GunConfig.BulletCheckType;
+			bulletComponent.Team = bulletRequest.Team;
+			// On-shot debuffs (если заданы) — применяются к цели через RequestDamage.DamageModifiers.
+			bulletComponent.Modifiers = bulletRequest.GunConfig.ShotDebuffs;
 			bulletComponent.PiercedTargets = default;
 			ref var moveComponent = ref movePool.Add(bulletEntity);
 			ref var disposeComponent = ref disposePool.Add(bulletEntity);

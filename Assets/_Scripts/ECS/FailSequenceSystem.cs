@@ -1,4 +1,5 @@
 using Leopotam.EcsLite;
+using Scene.Animation;
 using UnityEngine;
 
 namespace ECS
@@ -103,7 +104,7 @@ namespace ECS
 		public static void StopAllMoves(EcsWorld world, PlayerComponent player)
 		{
 			var movePool = world.GetPool<MoveComponent>();
-			var mobPool = world.GetPool<MobComponent>();
+			var animPool = world.GetPool<AnimationStateComponent>();
 
 			foreach (var entity in world.Filter<MoveComponent>().End())
 			{
@@ -112,10 +113,12 @@ namespace ECS
 				move.Direction = Vector2.zero;
 			}
 
+			// Мобы остаются живыми и переходят в Idle: AnimationSystem/CrowdRenderSystem не завязаны
+			// на паузу и доиграют смену состояния (аниматоры не паузим).
 			foreach (var entity in world.Filter<MobComponent>().End())
 			{
-				ref var mob = ref mobPool.Get(entity);
-				mob.Value.Animator.Pause();
+				ref var anim = ref animPool.Has(entity) ? ref animPool.Get(entity) : ref animPool.Add(entity);
+				anim.Requested = AnimationType.Idle;
 			}
 
 			player.Value.Animator.Pause();

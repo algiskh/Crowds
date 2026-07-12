@@ -63,6 +63,13 @@ namespace ECS
 			{
 				ref var request = ref requetEffectsPool.Get(entity);
 
+				// Fuse: defer the spawn until the delay elapses (staggered destruction bursts).
+				if (request.Delay > 0f)
+				{
+					request.Delay -= Time.deltaTime;
+					continue;
+				}
+
 				var wrapper = effectsHolder.Value.GetEffect(request.EffectId);
 
 				if (wrapper == null)

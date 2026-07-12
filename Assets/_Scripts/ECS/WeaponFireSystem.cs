@@ -50,6 +50,7 @@ namespace ECS
 				requestSpawnBullet.Direction = weapon.Weapon.Muzzle.forward;
 				requestSpawnBullet.Position = weapon.Weapon.Muzzle.transform.position;
 				requestSpawnBullet.GunConfig = weapon.GunConfig;
+				requestSpawnBullet.Team = BulletTeam.Player;
 
 				weapon.IsFiring = true;
 				weapon.CoolDown = weapon.GunConfig.FireCoolDown;
