@@ -100,31 +100,48 @@ namespace ECS
 		// первый настоящий кадр уровня.
 		private async UniTaskVoid InitializeAsync(CancellationToken token)
 		{
-			// 1) Инстанс префаба уровня (весь контент сцены должен существовать до Find*-сканов).
-			LoadLevel();
-			LoadingScreen.SetProgress(0.2f);
-			await UniTask.Yield(PlayerLoopTiming.Update, token);
+			bool completed = false;
+			try
+			{
+				// 1) Инстанс префаба уровня (весь контент сцены должен существовать до Find*-сканов).
+				LoadLevel();
+				LoadingScreen.SetProgress(0.2f);
+				await UniTask.Yield(PlayerLoopTiming.Update, token);
 
-			// 2) Данные сцены: пулы, игрок, UI, точки спауна. NavMesh здесь НЕ печём (bake:false).
-			SetupSpawnData();
-			LoadingScreen.SetProgress(0.5f);
-			await UniTask.Yield(PlayerLoopTiming.Update, token);
+				// 2) Данные сцены: пулы, игрок, UI, точки спауна. NavMesh здесь НЕ печём (bake:false).
+				SetupSpawnData();
+				LoadingScreen.SetProgress(0.5f);
+				await UniTask.Yield(PlayerLoopTiming.Update, token);
 
-			// 3) Асинхронное запекание navmesh — не блокирует кадр.
-			if (_navMeshManager != null)
-				await _navMeshManager.RebuildNavMeshAsync().ToUniTask(cancellationToken: token);
-			LoadingScreen.SetProgress(0.8f);
+				// 3) Асинхронное запекание navmesh — не блокирует кадр.
+				if (_navMeshManager != null)
+					await _navMeshManager.RebuildNavMeshAsync().ToUniTask(cancellationToken: token);
+				LoadingScreen.SetProgress(0.8f);
 
-			// 4) Регистрируем системы и разрешаем их прогон.
-			RegisterSystems();
-			_initialized = true;
-			LoadingScreen.SetProgress(1f);
+				// 4) Регистрируем системы и разрешаем их прогон.
+				RegisterSystems();
+				_initialized = true;
+				LoadingScreen.SetProgress(1f);
 
-			// 5) Даём кадр отработать системам (позиционирование камеры и т.п.) и дожидаемся конца
-			//    кадра — уровень уже отрисован камерой. Затем плавно снимаем занавес.
-			await UniTask.Yield(PlayerLoopTiming.Update, token);
-			await UniTask.WaitForEndOfFrame(this, token);
-			LoadingScreen.HideAndDestroy();
+				// 5) Даём кадр отработать системам (позиционирование камеры и т.п.) и дожидаемся конца
+				//    кадра — уровень уже отрисован камерой. Затем плавно снимаем занавес.
+				await UniTask.Yield(PlayerLoopTiming.Update, token);
+				await UniTask.WaitForEndOfFrame(this, token);
+				completed = true;
+				LoadingScreen.HideAndDestroy();
+			}
+			catch (System.Exception e) when (!(e is System.OperationCanceledException))
+			{
+				Debug.LogException(e, this);
+			}
+			finally
+			{
+				// Бут упал — снимаем занавес (он DontDestroyOnLoad и блокирует ввод), иначе игра зависает
+				// на экране загрузки. При отмене (сцену выгрузили/рестарт) не трогаем: занавес уже нужен
+				// следующей сцене.
+				if (!completed && !token.IsCancellationRequested)
+					LoadingScreen.HideAndDestroy();
+			}
 		}
 
 		private void OnDestroy()
