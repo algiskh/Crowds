@@ -1,5 +1,4 @@
 ﻿using Leopotam.EcsLite;
-using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
 namespace ECS
