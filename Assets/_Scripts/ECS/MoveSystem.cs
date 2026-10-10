@@ -19,7 +19,7 @@ namespace ECS
 
 				if (pathPool.Has(entity))
 				{
-					MoveByPath(pathPool, entity, moveComponent, modifierOwnerComponent);
+					MoveByPath(pathPool, entity, ref moveComponent, modifierOwnerComponent);
 				}
 				else
 				{
@@ -32,7 +32,7 @@ namespace ECS
 		/// <summary>
 		/// Move agent by path if it exists
 		/// </summary>
-		private void MoveByPath(EcsPool<MovePath> pathPool, int entity, MoveComponent moveComponent, ModifierOwnerComponent modifierOwnerComponent)
+		private void MoveByPath(EcsPool<MovePath> pathPool, int entity, ref MoveComponent moveComponent, ModifierOwnerComponent modifierOwnerComponent)
 		{
 			ref var movePath = ref pathPool.Get(entity);
 
