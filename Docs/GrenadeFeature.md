@@ -136,9 +136,13 @@ modifiers — because its config inherits from `MobConfig`.
     at the player's current position via `GrenadeLauncher`.
   - **Cooldown** (after throw): stays put for `ThrowCooldown` seconds, plays **`throw_cooldown`**.
   - **Flee** (dist < Y): moves to a free NavMesh point away from the player (`NavMesh.SamplePosition`
-    over a fan of angles = "free space nearby"); re-engages once back outside Y.
+    over a fan of angles limited to ±90° from "away from player" = "free space nearby, on the mob's
+    side"). A point is accepted only with a complete `NavMesh.CalculatePath` whose segments never come
+    closer to the player than the mob currently is (−0.5 tolerance); the path corners become the
+    waypoints. Re-engages once back outside Y.
   - In Throw/Cooldown it stops by clearing the player-path waypoints (running after pathfinding,
-    before movement); Flee overwrites the path with a single flee waypoint each frame.
+    before movement). In Flee, when pathfinding overwrote `MovePath` with the path to the player, the
+    flee path is re-planned from the current position (if no longer valid — a new point is picked).
 - **`GrenadeLauncher`** (`ECS/GrenadeLauncher.cs`) — shared projectile-spawn helper used by **both**
   the player (`GrenadeThrowSystem`) and the grenadier. Differs only by start/target; who the blast
   hurts comes from the `GrenadeConfig` itself, so the same helper serves both.

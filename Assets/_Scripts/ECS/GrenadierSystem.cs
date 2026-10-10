@@ -23,7 +23,16 @@ namespace ECS
 	public sealed class GrenadierSystem : IEcsRunSystem
 	{
 		// Углы (град) для поиска свободной точки отхода: сначала строго от игрока, затем в стороны.
-		private static readonly float[] _fleeAngles = { 0f, 30f, -30f, 60f, -60f, 90f, -90f, 135f, -135f, 180f };
+		// Не дальше ±90°: точка всегда остаётся «на стороне моба» и отход не ведёт через игрока.
+		private static readonly float[] _fleeAngles = { 0f, 30f, -30f, 60f, -60f, 90f, -90f };
+		// Допуск: путь отхода может подойти к игроку не более чем на столько ближе текущей дистанции.
+		private const float FleeClearanceTolerance = 0.5f;
+		private const float FleeArriveDistance = 0.4f;
+
+		// Переиспользуемые буферы для расчёта пути отхода по NavMesh.
+		private readonly NavMeshPath _fleePath = new NavMeshPath();
+		private Vector3[] _fleeCorners = new Vector3[16];
+		private int _fleeCornerCount;
 
 		public void Run(IEcsSystems systems)
 		{
@@ -169,8 +178,9 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Шаг отхода: выбирает (при необходимости) свободную точку NavMesh подальше от игрока и
-		/// каждый кадр прописывает её единственным waypoint'ом, перетирая путь к игроку.
+		/// Шаг отхода: выбирает (при необходимости) свободную точку NavMesh подальше от игрока и ведёт
+		/// моба к ней по пути NavMesh (углы пути — waypoint'ы). Патфайндинг периодически перетирает
+		/// MovePath путём к игроку — тогда путь отхода прокладывается заново от текущей позиции.
 		/// </summary>
 		private void FleeStep(int entity, ref GrenadierComponent grenadier, Vector3 mobPos, Vector3 playerPos,
 			float minDistance, EcsPool<MoveComponent> movePool, EcsPool<MovePath> pathPool)
@@ -180,14 +190,19 @@ namespace ECS
 			{
 				Vector3 toTarget = grenadier.FleeTarget - mobPos;
 				toTarget.y = 0f;
-				if (toTarget.sqrMagnitude < 0.4f * 0.4f)
+				if (toTarget.sqrMagnitude < FleeArriveDistance * FleeArriveDistance)
 					needNew = true; // дошёл до выбранной точки, а игрок всё ещё близко — ищем новую.
 			}
 
-			if (needNew && TryFindFleeTarget(mobPos, playerPos, minDistance, out var target))
+			bool hasFreshPath = false;
+			if (needNew)
 			{
-				grenadier.FleeTarget = target;
-				grenadier.HasFleeTarget = true;
+				grenadier.HasFleeTarget = TryFindFleeTarget(mobPos, playerPos, minDistance, out var target);
+				if (grenadier.HasFleeTarget)
+				{
+					grenadier.FleeTarget = target;
+					hasFreshPath = true; // TryFindFleeTarget оставил проверенный путь в _fleeCorners.
+				}
 			}
 
 			if (!grenadier.HasFleeTarget)
@@ -197,17 +212,43 @@ namespace ECS
 				return;
 			}
 
+			// Путь уже ведёт к точке отхода и MoveSystem по нему идёт — не трогаем (иначе сбросили бы прогресс).
+			if (!hasFreshPath && IsFollowingFleePath(entity, grenadier.FleeTarget, pathPool))
+				return;
+
+			if (!hasFreshPath && !TryCalculateFleePath(mobPos, grenadier.FleeTarget, playerPos))
+			{
+				// Прежний маршрут больше не годится (перекрыт или ведёт к игроку) — выберем точку заново в след. кадре.
+				grenadier.HasFleeTarget = false;
+				StopMovement(entity, movePool, pathPool);
+				return;
+			}
+
 			ref var path = ref pathPool.Has(entity) ? ref pathPool.Get(entity) : ref pathPool.Add(entity);
 			if (path.Waypoints == null)
-				path.Waypoints = new List<Vector3>(2);
+				path.Waypoints = new List<Vector3>(_fleeCorners.Length);
 			path.Waypoints.Clear();
-			path.Waypoints.Add(grenadier.FleeTarget);
+			for (int i = 0; i < _fleeCornerCount; i++)
+				path.Waypoints.Add(_fleeCorners[i]);
 			path.CurrentIndex = 0;
 		}
 
+		private static bool IsFollowingFleePath(int entity, Vector3 fleeTarget, EcsPool<MovePath> pathPool)
+		{
+			if (!pathPool.Has(entity))
+				return false;
+			ref var path = ref pathPool.Get(entity);
+			if (path.Waypoints == null || path.Waypoints.Count == 0)
+				return false;
+			Vector3 last = path.Waypoints[path.Waypoints.Count - 1];
+			last.y = fleeTarget.y;
+			return (last - fleeTarget).sqrMagnitude < 0.01f;
+		}
+
 		/// <summary>
-		/// Ищет валидную точку NavMesh на дистанции > minDistance от игрока, отходя от него;
-		/// при заблокированном направлении перебирает углы в стороны ("свободное место рядом").
+		/// Ищет валидную точку NavMesh на дистанции >= minDistance от игрока, отходя от него;
+		/// при заблокированном направлении перебирает углы в стороны (в пределах ±90° от «прочь от игрока»).
+		/// Точка принимается только если до неё есть полный путь NavMesh, не подводящий моба к игроку.
 		/// </summary>
 		private bool TryFindFleeTarget(Vector3 mobPos, Vector3 playerPos, float minDistance, out Vector3 result)
 		{
@@ -222,7 +263,15 @@ namespace ECS
 			{
 				Vector3 dir = Quaternion.Euler(0f, _fleeAngles[i], 0f) * away;
 				Vector3 candidate = playerPos + dir * desired;
-				if (NavMesh.SamplePosition(candidate, out var hit, 2f, NavMesh.AllAreas))
+				if (!NavMesh.SamplePosition(candidate, out var hit, 2f, NavMesh.AllAreas))
+					continue;
+
+				Vector3 flat = hit.position - playerPos;
+				flat.y = 0f;
+				if (flat.sqrMagnitude < minDistance * minDistance)
+					continue;
+
+				if (TryCalculateFleePath(mobPos, hit.position, playerPos))
 				{
 					result = hit.position;
 					return true;
@@ -231,6 +280,48 @@ namespace ECS
 
 			result = mobPos;
 			return false;
+		}
+
+		/// <summary>
+		/// Считает путь NavMesh до точки отхода в _fleeCorners. Путь отвергается, если он неполный или
+		/// хоть один его отрезок проходит к игроку ближе, чем моб стоит сейчас (минус допуск).
+		/// </summary>
+		private bool TryCalculateFleePath(Vector3 from, Vector3 to, Vector3 playerPos)
+		{
+			_fleeCornerCount = 0;
+			if (!NavMesh.CalculatePath(from, to, NavMesh.AllAreas, _fleePath)
+				|| _fleePath.status != NavMeshPathStatus.PathComplete)
+				return false;
+
+			int cornerCount = _fleePath.GetCornersNonAlloc(_fleeCorners);
+			if (cornerCount == _fleeCorners.Length)
+			{
+				_fleeCorners = new Vector3[_fleeCorners.Length * 2];
+				cornerCount = _fleePath.GetCornersNonAlloc(_fleeCorners);
+			}
+			if (cornerCount == 0)
+				return false;
+
+			Vector2 player = new Vector2(playerPos.x, playerPos.z);
+			float clearance = Mathf.Max(0f, Vector2.Distance(new Vector2(from.x, from.z), player) - FleeClearanceTolerance);
+			for (int i = 0; i < cornerCount - 1; i++)
+			{
+				Vector2 a = new Vector2(_fleeCorners[i].x, _fleeCorners[i].z);
+				Vector2 b = new Vector2(_fleeCorners[i + 1].x, _fleeCorners[i + 1].z);
+				if (DistanceToSegment(player, a, b) < clearance)
+					return false;
+			}
+
+			_fleeCornerCount = cornerCount;
+			return true;
+		}
+
+		private static float DistanceToSegment(Vector2 p, Vector2 a, Vector2 b)
+		{
+			Vector2 ab = b - a;
+			float lenSq = ab.sqrMagnitude;
+			float t = lenSq > 0.0001f ? Mathf.Clamp01(Vector2.Dot(p - a, ab) / lenSq) : 0f;
+			return Vector2.Distance(p, a + ab * t);
 		}
 
 		private void FacePlayer(in MobComponent mob, Vector3 mobPos, Vector3 playerPos)
