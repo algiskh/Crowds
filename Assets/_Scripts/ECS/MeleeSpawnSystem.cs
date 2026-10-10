@@ -65,7 +65,7 @@ namespace ECS
 					{
 						damageRequestPool.Add(world.NewEntity()) = new RequestDamageComponent
 						{
-							TargetEntity = targetEntity,
+							Target = world.PackEntity(targetEntity),
 							Damage = spawnRequest.Config.Damage
 						};
 
@@ -105,7 +105,7 @@ namespace ECS
 
 					damageRequestPool.Add(world.NewEntity()) = new RequestDamageComponent
 					{
-						TargetEntity = breakableEntity,
+						Target = world.PackEntity(breakableEntity),
 						Damage = spawnRequest.Config.Damage
 					};
 				}

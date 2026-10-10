@@ -86,7 +86,7 @@ for any new modifier-carrying field.
 | Struct | Kind | Fields | Notes |
 |--------|------|--------|-------|
 | `ModifierOwnerComponent` | per-entity | `int Entity; Transform Transform; List<Modifier> Modifiers; bool ReadyToRemove;` | The bag of active modifiers on an entity. `Transform` lets effect/DoT find the owner. `ReadyToRemove` is currently unused. |
-| `TryApplyModifierComponent` | request | `int TargetEntity; Modifier Modifier;` | "Apply this modifier to that entity." Consumed by `ModifiersSystem`. |
+| `TryApplyModifierComponent` | request | `EcsPackedEntity Target; Modifier Modifier;` | "Apply this modifier to that entity." Consumed by `ModifiersSystem`. `Target` is packed (`world.PackEntity`): the request lives into the next frame and the target (e.g. a mob killed by the same shot) may be deleted/recycled meanwhile — such requests are dropped. |
 | `ApplyModifierResponseComponent` | — | `int TargetEntity; Modifier Modifier;` | Defined but **currently unused** (reserved). |
 
 **Entities that own a `ModifierOwnerComponent`:** player + camera follower (`EntryPoint`), every mob
@@ -183,18 +183,23 @@ unconditionally.
 | `MeleeSpawnSystem` (melee hit) | `MeleeConfig.Modifiers` | A | each target in radius |
 | `MeleeSpawnSystem` (on attack) | `MeleeConfig.Debuffs` | A | the attacker (self) |
 | `BonusSystem` (pickup) | `BonusConfig.Modifier` | A | player |
-| `GunConfig.ShotDebuffs` / `ReloadDebuffs` | declared | — | **not yet consumed** (no system applies them) |
+| `GunConfig.ShotDebuffs` | bullet → `CollisionSystem.BuildShotDebuffs` | B | the hit target |
+| `GunConfig.ReloadDebuffs` | declared | — | **not yet consumed** |
 
 ---
 
 ## 8. Effect linkage (modifier ↔ VFX)
 
-`RequestEffectComponent` carries `Parent`, `DamageType`, and `ModifierEntity`. When `ModifiersSystem`
-applies a modifier with `HasEffect`, it requests the effect tagged with the owner entity + the
-modifier's `DamageType`. In **`EffectsSystem`**, such an effect (`ModifierEntity != 0`,
-`DamageType != Unknown`) is **kept alive and repositioned to the owner** as long as
-`HasModifierWithDamageType(DamageType)` is true; once no matching modifier remains, `ModifierEntity`
-is cleared and the effect returns to the pool. This is how a "burning" loop VFX persists exactly for
+`RequestEffectComponent` carries `Parent`, `DamageType`, and the link `HasModifierLink` +
+`EcsPackedEntity ModifierOwner` + `Modifier LinkedModifier`. When `ModifiersSystem` applies a modifier
+with `HasEffect`, it requests the effect linked to the (packed) owner, the modifier and its `DamageType`.
+In **`EffectsSystem`**, a linked effect is **kept alive and repositioned to the owner** while:
+- `DamageType != Unknown` (DoT) — `HasModifierWithDamageType(DamageType)` is true;
+- `DamageType == Unknown` (non-damage, e.g. `SpeedShotDebuff`) — `LinkedModifier` is still in the owner's list.
+
+Once that is false, **or the owner no longer unpacks** (died/recycled), the link is cleared and the
+effect returns to the pool (`Pool()` re-parents child effects off the mob, so they don't come back
+with a recycled mob). This is how a "burning" loop VFX persists exactly for
 the duration of a burning `DamageModifier`.
 
 ---
@@ -225,7 +230,7 @@ Pickable player power-ups built entirely on the above:
 - `ShieldModifier.ImmuneType` — unused; shield currently only does `Value` % reduction (no
   type-specific immunity). `RequestDamageComponent` carries no single `DamageType` for melee, so
   type-aware shields would need that plumbing.
-- `GunConfig.ShotDebuffs` / `ReloadDebuffs` — declared on the config, **not applied** by any system.
+- `GunConfig.ReloadDebuffs` — declared on the config, **not applied** by any system.
 - `ApplyModifierResponseComponent` and `ModifierOwnerComponent.ReadyToRemove` — declared, unused.
 
 ---
@@ -240,7 +245,7 @@ Pickable player power-ups built entirely on the above:
 
 **Apply a modifier from code:** clone it, then either
 `modifierOwner.Modifiers.Add(cfg.X.Clone<Modifier>())` (immediate) or
-`world.CreateSimpleEntity<TryApplyModifierComponent>()` with `TargetEntity`+`Modifier` (next frame,
+`world.CreateSimpleEntity<TryApplyModifierComponent>()` with `Target = world.PackEntity(e)`+`Modifier` (next frame,
 auto-VFX). Always clone — never share a config instance across owners.
 
 **Gotchas**

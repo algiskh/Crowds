@@ -23,15 +23,17 @@ namespace ECS
 			foreach (var requestEntity in filter)
 			{
 				var requestDamageComponent = requestDamagePool.Get(requestEntity);
-				var target = requestDamageComponent.TargetEntity;
 
-				var isPlayer = playerPool.Has(target);
-
-				if (!healthPool.Has(target))
+				// Цель могла умереть/переиспользоваться с момента создания запроса (запросы от систем,
+				// идущих после DamageSystem, доживают до следующего кадра). Запрос удаляем всегда,
+				// иначе он висел бы вечно и мог попасть в чужую сущность после рецикла id.
+				if (!requestDamageComponent.Target.Unpack(world, out var target) || !healthPool.Has(target))
 				{
-					// If the target does not have health or mob component, skip processing
+					requestDamagePool.Del(requestEntity);
 					continue;
 				}
+
+				var isPlayer = playerPool.Has(target);
 
 				ref var healthComponent = ref healthPool.Get(target);
 
@@ -80,16 +82,12 @@ namespace ECS
 					{
 						tryapplyModifierPool.Add(world.NewEntity()) = new TryApplyModifierComponent
 						{
-							TargetEntity = target,
+							Target = world.PackEntity(target),
 							Modifier = modifier
 						};
 					}
 				}
 
-				// Чистим managed-ссылку перед возвратом слота в пул: EcsLite не обнуляет переиспользуемые
-				// struct'ы, иначе следующий RequestDamage, не выставивший DamageModifiers, унаследовал бы
-				// чужой список модификаторов.
-				requestDamagePool.Get(requestEntity).DamageModifiers = null;
 				requestDamagePool.Del(requestEntity);
 			}
 			#endregion

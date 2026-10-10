@@ -23,21 +23,31 @@ namespace ECS
 			{
 				ref var fx = ref effectPool.Get(entity);
 
-				if (fx.LifeTime <= 0 && fx.ModifierEntity != 0)
+				if (fx.LifeTime <= 0 && fx.HasModifierLink)
 				{
-					if (fx.DamageType != DamageType.Unknown && modifiersPool.Has(fx.ModifierEntity))
+					// Владелец умер/переиспользован → связь рвём, эффект уйдёт в пул (Pool() отцепит
+					// child-эффект от моба, иначе он «воскрес» бы вместе с переиспользованным мобом).
+					if (fx.ModifierOwner.Unpack(world, out var ownerEntity) && modifiersPool.Has(ownerEntity))
 					{
-						ref var modifierOwner = ref modifiersPool.Get(fx.ModifierEntity);
+						ref var modifierOwner = ref modifiersPool.Get(ownerEntity);
 
 						if (!fx.IsChild)
 						{
 							fx.Effect.transform.position = modifierOwner.Transform.position;
 						}
 
-						if (!modifierOwner.HasModifierWithDamageType(fx.DamageType))
-						{
-							fx.ModifierEntity = 0;
-						}
+						// DoT: эффект живёт, пока на владельце есть модификатор этого типа урона.
+						// Прочие (DamageType.Unknown, напр. SpeedShotDebuff) — пока жив сам связанный модификатор.
+						bool stillActive = fx.DamageType != DamageType.Unknown
+							? modifierOwner.HasModifierWithDamageType(fx.DamageType)
+							: modifierOwner.Modifiers != null && modifierOwner.Modifiers.Contains(fx.LinkedModifier);
+
+						if (!stillActive)
+							fx.HasModifierLink = false;
+					}
+					else
+					{
+						fx.HasModifierLink = false;
 					}
 				}
 				fx.LifeTime -= Time.deltaTime;
@@ -49,7 +59,7 @@ namespace ECS
 			{
 				ref var fx = ref effectPool.Get(entity);
 
-				if (fx.LifeTime <= 0 && fx.ModifierEntity <= 0)
+				if (fx.LifeTime <= 0 && !fx.HasModifierLink)
 				{
 					effectMainPool.Pool(fx.Effect);
 					world.DelEntity(entity);
@@ -98,7 +108,9 @@ namespace ECS
 							effectComponent.Effect.SetParent(request.Parent);
 						}
 						effectComponent.DamageType = request.DamageType;
-						effectComponent.ModifierEntity = request.ModifierEntity;
+						effectComponent.HasModifierLink = request.HasModifierLink;
+						effectComponent.ModifierOwner = request.ModifierOwner;
+						effectComponent.LinkedModifier = request.LinkedModifier;
 					}
 					else
 					{

@@ -22,10 +22,14 @@ namespace ECS
 			foreach (var entity in tryApplyFilter)
 			{
 				ref var request = ref tryApplyModifierPool.Get(entity);
-				if (request.TargetEntity == -1 || !modifierPool.Has(request.TargetEntity))
+				// Цель могла умереть в DamageSystem прошлого кадра — запрос удаляем в любом случае.
+				if (!request.Target.Unpack(world, out var target) || !modifierPool.Has(target) || request.Modifier == null)
+				{
+					world.DelEntity(entity);
 					continue;
+				}
 
-				ref var modifierOwner = ref modifierPool.Get(request.TargetEntity);
+				ref var modifierOwner = ref modifierPool.Get(target);
 				if (modifierOwner.Modifiers == null)
 					modifierOwner.Modifiers = new List<Modifier>();
 
@@ -41,7 +45,9 @@ namespace ECS
 							EffectId = request.Modifier.EffectId,
 							Parent = modifierOwner.Transform,
 							DamageType = request.Modifier is DamageModifier dmg ? dmg.Type : DamageType.Unknown,
-							ModifierEntity = request.TargetEntity
+							HasModifierLink = true,
+							ModifierOwner = request.Target,
+							LinkedModifier = request.Modifier
 						};
 					}
 				}
@@ -88,11 +94,11 @@ namespace ECS
 			{
 				if (modifier is DamageModifier)
 				{
-					world.GetPool<RequestDamageComponent>().Add(targetEntity) = new RequestDamageComponent
-					{
-						TargetEntity = targetEntity,
-						Damage = value
-					};
+					// Отдельная сущность на каждый тик: несколько DoT на одной цели могут тикнуть в одном
+					// кадре, а Add на саму цель второй раз бросил бы «already attached».
+					ref var request = ref world.CreateSimpleEntity<RequestDamageComponent>();
+					request.Target = world.PackEntity(targetEntity);
+					request.Damage = value;
 				}
 			}
 		}

@@ -1,4 +1,5 @@
 using System;
+using Leopotam.EcsLite;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.VisualScripting;
@@ -139,7 +140,9 @@ public struct HealthComponent
 public struct RequestDamageComponent
 {
 	public float Damage;
-	public int TargetEntity;
+	// Packed: requests may outlive the frame (e.g. raised after DamageSystem), and the target may be
+	// deleted/recycled meanwhile. Use world.PackEntity(target) when raising.
+	public EcsPackedEntity Target;
 	public IEnumerable<Modifier> DamageModifiers;
 }
 
@@ -340,8 +343,11 @@ public struct EffectComponent
 {
 	public SceneEffect Effect;
 	public float LifeTime;
-	// if effect is associated with modifier
-	public int ModifierEntity;
+	// if effect is associated with modifier: owner entity (packed — the owner may die/recycle while
+	// the effect lives) and the modifier itself (link for non-damage modifiers, DamageType == Unknown).
+	public bool HasModifierLink;
+	public EcsPackedEntity ModifierOwner;
+	public Modifier LinkedModifier;
 	public DamageType DamageType;
 	public bool IsChild;
 }
@@ -354,7 +360,9 @@ public struct RequestEffectComponent
 	// if effect is associated with modifier
 	public Transform Parent;
 	public DamageType DamageType;
-	public int ModifierEntity;
+	public bool HasModifierLink;
+	public EcsPackedEntity ModifierOwner;
+	public Modifier LinkedModifier;
 	// Optional fuse (sec): while > 0 the effect is deferred (counted down in EffectsSystem)
 	// before it spawns. 0 (default) = spawn immediately. Used for staggered destruction bursts.
 	public float Delay;
@@ -708,7 +716,7 @@ public struct ModifierOwnerComponent
 
 public struct TryApplyModifierComponent
 {
-	public int TargetEntity;
+	public EcsPackedEntity Target;
 	public Modifier Modifier;
 }
 

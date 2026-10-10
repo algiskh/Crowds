@@ -100,7 +100,7 @@ namespace ECS
 							var mobConfig = mob.Config;
 
 							ref var damageRequest = ref world.CreateSimpleEntity<RequestDamageComponent>();
-							damageRequest.TargetEntity = mobEntity;
+							damageRequest.Target = world.PackEntity(mobEntity);
 							damageRequest.Damage = damage;
 
 							world.RequestDamageDecal(mobConfig, DamageSourceType.Explosion, mobPos, mobPos - request.Position);
@@ -118,7 +118,7 @@ namespace ECS
 							float damage = Mathf.Lerp(request.MaxDamage, request.MinDamage, t) * request.MobDamageScale;
 
 							ref var damageRequest = ref world.CreateSimpleEntity<RequestDamageComponent>();
-							damageRequest.TargetEntity = breakableEntity;
+							damageRequest.Target = world.PackEntity(breakableEntity);
 							damageRequest.Damage = damage;
 						}
 					}
@@ -136,7 +136,7 @@ namespace ECS
 						float damage = Mathf.Lerp(request.MaxDamage, request.MinDamage, t) * request.PlayerDamageScale;
 
 						ref var damageRequest = ref world.CreateSimpleEntity<RequestDamageComponent>();
-						damageRequest.TargetEntity = playerSingleton.Value.Entity;
+						damageRequest.Target = world.PackEntity(playerSingleton.Value.Entity);
 						damageRequest.Damage = damage;
 					}
 				}

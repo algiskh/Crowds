@@ -79,7 +79,7 @@ namespace ECS
 					}
 
 					ref var damage = ref world.CreateSimpleEntity<RequestDamageComponent>();
-					damage.TargetEntity = mobEntity;
+					damage.Target = world.PackEntity(mobEntity);
 					damage.Damage = bulletComponent.Damage;
 					damage.DamageModifiers = BuildShotDebuffs(bulletComponent.Modifiers);
 
@@ -121,7 +121,7 @@ namespace ECS
 						continue;
 
 					ref var damage = ref world.CreateSimpleEntity<RequestDamageComponent>();
-					damage.TargetEntity = breakableEntity;
+					damage.Target = world.PackEntity(breakableEntity);
 					damage.Damage = bulletComponent.Damage;
 
 					// Solid prop — пуля останавливается на нём.
@@ -149,7 +149,7 @@ namespace ECS
 					continue;
 
 				ref var damage = ref world.CreateSimpleEntity<RequestDamageComponent>();
-				damage.TargetEntity = player.Value.Entity;
+				damage.Target = world.PackEntity(player.Value.Entity);
 				damage.Damage = bulletComponent.Damage;
 				damage.DamageModifiers = BuildShotDebuffs(bulletComponent.Modifiers);
 
@@ -184,7 +184,7 @@ namespace ECS
 				if (distance < mob.Config.HitRadius && mob.Cooldown <= 0)
 				{
 					ref var requestDamage = ref world.CreateSimpleEntity<RequestDamageComponent>();
-					requestDamage.TargetEntity = player.Value.Entity;
+					requestDamage.Target = world.PackEntity(player.Value.Entity);
 					requestDamage.Damage = mob.Config.Damage;
 
 					var attackMods = mob.Config.AttackModifiers;

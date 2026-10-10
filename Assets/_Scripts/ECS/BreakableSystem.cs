@@ -107,7 +107,7 @@ namespace ECS
 					if (dmg <= 0f) continue;
 
 					ref var damage = ref world.CreateSimpleEntity<RequestDamageComponent>();
-					damage.TargetEntity = entity;
+					damage.Target = world.PackEntity(entity);
 					damage.Damage = dmg;
 
 					breakable.ContactCooldown = CONTACT_COOLDOWN;
