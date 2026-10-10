@@ -40,7 +40,6 @@ Top-down шутер на Unity с ECS-архитектурой. «Толпы» �
 - `SmartConditions/` — обёртки условий (`FragsConditionWrapper`, `NoAmmoAroundConditionWrapper`)
 - `Enums/` — enum-типы
 - `Input/InputActionsHolder.cs`
-- `Remote/Leaderboard/` — лидерборд
 - Корень `_Scripts/` — MonoBehaviour'ы сцены: `Player`, `Mob`, `Weapon`, `Bullet`, `Loot`, `SpawnPoint`, `FloorSector`, `NavMeshManager`, `AimVisualizer`, `PathGizmoDrawer` и enum'ы вроде `DamageType`, `AimType`, `BonusType`
 
 ## Ассеты
