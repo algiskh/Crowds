@@ -39,7 +39,8 @@ namespace ECS
 
 			if (reloading.ShutteringTime > 0)
 			{
-				reloading.ShutteringTime -= Time.deltaTime;
+				// Clamp: отрицательный остаток портил бы прогресс в UI и следующий цикл перезарядки.
+				reloading.ShutteringTime = Mathf.Max(0f, reloading.ShutteringTime - Time.deltaTime);
 			}
 
 			if (reloading.ReloadTime > 0)
@@ -65,8 +66,18 @@ namespace ECS
 				ref var changeAmmoTextRequest = ref world.CreateSimpleEntity<UpdateAmmoViewRequestComponent>();
 			}
 			else
-			if (hasReloadRequest && weapon.CurrentMagazineCount < capacity)
+			if (hasReloadRequest)
 			{
+				// Перезарядка только если есть смысл: магазин не полон и в запасе есть патроны этого калибра.
+				// Запрос удаляем в любом случае — иначе «лишнее» нажатие R висело бы до следующего выстрела
+				// и запускало перезарядку, о которой игрок уже не просил.
+				var reserveAmmo = world.GetAsSingleton<AmmoInventoryComponent>().Get(weapon.GunConfig.Caliber);
+				if (weapon.CurrentMagazineCount >= capacity || reserveAmmo <= 0)
+				{
+					world.DeleteAllWith<RequestReloadComponent>();
+					return;
+				}
+
 				var sound = soundHolder.Value.GetClip(weapon.GunConfig.ReloadSoundId);
 				if (sound == null)
 				{
@@ -91,6 +102,7 @@ namespace ECS
 			else
 			{
 				Debug.LogWarning("Cannot reload, magazine is full or no ammo left.");
+				reloading.ReloadTime = 0;
 				return;
 			}
 

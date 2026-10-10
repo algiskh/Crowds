@@ -5,6 +5,9 @@ namespace ECS
 {
 	public class UISystem : IEcsRunSystem
 	{
+		// Был ли активен цикл перезарядки в прошлом кадре — чтобы по завершении дорисовать иконку до 1.
+		private bool _wasReloading;
+
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
@@ -39,7 +42,13 @@ namespace ECS
 
 			if (reloading.ReloadTime > 0 || reloading.ShutteringTime > 0)
 			{
-				weaponView.Value.ShowReloading(1 - ((reloading.ReloadTime + reloading.ShutteringTime) / (weapon.GunConfig.ReloadTime + weapon.GunConfig.ShutterTime)));
+				weaponView.Value.ShowReloading(GetReloadProgress(reloading, weapon.GunConfig));
+				_wasReloading = true;
+			}
+			else if (_wasReloading)
+			{
+				weaponView.Value.ShowReloading(1f);
+				_wasReloading = false;
 			}
 
 			var ammoRequestFilter = world.Filter<UpdateAmmoViewRequestComponent>()
@@ -123,6 +132,25 @@ namespace ECS
 			world.DeleteAllWith<UpdateGrenadeViewRequestComponent>();
 			world.DeleteAllWith<RequestShowDifficultyComponent>();
 			world.DeleteAllWith<RequestHideDifficultyComponent>();
+		}
+
+		/// <summary>
+		/// Прогресс цикла перезарядки 0..1. Фазы идут последовательно: сначала ReloadTime, потом ShutteringTime,
+		/// поэтому прошедшее время = (R - reloadLeft) в первой фазе и R + (S - shutterLeft) во второй.
+		/// </summary>
+		private static float GetReloadProgress(ReloadingComponent reloading, GunConfig config)
+		{
+			float reload = config.ReloadTime;
+			float shutter = config.ShutterTime;
+			float total = reload + shutter;
+			if (total <= 0f)
+				return 1f;
+
+			float elapsed = reloading.ReloadTime > 0
+				? reload - reloading.ReloadTime
+				: reload + (shutter - reloading.ShutteringTime);
+
+			return UnityEngine.Mathf.Clamp01(elapsed / total);
 		}
 	}
 }
