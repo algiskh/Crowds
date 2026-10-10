@@ -1,5 +1,6 @@
 using UnityEngine;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
 
 [CreateAssetMenu(fileName = "GunConfig", menuName = "Scriptable Objects/GunConfig")]
 public class GunConfig : ScriptableObject
@@ -77,10 +78,10 @@ public class GunConfig : ScriptableObject
 	[SerializeField] private bool _fireOnDemand;
 
 	[LabelText("On-shot debuffs")]
-	[SerializeField] private Modifier[] _shotDebuffs;
+	[SerializeReference, OdinSerialize] private Modifier[] _shotDebuffs;
 
 	[LabelText("On-reload debuffs")]
-	[SerializeField] private Modifier[] _reloadDebuffs;
+	[SerializeReference, OdinSerialize] private Modifier[] _reloadDebuffs;
 
 	public string Id => _id;
 	public Caliber Caliber => _caliber;
