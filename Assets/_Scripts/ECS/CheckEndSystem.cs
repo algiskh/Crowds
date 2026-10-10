@@ -18,12 +18,31 @@ namespace ECS
 			var endGameFilter = world.Filter<EndGameComponent>()
 				.End();
 
+			// Поражение приоритетнее победы: если в этом кадре пришли оба исхода или концовка поражения уже
+			// идёт (она длится ~1с до окна), победу игнорируем — иначе открылись бы оба окна.
+			ref var failSequence = ref world.GetAsSingleton<FailSequenceComponent>();
+			bool isFailing = failSequence.Phase != FailSequencePhase.Inactive;
+			foreach (var entity in endGameFilter)
+			{
+				if (!endGamePool.Get(entity).isWin)
+				{
+					isFailing = true;
+					break;
+				}
+			}
+
 			foreach (var entity in endGameFilter)
 			{
 				var endGameComponent = endGamePool.Get(entity);
 
 				if (endGameComponent.isWin)
 				{
+					if (isFailing)
+					{
+						world.DelEntity(entity);
+						continue;
+					}
+
 					ref var requestPause = ref world.CreateSimpleEntity<RequestPauseComponent>();
 					requestPause.Source = SignalSource.EndGame;
 
