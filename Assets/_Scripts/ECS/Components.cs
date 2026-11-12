@@ -84,6 +84,9 @@ public struct AnimationStateComponent
 	public Scene.Animation.AnimationType Requested;
 	public Scene.Animation.AnimationType Current;
 	public bool HasCurrent;
+	// One-shot: replay Requested from the start even if it's already playing (e.g. recoil on every burst shot).
+	// Consumed by AnimationSystem.
+	public bool Restart;
 }
 
 /// <summary>
@@ -913,6 +916,7 @@ public enum RangedAttackerState : byte
 {
 	Chase,
 	Windup,
+	Burst,    // between the shots of a burst (RangedMobConfig.BurstCount > 1)
 	Cooldown
 }
 
@@ -927,6 +931,20 @@ public struct RangedAttackerComponent
 	public RangedMobConfig Config;
 	public RangedAttackerState State;
 	// В Windup — отсчёт замаха до выстрела; в Cooldown — отсчёт восстановления.
+	public float Timer;
+	// Shots still to fire in the current burst (Burst state).
+	public int ShotsLeft;
+}
+
+/// <summary>
+/// A dead mob's view that still plays its "die" animation. The gameplay entity is already deleted at the
+/// moment of death (DamageSystem), so nothing targets/collides with the corpse; this separate entity only keeps
+/// the GameObject alive for <see cref="MobConfig.DeathAnimationTime"/> seconds, then DyingMobSystem returns it
+/// to the mob pool. Only skinned (non-VAT) mobs with DeathAnimationTime > 0.
+/// </summary>
+public struct DyingMobComponent
+{
+	public Mob Value;
 	public float Timer;
 }
 #endregion

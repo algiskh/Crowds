@@ -10,12 +10,12 @@ namespace ECS
 			var world = systems.GetWorld();
 
 			ref var fragCount = ref world.GetAsSingleton<FragCountComponent>();
-			ref var mobSpawnPool = ref world.GetAsSingleton<MobPoolComponent>(); 
 			var requestDamagePool = world.GetPool<RequestDamageComponent>();
 			var mobPool = world.GetPool<MobComponent>();
 			var healthPool = world.GetPool<HealthComponent>();
 			var playerPool = world.GetPool<PlayerComponent>();
 			var modifierPool = world.GetPool<ModifierOwnerComponent>();
+			var crowdPool = world.GetPool<CrowdInstanceComponent>();
 			List<int> entitiesWithLoot = new();
 
 			#region Handling DamageRequests
@@ -106,15 +106,25 @@ namespace ECS
 				if (healthComponent.CurrentHealth <= 0)
 				{
 					var deadMob = mobComponent.Value;
-					if (mobSpawnPool.Pools == null)
-						mobSpawnPool.Pools = new Dictionary<string, Stack<Mob>>();
-					if (!mobSpawnPool.Pools.TryGetValue(deadMob.Id, out var stack))
+					float deathAnimTime = mobComponent.Config != null ? mobComponent.Config.DeathAnimationTime : 0f;
+
+					// Skinned mob with a death animation: the entity dies now (below), the view lingers to play
+					// "die" and is pooled later by DyingMobSystem. VAT mobs have no live Animator → instant.
+					if (deathAnimTime > 0f && deadMob.Animator != null && !crowdPool.Has(mobEntity))
 					{
-						stack = new Stack<Mob>();
-						mobSpawnPool.Pools[deadMob.Id] = stack;
+						if (deadMob.Collider != null)
+							deadMob.Collider.enabled = false;
+						deadMob.ValueBar?.SetVisible(false);
+						deadMob.Animator.SetAnimation(Scene.Animation.AnimationType.Die);
+
+						ref var dying = ref world.GetPool<DyingMobComponent>().Add(world.NewEntity());
+						dying.Value = deadMob;
+						dying.Timer = deathAnimTime;
 					}
-					stack.Push(deadMob);
-					deadMob.gameObject.SetActive(false);
+					else
+					{
+						DyingMobSystem.ReturnToPool(world, deadMob);
+					}
 
 
 

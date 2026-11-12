@@ -10,7 +10,9 @@ namespace Scene.Animation
 		Attack,
 		Die,
 		Throw,
-		ThrowCooldown
+		ThrowCooldown,
+		Aim,   // ranged windup: weapon raised, telegraph before the shot
+		Shoot  // ranged shot: recoil, played when the bullet leaves the muzzle
 	}
 
 	/// <summary>
@@ -28,7 +30,9 @@ namespace Scene.Animation
 			"attack",          // Attack
 			"die",             // Die
 			"throw",           // Throw
-			"throw_cooldown"   // ThrowCooldown
+			"throw_cooldown",  // ThrowCooldown
+			"aim",             // Aim
+			"shoot"            // Shoot
 		};
 
 		private static readonly int[] _hashes = BuildHashes();

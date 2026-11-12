@@ -572,6 +572,7 @@ namespace ECS
 				.Add(new GrenadeProjectileSystem())
 				.Add(new ExplosionSystem())
 				.Add(new DamageSystem())
+				.Add(new DyingMobSystem())
 				.Add(new BreakableSystem())
 				.Add(new BonusSystem())
 				// Other spawning systems

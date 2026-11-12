@@ -63,6 +63,21 @@ public class SimpleAnimator : MonoBehaviour
 	}
 
 	/// <summary>
+	/// Plays <paramref name="type"/> from its start even if it's the current state (e.g. recoil on every shot of a burst).
+	/// </summary>
+	public void RestartAnimation(AnimationType type, float crossFadeTime = 0.05f)
+	{
+		if (_animator == null)
+			return;
+
+		_currentHash = type.ToHash();
+		_hasCurrent = true;
+		_isPaused = false;
+		_animator.speed = 1f;
+		_animator.CrossFade(_currentHash, crossFadeTime, 0, 0f);
+	}
+
+	/// <summary>
 	/// Plays an animation by its Animator state name. Kept for callers that still use string ids.
 	/// </summary>
 	public void SetAnimation(string id, float crossFadeTime = 0.1f)

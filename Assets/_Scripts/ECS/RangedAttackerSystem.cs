@@ -80,8 +80,35 @@ namespace ECS
 						attacker.Timer -= dt;
 						if (attacker.Timer <= 0f)
 						{
-							Fire(world, bulletRequestPool, soundHolder, config, mobPos, playerPos);
-							EnterCooldown(ref attacker);
+							// First shot of the attack: switch to the fire clip.
+							Fire(world, bulletRequestPool, soundHolder, config, mob.Value, mobPos, playerPos);
+							RequestAnimation(animPool, entity, config.FireAnimation);
+							attacker.ShotsLeft = config.BurstCount - 1;
+							if (attacker.ShotsLeft > 0)
+							{
+								attacker.State = RangedAttackerState.Burst;
+								attacker.Timer = config.BurstInterval;
+							}
+							else
+								EnterCooldown(ref attacker);
+						}
+						break;
+
+					case RangedAttackerState.Burst:
+						// Rest of the burst: stay put, keep tracking the player, fire every BurstInterval.
+						StopMovement(entity, movePool, pathPool);
+						FacePlayer(mob, mobPos, playerPos);
+						attacker.Timer -= dt;
+						if (attacker.Timer <= 0f)
+						{
+							Fire(world, bulletRequestPool, soundHolder, config, mob.Value, mobPos, playerPos);
+							if (config.RestartFireAnimationPerShot)
+								RequestAnimation(animPool, entity, config.FireAnimation, restart: true);
+							attacker.ShotsLeft--;
+							if (attacker.ShotsLeft > 0)
+								attacker.Timer += config.BurstInterval;
+							else
+								EnterCooldown(ref attacker);
 						}
 						break;
 
@@ -89,7 +116,13 @@ namespace ECS
 						StopMovement(entity, movePool, pathPool);
 						attacker.Timer -= dt;
 						if (attacker.Timer <= 0f)
-							EnterChase(entity, ref attacker, recalcRequestPool, animPool);
+						{
+							// Still in range → aim again right away (no one-frame flick into the chase clip).
+							if (distance <= config.AttackRange)
+								EnterWindup(entity, ref attacker, mob, mobPos, playerPos, animPool);
+							else
+								EnterChase(entity, ref attacker, recalcRequestPool, animPool);
+						}
 						break;
 				}
 			}
@@ -104,13 +137,14 @@ namespace ECS
 			attacker.Timer = attacker.Config.WindupDelay;
 			FacePlayer(mob, mobPos, playerPos);
 			// Одна анимация "attack" на все три фазы (замах → выстрел → восстановление).
-			RequestAnimation(animPool, entity, AnimationType.Attack);
+			RequestAnimation(animPool, entity, attacker.Config.WindupAnimation);
 		}
 
 		private void EnterCooldown(ref RangedAttackerComponent attacker)
 		{
 			attacker.State = RangedAttackerState.Cooldown;
 			attacker.Timer = attacker.Config.Cooldown;
+			attacker.ShotsLeft = 0;
 			// Анимацию не трогаем — клип "attack" доигрывает фазу восстановления.
 		}
 
@@ -118,7 +152,7 @@ namespace ECS
 			EcsPool<PathRecalculationRequest> recalcRequestPool, EcsPool<AnimationStateComponent> animPool)
 		{
 			attacker.State = RangedAttackerState.Chase;
-			RequestAnimation(animPool, entity, AnimationType.Run);
+			RequestAnimation(animPool, entity, attacker.Config.ChaseAnimation);
 
 			// Заставляем патфайндинг проложить путь к игроку сразу же, а не ждать интервала.
 			if (!recalcRequestPool.Has(entity))
@@ -135,14 +169,30 @@ namespace ECS
 		/// количество снарядов, урон/скорость/радиус/калибр — из вложенного GunConfig.
 		/// </summary>
 		private void Fire(EcsWorld world, EcsPool<RequestSpawnBulletComponent> bulletRequestPool,
-			in SoundHolderComponent soundHolder, RangedMobConfig config, Vector3 mobPos, Vector3 playerPos)
+			in SoundHolderComponent soundHolder, RangedMobConfig config, Mob mob, Vector3 mobPos, Vector3 playerPos)
 		{
-			Vector3 toPlayer = playerPos - mobPos;
+			var weapon = mob.Weapon;
+			Transform muzzle = weapon != null ? weapon.Muzzle : null;
+
+			Vector3 origin = muzzle != null ? muzzle.position : mobPos;
+			Vector3 toPlayer = playerPos - origin;
 			toPlayer.y = 0f;
-			Vector3 dir = toPlayer.sqrMagnitude > 0.0001f ? toPlayer.normalized : Vector3.forward;
+			Vector3 dir = toPlayer.sqrMagnitude > 0.0001f ? toPlayer.normalized : mob.transform.forward;
 
 			// Дуло: приподнято над origin и сдвинуто вперёд, чтобы пуля не спаунилась внутри своего коллайдера.
-			Vector3 muzzlePos = mobPos + Vector3.up * config.MuzzleHeight + dir * config.MuzzleForwardOffset;
+			Vector3 muzzlePos = muzzle != null
+				? muzzle.position
+				: mobPos + Vector3.up * config.MuzzleHeight + dir * config.MuzzleForwardOffset;
+
+			// Muzzle flash: a pooled effect from EffectsHolder (follows the muzzle when its FxWrapper is IsChild).
+			if (muzzle != null && !string.IsNullOrEmpty(weapon.MuzzleEffectId))
+			{
+				ref var fx = ref world.CreateSimpleEntity<RequestEffectComponent>();
+				fx.EffectId = weapon.MuzzleEffectId;
+				fx.Position = muzzlePos;
+				fx.Parent = muzzle;
+				fx.Rotation = Quaternion.LookRotation(dir).eulerAngles.y;
+			}
 
 			var requestEntity = world.NewEntity();
 			ref var request = ref bulletRequestPool.Add(requestEntity);
@@ -190,10 +240,12 @@ namespace ECS
 		}
 
 		// Sets the desired animation on the mob's state component; AnimationSystem applies it to the view.
-		private void RequestAnimation(EcsPool<AnimationStateComponent> animPool, int entity, AnimationType type)
+		private void RequestAnimation(EcsPool<AnimationStateComponent> animPool, int entity, AnimationType type, bool restart = false)
 		{
 			ref var anim = ref animPool.Has(entity) ? ref animPool.Get(entity) : ref animPool.Add(entity);
 			anim.Requested = type;
+			if (restart)
+				anim.Restart = true;
 		}
 
 		#endregion

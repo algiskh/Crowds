@@ -83,3 +83,8 @@ MonoBehaviour:
     HasDuration: 1
     Duration: 1.5
     IsChild: 0
+  - Id: muzzle_flash
+    Prefab: {fileID: 3100000003, guid: 1c665aa4393e4aaaa23765eac5d200b8, type: 3}
+    HasDuration: 1
+    Duration: 0.6
+    IsChild: 1

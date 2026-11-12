@@ -113,6 +113,10 @@ namespace ECS
 				ranged.Config = rangedMobConfig;
 				ranged.State = RangedAttackerState.Chase;
 				ranged.Timer = 0f;
+
+				// Start in the config's chase clip (the generic default is Run, which a walking shooter may not have).
+				ref var anim = ref world.GetPool<AnimationStateComponent>().Add(mobEntity);
+				anim.Requested = rangedMobConfig.ChaseAnimation;
 			}
 
 			// Crowd rendering: this mob is drawn GPU-instanced from a baked VAT (CrowdRenderSystem)
@@ -193,11 +197,18 @@ namespace ECS
 
 			var mob = Object.Instantiate(mobConfig.Prefab, mobPool.Parent);
 			mob.SetId(mobConfig.Id);
+			// Per-config gun on a shared model (pool is per config id → done once per instance).
+			if (mobConfig is RangedMobConfig ranged && ranged.WeaponOverride != null)
+				mob.ReplaceWeapon(ranged.WeaponOverride);
 			return mob;
 		}
 
 		private static void InitializeMobGameObject(Mob mob, MobConfig mobConfig, Vector2 playerPosition)
 		{
+			// A pooled mob may have died with a death animation (DamageSystem disables its collider then).
+			if (mob.Collider != null)
+				mob.Collider.enabled = true;
+
 			mob.ValueBar.SetMaxValue(mobConfig.Health)
 						.ApplyValue(mobConfig.Health)
 						.SetVisible(true);

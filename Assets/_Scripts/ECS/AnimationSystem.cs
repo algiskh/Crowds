@@ -34,12 +34,17 @@ namespace ECS
 
 				ref var anim = ref animPool.Has(entity) ? ref animPool.Get(entity) : ref AddDefault(animPool, entity);
 
-				if (!anim.HasCurrent || anim.Requested != anim.Current)
+				if (anim.Restart && anim.HasCurrent && anim.Requested == anim.Current)
+				{
+					mob.Value.Animator.RestartAnimation(anim.Requested);
+				}
+				else if (!anim.HasCurrent || anim.Requested != anim.Current)
 				{
 					mob.Value.Animator.SetAnimation(anim.Requested);
 					anim.Current = anim.Requested;
 					anim.HasCurrent = true;
 				}
+				anim.Restart = false;
 			}
 		}
 

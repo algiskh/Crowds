@@ -56,6 +56,13 @@ public class MobConfig: ScriptableObject
 	[SerializeField, MinValue(0.05f), Tooltip("Uniform size multiplier. 1 = prefab default.")]
 	private float _scale = 1f;
 
+	[Title("Death")]
+	// Seconds the corpse stays to play the Animator "die" state before it returns to the pool. The entity is
+	// removed at the moment of death (no more hits/attacks/collisions); only the view lingers (DyingMobSystem).
+	// 0 = vanish instantly (classic). Ignored for VAT crowd mobs (no live Animator).
+	[SerializeField, MinValue(0f), Tooltip("Seconds to play the 'die' animation before the mob returns to the pool. 0 = vanish instantly. Skinned (non-VAT) mobs only.")]
+	private float _deathAnimationTime;
+
 	public string Id => _id;
 	public float Health => _health;
 	public float Speed => _speed;
@@ -70,6 +77,7 @@ public class MobConfig: ScriptableObject
 	public Scene.Animation.CrowdAnimationLibrary CrowdLibrary => _crowdLibrary;
 	public Color Tint => _tint;
 	public float Scale => _scale;
+	public float DeathAnimationTime => _deathAnimationTime;
 
 	/// <summary>
 	/// Random decal id for the given damage source, or null if no pool is configured
