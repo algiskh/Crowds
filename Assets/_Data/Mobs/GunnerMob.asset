@@ -18,8 +18,23 @@ MonoBehaviour:
   _damage: 0
   _collisionRadius: 0
   _hitCooldown: 0
-  _prefab: {fileID: 0}
-  _possibleLoots: []
+  _prefab: {fileID: 4635986969134950211, guid: ab94542c69d344b9a2b9c62c165ff178, type: 3}
+  _possibleLoots:
+  - LootType: 0
+    Id: 
+    Count: 10
+    Chance: 0.35
+    AmmoCaliber: 0
+  - LootType: 1
+    Id: 
+    Count: 15
+    Chance: 0.1
+    AmmoCaliber: 0
+  - LootType: 3
+    Id: Grenade
+    Count: 1
+    Chance: 0.08
+    AmmoCaliber: 0
   _targetType: 2
   _attackModifiers: []
   _damageDecals: []
@@ -27,12 +42,16 @@ MonoBehaviour:
   _crowdLibrary: {fileID: 0}
   _tint: {r: 1, g: 1, b: 1, a: 1}
   _scale: 1
+  _deathAnimationTime: 2
   _attackRange: 8
   _gunConfig: {fileID: 11400000, guid: 24d6e97ecc5e57f41bee107b1c83c1d6, type: 2}
   _windupDelay: 0.4
   _cooldown: 0.8
-  _muzzleHeight: 1
-  _muzzleForwardOffset: 0.5
+  _muzzleHeight: 1.2
+  _muzzleForwardOffset: 1
+  _chaseAnimation: 1
+  _windupAnimation: 7
+  _fireAnimation: 8
   references:
     version: 2
     RefIds: []

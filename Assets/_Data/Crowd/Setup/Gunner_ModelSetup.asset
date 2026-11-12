@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bca4a2ec80144b5aedf00b55361eab5, type: 3}
+  m_Name: Gunner_ModelSetup
+  m_EditorClassIdentifier: 
+  Model: {fileID: -927199367670048503, guid: 1d930908490c4d1691ace171af913392, type: 3}
+  BaseColor: {fileID: 2800000, guid: 7a96c88defa14bbbae65aed7d9b395e0, type: 3}
+  Normal: {fileID: 2800000, guid: 45a59fa55d3e4be8abf558ca3336c874, type: 3}
+  MaterialName: GunnerMaterial
+  Clips:
+  - State: idle
+    Fbx: {fileID: -927199367670048503, guid: 1d930908490c4d1691ace171af913392, type: 3}
+    Loop: 1
+    RemoveRootDrift: 1
+  - State: walk
+    Fbx: {fileID: 919132149155446097, guid: 53a593a00514299449e560ff58ae2881, type: 3}
+    Loop: 1
+    RemoveRootDrift: 1
+  - State: aim
+    Fbx: {fileID: -927199367670048503, guid: 7d2121b5a358403287b1bf357c3410a4, type: 3}
+    Loop: 1
+    RemoveRootDrift: 1
+  - State: shoot
+    Fbx: {fileID: -927199367670048503, guid: 5a114bdfa479465cbb5cc08b0cddf06a, type: 3}
+    Loop: 0
+    RemoveRootDrift: 1
+  - State: die
+    Fbx: {fileID: -927199367670048503, guid: 04f5aaa9cf5048bbb85c4c92b16b2fa8, type: 3}
+    Loop: 0
+    RemoveRootDrift: 0
+  Prefab: {fileID: 4635986969134950211, guid: ab94542c69d344b9a2b9c62c165ff178, type: 3}
+  VisualName: Gunner
+  TargetHeight: 2
+  HeightReference: {fileID: 0}
+  RemoveObjects:
+  - Gun
+  HideRenderers:
+  - Capsule
+  WeaponPrefab: {fileID: 1100000003, guid: 6f21d042e46340619e2ca93d255cccf6, type: 3}
+  WeaponBone: mixamorig:RightHand
+  WeaponAlignState: aim
+  WeaponLocalPosition: {x: 0, y: 0, z: 0.05}
+  WeaponLocalEuler: {x: 0, y: 0, z: 0}
+  WeaponScale: 1
+  BakeVat: 0
+  BakeFps: 30
+  Configs:
+  - {fileID: 11400000, guid: 78a59c8f40c0be94883d3f5b96d4e0a9, type: 2}
