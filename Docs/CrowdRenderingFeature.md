@@ -67,6 +67,32 @@ DamageSystem (death)  → pool push + SetActive(false) + world.DelEntity
 `CrowdRenderSystem` is registered right after `AnimationSystem` in `EntryPoint.RegisterSystems()`, so
 transforms are current for the frame. Order matters: it must run after movement.
 
+## One-click model pipeline (new/replaced FBX)
+
+For a new or replaced rigged (Mixamo) model, use a **`MobModelSetupPreset`** asset
+(`Assets/_Data/Crowd/Setup/<Prefab>_ModelSetup.asset`, create via *Create ▸ Crowds ▸ Mob Model Setup Preset*)
+and press **Run Setup** (or select it → **Tools ▸ Crowds ▸ Run Selected Mob Model Preset**).
+`MobModelPipeline` (`_Scripts/Editor/CrowdVat/`) then does everything below in one go, idempotently:
+
+1. textures: Normal → NormalMap; URP Lit material (BaseColor + Normal) next to the model, remapped onto every
+   material of the FBX (embedded texture paths from exporters usually don't resolve);
+2. Generic import; one clip per `Clips[]` entry named `<Visual>_<state>` with its loop flag; if the hips
+   travel on XZ (Mixamo "In Place" off) an in-place copy `<Visual>_<state>_InPlace.anim` is written;
+3. `Assets/_Animations/Mob/<Visual>.controller` with the states (names = `AnimationType` names);
+4. prefab: old visual removed (incl. a missing nested prefab after the FBX was deleted), new one scaled to the
+   old visual's height (or `TargetHeight` / `HeightReference`), Animator + `SimpleAnimator`, `Mob._animator`;
+5. `VatBakerWindow.Bake(prefab)` (static, also used by the window) and `CrowdLibrary` on every `Configs[]` entry.
+
+Extras for non-crowd / armed mobs: `BakeVat` off (skinned only); `RemoveObjects` (delete placeholder children)
+and `HideRenderers` (keep e.g. a collider capsule, hide its mesh); one FBX may back several states (imported once —
+useful as a placeholder clip); **weapon**: `WeaponPrefab` (`MobWeapon`) is instantiated under `WeaponBone`
+(default `mixamorig:RightHand`), sized to `WeaponScale` in world units, aligned so the barrel points along the
+character's forward in frame 0 of `WeaponAlignState` (default `aim`), and assigned to `Mob._weapon`. A weapon already
+in the prefab keeps its hand-tuned local pose on re-runs. Example: `Gunner_ModelSetup`.
+
+All steps log with `[MobModel]` (verts/tris, scale, clip bindings, drift). Example: `FastMob_ModelSetup`
+(ZombieFemale 5k). A project skill `mob-model` (`.claude/skills/`) describes the agent-side workflow.
+
 ## How to convert a mob to VAT
 
 1. **Bake.** Open **Tools ▸ Crowds ▸ VAT Baker**. Assign the mob **prefab** (the one that gets spawned,

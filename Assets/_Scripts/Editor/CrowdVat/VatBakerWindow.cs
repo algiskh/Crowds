@@ -59,11 +59,20 @@ namespace Crowds.EditorTools
 			}
 		}
 
-		private void Bake()
-		{
-			if (_fps < 1f) { Debug.LogError("[VAT] FPS must be >= 1."); return; }
+		private void Bake() => Bake(_prefab, _fps, _bakeNormals, _textureWidth, _outputFolder);
 
-			GameObject instance = Instantiate(_prefab);
+		/// <summary>
+		/// Bakes <paramref name="prefab"/> into VAT assets under <paramref name="outputFolder"/>/&lt;prefab&gt;/.
+		/// Returns the created <see cref="CrowdAnimationLibrary"/>, or null on failure (errors are logged).
+		/// Usable from other editor tools (e.g. one-click mob setup scripts).
+		/// </summary>
+		public static CrowdAnimationLibrary Bake(GameObject prefab, float fps = 30f, bool bakeNormals = true,
+			int textureWidth = 8192, string outputFolder = "Assets/_Data/Crowd")
+		{
+			if (prefab == null) { Debug.LogError("[VAT] Prefab is null."); return null; }
+			if (fps < 1f) { Debug.LogError("[VAT] FPS must be >= 1."); return null; }
+
+			GameObject instance = Instantiate(prefab);
 			instance.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
 
 			try
@@ -72,11 +81,11 @@ namespace Crowds.EditorTools
 				// (a prefab may nest an FBX with its own controller-less Animator, found first otherwise).
 				var smr = FindSkinnedMesh(instance);
 				var animator = FindAnimatorWithController(instance);
-				if (smr == null || smr.sharedMesh == null) { Debug.LogError("[VAT] No SkinnedMeshRenderer with a mesh found."); return; }
-				if (animator == null) { Debug.LogError("[VAT] No Animator with an assigned controller found in the prefab."); return; }
+				if (smr == null || smr.sharedMesh == null) { Debug.LogError("[VAT] No SkinnedMeshRenderer with a mesh found."); return null; }
+				if (animator == null) { Debug.LogError("[VAT] No Animator with an assigned controller found in the prefab."); return null; }
 
 				var controller = animator.runtimeAnimatorController as AnimatorController;
-				if (controller == null) { Debug.LogError("[VAT] Animator controller is not an AnimatorController asset."); return; }
+				if (controller == null) { Debug.LogError("[VAT] Animator controller is not an AnimatorController asset."); return null; }
 
 				// Gather states that map to a known AnimationType, in declaration order.
 				var entries = new List<(AnimationType type, AnimationClip clip)>();
@@ -91,7 +100,7 @@ namespace Crowds.EditorTools
 					}
 				}
 
-				if (entries.Count == 0) { Debug.LogError("[VAT] No states matched an AnimationType."); return; }
+				if (entries.Count == 0) { Debug.LogError("[VAT] No states matched an AnimationType."); return null; }
 
 				// Assign a frame range per distinct clip (throw/throw_cooldown reuse the run clip -> same rows).
 				var clipRanges = new Dictionary<AnimationClip, (int start, int count)>();
@@ -99,7 +108,7 @@ namespace Crowds.EditorTools
 				foreach (var (_, clip) in entries)
 				{
 					if (clipRanges.ContainsKey(clip)) continue;
-					int count = Mathf.Max(1, Mathf.CeilToInt(clip.length * _fps));
+					int count = Mathf.Max(1, Mathf.CeilToInt(clip.length * fps));
 					clipRanges[clip] = (totalFrames, count);
 					totalFrames += count;
 				}
@@ -108,13 +117,13 @@ namespace Crowds.EditorTools
 
 				// Pack (frame*vertexCount + vertexId) as a flat array wrapped into a fixed-width texture,
 				// so texture width no longer depends on vertex count (which can exceed the 16384 limit).
-				int width = Mathf.Clamp(_textureWidth, 1, MaxTextureSize);
+				int width = Mathf.Clamp(textureWidth, 1, MaxTextureSize);
 				long totalTexels = (long)vertexCount * totalFrames;
 				int height = Mathf.CeilToInt((float)totalTexels / width);
 				if (height > MaxTextureSize)
 				{
 					Debug.LogError($"[VAT] Baked data needs {width}x{height}; height exceeds {MaxTextureSize}. Increase Texture Width or reduce FPS/clips.");
-					return;
+					return null;
 				}
 
 				var posColors = new Color[width * height];
@@ -186,11 +195,11 @@ namespace Crowds.EditorTools
 				}
 
 				// --- Write output assets ---
-				string mobName = _prefab.name;
-				string folder = EnsureFolder(_outputFolder, mobName);
+				string mobName = prefab.name;
+				string folder = EnsureFolder(outputFolder, mobName);
 
 				Texture2D posMap = CreateVatTexture(posColors, width, height, $"{mobName}_VAT_Pos");
-				Texture2D nrmMap = _bakeNormals ? CreateVatTexture(nrmColors, width, height, $"{mobName}_VAT_Nrm") : null;
+				Texture2D nrmMap = bakeNormals ? CreateVatTexture(nrmColors, width, height, $"{mobName}_VAT_Nrm") : null;
 				AssetDatabase.CreateAsset(posMap, $"{folder}/{mobName}_VAT_Pos.asset");
 				if (nrmMap != null) AssetDatabase.CreateAsset(nrmMap, $"{folder}/{mobName}_VAT_Nrm.asset");
 
@@ -198,7 +207,7 @@ namespace Crowds.EditorTools
 				renderMesh.name = $"{mobName}_VAT_Mesh";
 				AssetDatabase.CreateAsset(renderMesh, $"{folder}/{mobName}_VAT_Mesh.asset");
 
-				Material material = BuildMaterial(smr, posMap, nrmMap, _bakeNormals, width, height, vertexCount);
+				Material material = BuildMaterial(smr, posMap, nrmMap, bakeNormals, width, height, vertexCount);
 				material.name = $"{mobName}_VAT_Mat";
 				AssetDatabase.CreateAsset(material, $"{folder}/{mobName}_VAT_Mat.mat");
 
@@ -210,13 +219,14 @@ namespace Crowds.EditorTools
 				}
 
 				var library = CreateInstance<CrowdAnimationLibrary>();
-				library.EditorAssign(renderMesh, posMap, nrmMap, material, vertexCount, totalFrames, width, height, _fps, clips);
+				library.EditorAssign(renderMesh, posMap, nrmMap, material, vertexCount, totalFrames, width, height, fps, clips);
 				AssetDatabase.CreateAsset(library, $"{folder}/{mobName}_CrowdLibrary.asset");
 
 				AssetDatabase.SaveAssets();
 				AssetDatabase.Refresh();
 				Debug.Log($"[VAT] Baked '{mobName}': {vertexCount} verts x {totalFrames} frames, {clips.Count} clips -> {folder}", library);
 				Selection.activeObject = library;
+				return library;
 			}
 			finally
 			{
@@ -247,9 +257,10 @@ namespace Crowds.EditorTools
 				case AnimationType.Idle:
 				case AnimationType.Walk:
 				case AnimationType.Run:
+				case AnimationType.Aim:
 					return true;
 				default:
-					return false; // attack/die/throw/throw_cooldown play once
+					return false; // attack/die/throw/throw_cooldown/shoot play once
 			}
 		}
 
