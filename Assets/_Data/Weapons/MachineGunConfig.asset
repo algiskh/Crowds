@@ -15,6 +15,7 @@ MonoBehaviour:
   _preview: {fileID: 21300000, guid: acb9ff67123558d479c6b460c70c1405, type: 3}
   _id: MachineGun
   _caliber: 3
+  _model: {fileID: 7714191720611089966, guid: 002311ab014cd34438113637debb166a, type: 3}
   _fireRate: 0.15
   _magazineCapacity: 50
   _fireSoundId: ar_shot

@@ -27,10 +27,10 @@ public class RangedMobConfig : MobConfig
 	[Tooltip("Recovery seconds the mob stays stopped after firing, before it re-engages.")]
 	[SerializeField, MinValue(0f)] private float _cooldown = 0.8f;
 
-	[Tooltip("Fallback muzzle (when the prefab has no MobWeapon): vertical offset above the mob origin.")]
+	[Tooltip("Fallback muzzle (when the prefab has no WeaponModel): vertical offset above the mob origin.")]
 	[SerializeField, MinValue(0f)] private float _muzzleHeight = 1f;
 
-	[Tooltip("Fallback muzzle (when the prefab has no MobWeapon): forward offset from the mob origin.")]
+	[Tooltip("Fallback muzzle (when the prefab has no WeaponModel): forward offset from the mob origin.")]
 	[SerializeField, MinValue(0f)] private float _muzzleForwardOffset = 0.5f;
 
 	[Title("Burst")]
@@ -45,8 +45,8 @@ public class RangedMobConfig : MobConfig
 
 	[Title("Weapon View")]
 	[Tooltip("Optional: replaces the prefab's held weapon (Mob.Weapon) on this config's instances — same model, different " +
-		"gun. Must follow the MobWeapon convention: root = grip, barrel along +Z. Null = keep the prefab's weapon.")]
-	[SerializeField] private MobWeapon _weaponOverride;
+		"gun. Must follow the WeaponModel convention: root = grip, barrel along +Z. Null = keep the prefab's weapon.")]
+	[SerializeField] private WeaponModel _weaponOverride;
 
 	[Title("Ranged Animations")]
 	[Tooltip("Played while chasing the player (Animator state name = AnimationType name).")]
@@ -72,5 +72,5 @@ public class RangedMobConfig : MobConfig
 	public int BurstCount => Mathf.Max(1, _burstCount);
 	public float BurstInterval => _burstInterval;
 	public bool RestartFireAnimationPerShot => _restartFireAnimationPerShot;
-	public MobWeapon WeaponOverride => _weaponOverride;
+	public WeaponModel WeaponOverride => _weaponOverride;
 }

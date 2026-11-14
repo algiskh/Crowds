@@ -125,6 +125,7 @@ GameObject:
   - component: {fileID: 5689457051142550505}
   - component: {fileID: 4635986969134950211}
   - component: {fileID: 8641291612382326793}
+  - component: {fileID: 5213978460217734101}
   m_Layer: 3
   m_Name: Gunner
   m_TagString: Untagged
@@ -166,6 +167,29 @@ MonoBehaviour:
   _collider: {fileID: 4358559445545799627}
   _animator: {fileID: 7440978860926427373}
   _weapon: {fileID: 1622962609668201573}
+--- !u!114 &5213978460217734101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3683111880471000716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eab2070782de4fbf93c217e94d542f66, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _mob: {fileID: 4635986969134950211}
+  _weapon: {fileID: 0}
+  _animator: {fileID: 6508495901074072514}
+  _upperArmBone: mixamorig:LeftArm
+  _forearmBone: mixamorig:LeftForeArm
+  _handBone: mixamorig:LeftHand
+  _weight: 1
+  _rotationWeight: 0
+  _disabledStates:
+  - die
+  _blendSpeed: 6
 --- !u!195 &8641291612382326793
 NavMeshAgent:
   m_ObjectHideFlags: 0

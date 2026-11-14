@@ -21,6 +21,12 @@ public class GunConfig : ScriptableObject
 	         "(e.g. rifle and assault rifle = 7.62mm).")]
 	[SerializeField] private Caliber _caliber;
 
+	[VerticalGroup("Top/Right")]
+	[LabelText("Model"), PropertyOrder(-6),
+	 Tooltip("Visual gun model held by the player body (PlayerAnimator puts it into the hand bone). " +
+	         "Its external magazine is hidden while reloading. Visual only. Optional.")]
+	[SerializeField] private WeaponModel _model;
+
 	[Space]
 	[Title("Firing"), GUIColor(1, 0.95f, 0.7f)]
 	[LabelText("Fire rate (sec)"), MinValue(0.05f), SuffixLabel("sec", true)]
@@ -85,6 +91,7 @@ public class GunConfig : ScriptableObject
 
 	public string Id => _id;
 	public Caliber Caliber => _caliber;
+	public WeaponModel Model => _model;
 	public Sprite Preview => _preview;
 	public float BulletSpeed => _bulletSpeed;
 	public float BulletDamage => _bulletDamage;

@@ -158,8 +158,9 @@ windup→cooldown cadence.
 - **Muzzle flash**: `_Prefabs/Effects/MuzzleFlash.prefab` = `SceneEffect` root + nested Epic Toon FX
   `BulletMuzzleFire` (root rotation reset so the cone fires along +Z, scale 0.6). Registered in
   `Resources/FxHolder.asset` as `muzzle_flash` (Duration 0.6, `IsChild` → follows the muzzle, pooled like every effect).
-- **Temporary rifle**: `_Prefabs/Weapons/MobRifle.prefab` — primitives (Grip/Body/Stock/Barrel, `GunnerGun.mat`, no
-  colliders) + `Muzzle` at the barrel tip; root = grip point, barrel along +Z.
+- **Rifle**: `_Prefabs/Weapons/Mini14.prefab` (formerly `MobRifle`) — primitive Mini-14 built by
+  `WeaponModelBuilder`, shared with the player's `RifleConfig`; `WeaponHandIK` on `Gunner.prefab` keeps the left hand on
+  its forend. See `Docs/WeaponModels.md`.
 
 ## Bursts & stronger shooters (extension points)
 
@@ -179,8 +180,7 @@ windup→cooldown cadence.
   from the weapon's `MuzzleEffectId`.
 
 Recipe for a new shooter: duplicate `GunnerMob.asset` (new `Id`!), assign a new `GunConfig`, set `BurstCount`/
-`BurstInterval`, optionally `WeaponOverride` (new weapon prefab: copy `MobRifle.prefab`, keep grip at the root and
-`Muzzle` at the barrel tip), tune windup/cooldown/range, add it to spawn lists.
+`BurstInterval`, optionally `WeaponOverride` (any `WeaponModel` prefab from `_Prefabs/Weapons`, see `Docs/WeaponModels.md`), tune windup/cooldown/range, add it to spawn lists.
 
 ## Death animation (any skinned mob)
 
@@ -199,7 +199,7 @@ VAT mobs ignore the field (no live Animator).
   Clips: chase `walk`, windup `aim`, fire `shoot`; `DeathAnimationTime` 2 (`die`). Loot: ammo 10 (35%), health 15 (10%), grenade (8%).
 - Prefab `_Prefabs/Mobs/Gunner.prefab`: built by the model pipeline from `Model/Gunner` (Mixamo zombie soldier, 5k)
   with preset `_Data/Crowd/Setup/Gunner_ModelSetup.asset` — no VAT (few on screen). The placeholder `Gun` cube is
-  removed, the red `Capsule` keeps only its collider (renderer off), `MobRifle` is attached to `mixamorig:RightHand`
+  removed, the red `Capsule` keeps only its collider (renderer off), `Mini14` is attached to `mixamorig:RightHand`
   and aligned to the first frame of `aim`. Controller `_Animations/Mob/Gunner.controller`: idle, walk, aim, shoot, die.
   `walk` = Mixamo "Rifle Walk" (drift removed by the pipeline if it isn't In Place).
 - Spawns from `RegularSpawnPoint` (weight 0.5) in stages level2–level6 (`DifficultyLevel` 3–7). One instance in

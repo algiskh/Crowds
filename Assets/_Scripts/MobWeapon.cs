@@ -1,24 +1,11 @@
-using Sirenix.OdinInspector;
-using UnityEngine;
-
 /// <summary>
-/// A weapon held by a mob (e.g. the Gunner's rifle). Pure view data: the grip is the point that sits in the
-/// hand bone, the muzzle is where shots and the muzzle-flash effect come from. Usually attached under the hand
-/// bone by the model pipeline (MobModelSetupPreset.WeaponPrefab) and referenced from <see cref="Mob.Weapon"/>.
-/// RangedAttackerSystem fires from <see cref="Muzzle"/> when present (fallback: RangedMobConfig muzzle offsets).
+/// A weapon held by a mob (e.g. the Gunner's Mini-14). All data lives in <see cref="WeaponModel"/>
+/// (grip, muzzle, left-hand target, magazine, muzzle effect); this subclass only marks the weapon as the mob's
+/// and keeps old prefab references (same script guid, same serialized field names).
+/// Usually attached under the hand bone by the model pipeline (MobModelSetupPreset.WeaponPrefab) and referenced
+/// from <see cref="Mob.Weapon"/>. RangedAttackerSystem fires from <see cref="WeaponModel.Muzzle"/> when present
+/// (fallback: RangedMobConfig muzzle offsets). <see cref="WeaponHandIK"/> puts the left hand on its forend.
 /// </summary>
-public class MobWeapon : MonoBehaviour
+public class MobWeapon : WeaponModel
 {
-	[BoxGroup("Points"), Tooltip("Where the hand holds the weapon (the weapon root is usually placed here).")]
-	[SerializeField] private Transform _grip;
-
-	[BoxGroup("Points"), Required, Tooltip("Tip of the barrel: bullet spawn point and muzzle-flash anchor. +Z = shot direction.")]
-	[SerializeField] private Transform _muzzle;
-
-	[BoxGroup("Effects"), Tooltip("EffectsHolder id spawned at the muzzle on every shot. Empty = no flash.")]
-	[SerializeField] private string _muzzleEffectId = "muzzle_flash";
-
-	public Transform Grip => _grip;
-	public Transform Muzzle => _muzzle;
-	public string MuzzleEffectId => _muzzleEffectId;
 }

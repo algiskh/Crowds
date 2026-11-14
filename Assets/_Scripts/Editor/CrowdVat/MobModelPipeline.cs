@@ -529,7 +529,7 @@ namespace Crowds.EditorTools
 				(Vector3 pos, Quaternion rot, Vector3 scale)? weaponPose = null;
 				foreach (var go in old)
 				{
-					var w = go.GetComponentInChildren<MobWeapon>(true);
+					var w = go.GetComponentInChildren<WeaponModel>(true);
 					if (w != null) { weaponPose = (w.transform.localPosition, w.transform.localRotation, w.transform.localScale); break; }
 				}
 
@@ -614,7 +614,7 @@ namespace Crowds.EditorTools
 		/// local scale is divided by the bone's lossy scale to get WeaponScale in world units. A pose captured from
 		/// the previous run (hand-tuned in the prefab) wins over the preset's initial offsets.
 		/// </summary>
-		private static MobWeapon AttachWeapon(MobModelSetupPreset p, GameObject visual, (Vector3 pos, Quaternion rot, Vector3 scale)? keptPose,
+		private static WeaponModel AttachWeapon(MobModelSetupPreset p, GameObject visual, (Vector3 pos, Quaternion rot, Vector3 scale)? keptPose,
 			AnimationClip alignClip)
 		{
 			if (p.WeaponPrefab == null) return null;
@@ -626,7 +626,7 @@ namespace Crowds.EditorTools
 				return null;
 			}
 
-			var weapon = (MobWeapon)PrefabUtility.InstantiatePrefab(p.WeaponPrefab, bone);
+			var weapon = (WeaponModel)PrefabUtility.InstantiatePrefab(p.WeaponPrefab, bone);
 			if (keptPose.HasValue)
 			{
 				weapon.transform.localPosition = keptPose.Value.pos;
@@ -683,7 +683,7 @@ namespace Crowds.EditorTools
 		{
 			// Body only: a held weapon must not change the measured height between re-runs.
 			var renderers = go.GetComponentsInChildren<Renderer>(true)
-				.Where(r => r.GetComponentInParent<MobWeapon>(true) == null)
+				.Where(r => r.GetComponentInParent<WeaponModel>(true) == null)
 				.ToArray();
 			if (renderers.Length == 0) return default;
 			var b = renderers[0].bounds;

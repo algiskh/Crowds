@@ -15,6 +15,7 @@ MonoBehaviour:
   _preview: {fileID: 21300000, guid: 195e7a45675baf9478fe37712be1f905, type: 3}
   _id: AR
   _caliber: 2
+  _model: {fileID: 7752111259041326788, guid: 74503f1953a3e614dbe4bee0e1b2579b, type: 3}
   _fireRate: 0.1
   _magazineCapacity: 30
   _fireSoundId: ar_shot

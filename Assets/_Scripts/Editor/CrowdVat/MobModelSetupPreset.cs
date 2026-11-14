@@ -49,9 +49,9 @@ namespace Crowds.EditorTools
 		public List<string> HideRenderers = new();
 
 		[Title("Weapon (optional)")]
-		[Tooltip("Held weapon prefab (MobWeapon). Attached under WeaponBone and assigned to Mob.Weapon. " +
+		[Tooltip("Held weapon prefab (WeaponModel). Attached under WeaponBone and assigned to Mob.Weapon. " +
 		         "An existing attached instance is kept with its hand-tuned transform.")]
-		public MobWeapon WeaponPrefab;
+		public WeaponModel WeaponPrefab;
 		public string WeaponBone = "mixamorig:RightHand";
 		[Tooltip("State whose first frame is used to align the weapon: barrel along the character's forward, level. " +
 		         "Empty/missing ⇒ WeaponLocalEuler is used as the local rotation under the bone.")]
