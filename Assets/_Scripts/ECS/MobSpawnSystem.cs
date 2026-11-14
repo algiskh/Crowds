@@ -138,6 +138,9 @@ namespace ECS
 			}
 
 			InitializeMobGameObject(mob, mobConfig, playerPosition);
+			// Spawned during the death cinematic: no health bar (GameOverActions.HideMobHealthBars).
+			if (world.TryGetAsSingleton<FailSequenceComponent>(out var fail) && fail.Phase != FailSequencePhase.Inactive)
+				mob.ValueBar.SetVisible(false);
 			return mobEntity;
 		}
 

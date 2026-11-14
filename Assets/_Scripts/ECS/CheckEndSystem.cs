@@ -62,6 +62,8 @@ namespace ECS
 
 						ref var inputLock = ref world.GetAsSingleton<InputLockComponent>();
 						inputLock.Locked = true;
+
+						GameOverActions.HideMobHealthBars(world);
 					}
 				}
 

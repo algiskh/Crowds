@@ -7,7 +7,8 @@ When the player dies, the game plays a short staged cinematic instead of stoppin
 
 ```
 player HP ≤ 0 (DamageSystem) ──► EndGameComponent { isWin=false }
-CheckEndSystem (fail branch) ──► FailSequenceComponent.Phase = BlockControls; InputLock.Locked = true
+CheckEndSystem (fail branch) ──► FailSequenceComponent.Phase = BlockControls; InputLock.Locked = true;
+                                  GameOverActions.HideMobHealthBars (mobs spawned later get no bar either, MobSpawnSystem)
 FailSequenceSystem advances, 0.5s each:
   t=0.0  BlockControls : player input ignored (InputLock); MOBS/WORLD KEEP RUNNING
   t=0.5  RedScreen     : red full-screen overlay fades 0 → 0.6 alpha over the phase

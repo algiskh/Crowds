@@ -101,6 +101,18 @@ namespace ECS
 	/// </summary>
 	public static class GameOverActions
 	{
+		/// <summary>Player death: mob health bars are noise on the death cinematic and the fail menu.</summary>
+		public static void HideMobHealthBars(EcsWorld world)
+		{
+			var mobPool = world.GetPool<MobComponent>();
+			foreach (var entity in world.Filter<MobComponent>().End())
+			{
+				var mob = mobPool.Get(entity).Value;
+				if (mob != null)
+					mob.ValueBar?.SetVisible(false);
+			}
+		}
+
 		public static void StopAllMoves(EcsWorld world, PlayerComponent player)
 		{
 			var movePool = world.GetPool<MoveComponent>();
