@@ -56,6 +56,7 @@ namespace ECS
 				weapon.CoolDown = weapon.GunConfig.FireCoolDown;
 				weapon.CurrentMagazineCount--;
 				weapon.ShotCounter++;
+				SpawnMuzzleFlash(world, weapon.Weapon.Muzzle);
 
 				var sound = soundHolder.Value.GetClip(weapon.GunConfig.FireSoundId);
 				weapon.Weapon.AudioSource.PlayOneShot(sound);
@@ -70,6 +71,31 @@ namespace ECS
 			IterateCooldown(ref weapon);
 			world.DeleteAllWith<RequestFireComponent>();
 		}
+
+		/// <summary>
+		/// Muzzle flash on the gun the player visibly holds (PlayerAnimator's GunConfig.Model, its Muzzle and
+		/// MuzzleEffectId); no body model → at the gameplay muzzle. Bullets still come from the gameplay muzzle.
+		/// </summary>
+		private static void SpawnMuzzleFlash(EcsWorld world, Transform gameplayMuzzle)
+		{
+			WeaponModel model = null;
+			if (world.TryGetAsSingleton<PlayerComponent>(out var player) && player.Value != null && player.Value.BodyAnimator != null)
+				model = player.Value.BodyAnimator.CurrentGunModel;
+
+			var muzzle = model != null && model.Muzzle != null ? model.Muzzle : gameplayMuzzle;
+			string effectId = model != null ? model.MuzzleEffectId : DefaultMuzzleEffectId;
+			if (muzzle == null || string.IsNullOrEmpty(effectId))
+				return;
+
+			ref var fx = ref world.CreateSimpleEntity<RequestEffectComponent>();
+			fx.EffectId = effectId;
+			fx.Position = muzzle.position;
+			fx.Parent = muzzle;
+			fx.Rotation = Quaternion.LookRotation(muzzle.forward).eulerAngles.y;
+		}
+
+		// Same effect the mobs' WeaponModel uses by default (EffectsHolder id).
+		private const string DefaultMuzzleEffectId = "muzzle_flash";
 
 		private void IterateCooldown(ref WeaponComponent muzzle)
 		{

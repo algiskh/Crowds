@@ -337,3 +337,7 @@ Player                      ← Player, NavMeshAgent, LookAtCursor вращае�
 | `WeaponComponent.ShotCounter`, `GrenadeStateComponent.ThrowCounter` | счётчики событий (+1 за выстрел / бросок) |
 
 Новый набор анимаций (например, Shotgun): добавьте член в `WeaponAnimationSet`, строку в `Sets` генератора, длину перезарядки в `PlayerAnimator` и выставьте набор в нужных `GunConfig`.
+
+## Ствол всегда по прицелу
+
+Бег качает руки, а с ними и оружие в руке: ствол «гулял» относительно линии стрельбы (пули летят из `Weapon.Muzzle` по направлению взгляда игрока). Поэтому `PlayerAnimator` в `LateUpdate` после анимации и процедурной отдачи доворачивает кость `_weaponBone` (правая кисть) так, чтобы модель оружия смотрела ровно вперёд по телу (= на курсор) и стояла верхом вверх. Отдача добавляется поверх. Левая рука (`WeaponHandIK`, выполняется позже) следует за цевьём. Группа *Barrel aim*: `_aimBarrel` (вкл/выкл), `_freeBarrelStates` — состояния, где ствол не фиксируется (Reload_*, Melee, ThrowCharge, Throw, Death), `_aimBlendSpeed` — скорость перехода.

@@ -91,6 +91,18 @@ public class PlayerAnimator : MonoBehaviour
 	[Tooltip("Optional left-hand IK on the same body: receives the current gun model as its target.")]
 	[SerializeField] private WeaponHandIK _leftHandIK;
 
+	[BoxGroup("Barrel aim")]
+	[Tooltip("After the animation the hand bone is turned so the held gun's barrel points exactly where the player " +
+	         "faces (the cursor, = bullet direction) and stays upright: the run bob can't swing it off the aim line.")]
+	[SerializeField] private bool _aimBarrel = true;
+	[BoxGroup("Barrel aim")]
+	[Tooltip("UpperBody / base states in which the barrel is NOT forced (the clip moves the gun on purpose).")]
+	[SerializeField] private string[] _freeBarrelStates =
+		{ "Reload_Rifle", "Reload_Pistol", "Melee", "ThrowCharge", "Throw", "Death" };
+	[BoxGroup("Barrel aim")]
+	[Tooltip("Blend in/out speed of the barrel lock, weight per second.")]
+	[SerializeField, Min(0.1f)] private float _aimBlendSpeed = 8f;
+
 	[BoxGroup("Procedural kicks")]
 	[Tooltip("Sets whose Fire clip is missing (the pipeline put the static aim pose there): every shot kicks the arms up " +
 	         "procedurally instead. Mixamo has no two-handed pistol fire clip.")]
@@ -120,14 +132,21 @@ public class PlayerAnimator : MonoBehaviour
 	private float _recoilTime = float.MaxValue;
 	private float _flinchTime = float.MaxValue;
 	private Transform _rUpperArm, _lUpperArm, _rHand, _lHand, _spine, _chest;
+	private readonly HashSet<int> _freeBarrelHashes = new();
+	private float _aimWeight;
 
 	public Animator Animator => _animator;
+	/// <summary>The gun model shown in the hand right now (GunConfig.Model), or null.</summary>
+	public WeaponModel CurrentGunModel => _gunModel != null && _gunModel.gameObject.activeInHierarchy ? _gunModel : null;
 
 	private void Awake()
 	{
 		if (_animator == null)
 			_animator = GetComponent<Animator>();
 		CacheParameters();
+		foreach (var state in _freeBarrelStates)
+			if (!string.IsNullOrEmpty(state))
+				_freeBarrelHashes.Add(Animator.StringToHash(state));
 		if (_animator != null && _animator.isHuman)
 		{
 			_rUpperArm = _animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
@@ -145,9 +164,10 @@ public class PlayerAnimator : MonoBehaviour
 	/// </summary>
 	private void LateUpdate()
 	{
-		if (_isPaused || _isDead)
+		if (_isDead)
 			return;
-		float dt = Time.deltaTime;
+		// Paused: the kicks freeze (no time advance), the barrel lock still applies (the animator keeps writing the pose).
+		float dt = _isPaused ? 0f : Time.deltaTime;
 		var axis = transform.right;
 
 		_recoilTime += dt;
@@ -167,6 +187,42 @@ public class PlayerAnimator : MonoBehaviour
 			Rotate(_spine, axis, -_flinchAngles.x * f);
 			Rotate(_chest, axis, -_flinchAngles.y * f);
 		}
+
+		AimBarrel(r, _isPaused ? 0f : Time.deltaTime);
+	}
+
+	/// <summary>
+	/// Turns the weapon bone so the gun model looks along the body's forward (the player faces the cursor, bullets
+	/// fly along it) with its top up. The gun is a child of the bone, so the hand and the left-hand IK target
+	/// (WeaponHandIK runs after this) follow. The procedural recoil pitch is re-applied on top.
+	/// </summary>
+	private void AimBarrel(float recoil, float dt)
+	{
+		bool active = _aimBarrel && _weaponBone != null && _gunModel != null && _gunModel.gameObject.activeInHierarchy;
+		float wanted = active && !IsInFreeBarrelState() ? 1f : 0f;
+		_aimWeight = dt > 0f ? Mathf.MoveTowards(_aimWeight, wanted, _aimBlendSpeed * dt) : (wanted <= 0f ? 0f : _aimWeight);
+		if (!active || _aimWeight <= 0.001f)
+			return;
+
+		var gun = _gunModel.transform;
+		var desired = Quaternion.LookRotation(transform.forward, Vector3.up);
+		if (recoil > 0f && _proceduralRecoilSets.Contains(_weaponSet))
+			desired = Quaternion.AngleAxis(-(_recoilAngles.x + _recoilAngles.y) * recoil, transform.right) * desired;
+		var delta = Quaternion.Slerp(Quaternion.identity, desired * Quaternion.Inverse(gun.rotation), _aimWeight);
+		_weaponBone.rotation = delta * _weaponBone.rotation;
+	}
+
+	private bool IsInFreeBarrelState()
+	{
+		if (_animator == null || _freeBarrelHashes.Count == 0)
+			return false;
+		bool Check(int layer)
+		{
+			if (layer < 0 || layer >= _animator.layerCount) return false;
+			var info = _animator.IsInTransition(layer) ? _animator.GetNextAnimatorStateInfo(layer) : _animator.GetCurrentAnimatorStateInfo(layer);
+			return _freeBarrelHashes.Contains(info.shortNameHash);
+		}
+		return Check(0) || Check(_upperBodyLayer);
 	}
 
 	/// <summary>0→1 in the first 20% (snap), then eases back to 0 by <paramref name="duration"/>.</summary>

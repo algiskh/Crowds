@@ -124,8 +124,10 @@ namespace Crowds.EditorTools
 				.Box("StockButt", Mat.Steel, V(0, -0.02f, -0.28f), V(0.04f, 0.15f, 0.008f))
 				.Box("Magazine", Mat.Steel, V(0, -0.14f, 0.17f), V(0.025f, 0.22f, 0.04f), magazine: true);
 
-			// Beretta 92: black steel slide/frame, black grips. Magazine is inside the grip → nothing to hide. One-handed.
-			yield return new Spec("Pistol", typeof(WeaponModel), "PistolConfig", muzzle: V(0, 0.04f, 0.19f), leftHand: null)
+			// Beretta 92: black steel slide/frame, black grips. Magazine is inside the grip → nothing to hide.
+			// Two-handed cup grip (Mixamo pistol clips hold it so): the left wrist sits below-left of the grip, the palm
+			// wraps the right hand's fingers from the left. The point is the wrist (= mixamorig:LeftHand bone).
+			yield return new Spec("Pistol", typeof(WeaponModel), "PistolConfig", muzzle: V(0, 0.04f, 0.19f), leftHand: V(-0.055f, -0.065f, -0.02f))
 				.Box("Slide", Mat.Steel, V(0, 0.038f, 0.0675f), V(0.03f, 0.035f, 0.215f))
 				.Cyl("BarrelTip", Mat.Steel, V(0, 0.04f, 0.178f), 0.014f, 0.012f)
 				.Box("Frame", Mat.Steel, V(0, 0.008f, 0.08f), V(0.028f, 0.025f, 0.15f))

@@ -28,6 +28,7 @@ Because every gun shares it, one hand pose fits all (`Mob.ReplaceWeapon` keeps t
 | `Mini14` (`MobWeapon`) | mini14.jpg (Ranch) | `RifleConfig` + Gunner zombie | wood stock, blued steel | short 5-rd box | under the forend |
 | `AR` | ar.jpeg (M4, carry handle) | `ARConfig` | black steel/polymer | gray aluminium 30-rd | handguard |
 | `SMG` | smg.jpg (M3 grease gun) | `SMGConfig` | parkerized gray | long stick mag | mag housing |
+| `Pistol` | pistol.jpg (Beretta 92) | `PistolConfig` | black | — (inside the grip) | below-left of the grip (two-handed cup grip, as in the Mixamo pistol clips) |
 | `Pistol` | pistol.jpg (Beretta 92) | `PistolConfig` | black | — (inside the grip) | — (one-handed) |
 | `Shotgun` | shotgun.png (Remington 870) | `ShotgunConfig` | polymer + blued | — (tube) | pump |
 | `SawedOff` | sawedoff shotgun.png | `SawedOffConfig` | wood + blued | — (break action) | forend |
@@ -52,3 +53,6 @@ On the player's `PlayerAnimator`: `_weaponBone` = `mixamorig:RightHand`, tune `_
 once in the Aim pose (all guns share it), optionally add `WeaponHandIK` on the body (no `Mob` → it uses the weapon
 passed by `PlayerAnimator`) and reference it in `_leftHandIK`. Bullets still come from the root `Weapon.Muzzle`
 (see `Docs/PlayerAnimation.md`), the model is visual only.
+
+Muzzle flash: `WeaponFireSystem` requests `MuzzleEffectId` (default `muzzle_flash`, `Resources/FxHolder.asset`) at
+`PlayerAnimator.CurrentGunModel.Muzzle`, parented to it; without a body/gun model — at the gameplay `Weapon.Muzzle`.
