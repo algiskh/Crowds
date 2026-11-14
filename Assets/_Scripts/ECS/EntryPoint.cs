@@ -591,7 +591,9 @@ namespace ECS
 				.Add(new AimVisualizerSystem())
 				.Add(new UISystem())
 				.Add(new UILogSystem())
+				.Add(new PauseMenuSystem())
 				.Add(new PauseSystem())
+				.Add(new WorldFreezeSystem())
 				.Init();
 			#endregion
 		}

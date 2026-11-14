@@ -25,7 +25,7 @@ namespace ECS
 			foreach (var entity in filter)
 			{
 				ref var lt = ref lifetimePool.Get(entity);
-				lt.Value -= Time.deltaTime;
+				lt.Value -= world.GameDeltaTime();
 			}
 			#endregion
 

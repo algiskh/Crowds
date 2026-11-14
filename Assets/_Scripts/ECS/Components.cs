@@ -629,6 +629,14 @@ public struct InputActionsComponent
 	public InputAction MeleeAction;
 	public InputAction ReloadAction;
 	public InputAction ThrowAction;
+	// Esc / gamepad Start (PauseMenuSystem). Optional: null if the asset has no "Pause" action.
+	public InputAction PauseAction;
+}
+
+// Singleton: the runtime pause menu view (PauseMenuSystem).
+public struct PauseMenuComponent
+{
+	public PauseMenu Value;
 }
 
 public struct RequestReloadComponent

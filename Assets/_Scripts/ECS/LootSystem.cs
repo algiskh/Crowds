@@ -82,7 +82,7 @@ namespace ECS
 					continue; // already picked up this frame; handled by CheckingDisposed above
 
 				ref var lifetime = ref lifetimePool.Get(lootEntity);
-				lifetime.Value -= Time.deltaTime;
+				lifetime.Value -= world.GameDeltaTime();
 				if (lifetime.Value <= 0)
 				{
 					ref var loot = ref lootPool.Get(lootEntity);

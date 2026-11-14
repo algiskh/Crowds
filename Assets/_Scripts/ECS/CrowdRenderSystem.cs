@@ -63,7 +63,7 @@ namespace ECS
 			foreach (var batch in _batches.Values)
 				batch.Clear();
 
-			float dt = Time.deltaTime;
+			float dt = world.GameDeltaTime();
 
 			foreach (var entity in world.Filter<MobComponent>().Inc<CrowdInstanceComponent>().End())
 			{

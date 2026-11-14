@@ -8,6 +8,8 @@ namespace ECS
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
+			if (world.IsWorldFrozen())
+				return;
 			var movePool = world.GetPool<MoveComponent>();
 			var followPool = world.GetPool<FollowTarget>();
 			var offsetPool = world.GetPool<FollowerOffset>();

@@ -5,6 +5,16 @@ namespace ECS
 {
 	public static class Extensions
 	{
+		/// <summary>
+		/// The pause menu froze the world (pause requested by <see cref="SignalSource.UI"/>): movement, bullets, timers,
+		/// effects and mob animation stop. Win/fail pauses don't freeze (mobs finish their switch to Idle).
+		/// </summary>
+		public static bool IsWorldFrozen(this EcsWorld world) =>
+			world.TryGetAsSingleton<PauseStateComponent>(out var pause) && pause.IsPaused && pause.PreviousSource == SignalSource.UI;
+
+		/// <summary>Time.deltaTime, or 0 while the world is frozen (see <see cref="IsWorldFrozen"/>).</summary>
+		public static float GameDeltaTime(this EcsWorld world) => world.IsWorldFrozen() ? 0f : UnityEngine.Time.deltaTime;
+
 		public delegate void RefEntityAction<T>(ref T item) where T : struct;
 
 		public static ref T GetAsSingleton<T>(this EcsWorld world) where T : struct

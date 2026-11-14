@@ -50,7 +50,7 @@ namespace ECS
 						fx.HasModifierLink = false;
 					}
 				}
-				fx.LifeTime -= Time.deltaTime;
+				fx.LifeTime -= world.GameDeltaTime();
 			}
 			#endregion
 
@@ -76,7 +76,7 @@ namespace ECS
 				// Fuse: defer the spawn until the delay elapses (staggered destruction bursts).
 				if (request.Delay > 0f)
 				{
-					request.Delay -= Time.deltaTime;
+					request.Delay -= world.GameDeltaTime();
 					continue;
 				}
 

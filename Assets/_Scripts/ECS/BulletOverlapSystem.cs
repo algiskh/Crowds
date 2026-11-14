@@ -42,7 +42,7 @@ namespace ECS
 			// Единственная цель Enemy-пуль — игрок. Проверяем по дистанции (у игрока нет коллайдер-карты).
 			bool hasPlayer = world.TryGetAsSingleton<PlayerComponent>(out var playerSingleton) && playerSingleton.Value != null;
 			Vector3 playerPos = hasPlayer ? playerSingleton.Value.transform.position : default;
-			float dt = Time.deltaTime;
+			float dt = world.GameDeltaTime();
 
 			// --- Один раз за кадр строим collider → entity карту для всех мобов.
 			_mobColliderMap.Clear();
@@ -87,8 +87,8 @@ namespace ECS
 
 					case BulletCheckType.Raycast:
 						var direction = move.Transform.forward;
-						// Для быстрых пуль: путь за кадр + радиус.
-						float distance = Mathf.Max(bullet.Radius, move.Speed * Time.deltaTime + bullet.Radius);
+						// For fast bullets: the frame's path + radius.
+						float distance = Mathf.Max(bullet.Radius, move.Speed * dt + bullet.Radius);
 						int rayHits = Physics.RaycastNonAlloc(position, direction, _raycastBuffer, distance, layerMask, QueryTriggerInteraction.Collide);
 						hitCount = Mathf.Min(rayHits, _overlapBuffer.Length);
 						for (int i = 0; i < hitCount; i++)

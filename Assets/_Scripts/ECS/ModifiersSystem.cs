@@ -55,7 +55,7 @@ namespace ECS
 			}
 
 			_toRemove.Clear();
-			var deltaTime = UnityEngine.Time.deltaTime;
+			var deltaTime = world.GameDeltaTime();
 
 			var filter = world.Filter<ModifierOwnerComponent>().End();
 			foreach (var entity in filter)

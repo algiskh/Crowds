@@ -8,6 +8,8 @@ namespace ECS
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
+			if (world.IsWorldFrozen())
+				return;
 			var movePool = world.GetPool<MoveComponent>();
 			var pathPool = world.GetPool<MovePath>();
 			var modifierOwnerPool = world.GetPool<ModifierOwnerComponent>();

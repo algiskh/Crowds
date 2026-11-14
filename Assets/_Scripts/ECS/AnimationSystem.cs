@@ -14,6 +14,9 @@ namespace ECS
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
+			// Frozen by the pause menu: SetAnimation would reset Animator.speed to 1 (WorldFreezeSystem holds it at 0).
+			if (world.IsWorldFrozen())
+				return;
 			var mobPool = world.GetPool<MobComponent>();
 			var animPool = world.GetPool<AnimationStateComponent>();
 			var crowdPool = world.GetPool<CrowdInstanceComponent>();

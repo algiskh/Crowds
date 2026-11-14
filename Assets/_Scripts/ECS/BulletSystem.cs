@@ -21,7 +21,7 @@ namespace ECS
 
 			#endregion
 
-			var delta = Time.deltaTime;
+			var delta = world.GameDeltaTime();
 
 			// Check disposed bullets and return them to the pool
 			var disposedFilter = world.Filter<BulletComponent>().Inc<MoveComponent>().Inc<DisposableComponent>().End();
