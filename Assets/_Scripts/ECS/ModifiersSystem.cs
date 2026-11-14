@@ -99,6 +99,7 @@ namespace ECS
 					ref var request = ref world.CreateSimpleEntity<RequestDamageComponent>();
 					request.Target = world.PackEntity(targetEntity);
 					request.Damage = value;
+					request.IsPeriodic = true;
 				}
 			}
 		}

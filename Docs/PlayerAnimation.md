@@ -64,7 +64,7 @@ flowchart LR
 | Удар (СКМ) | `IsMeleeing` | `Melee` (trigger) | Melee |
 | Граната: зажатие | `IsCharging` | `IsChargingThrow` | ThrowCharge (цикл) |
 | Граната: бросок | `ThrowCounter` | `Throw` (trigger) | Throw |
-| Получение урона | HP уменьшилось (не чаще 0.5 с) | `Hit` (trigger) | Hit_X |
+| Получение урона | прямое попадание: `HealthComponent.HitCounter` изменился (не чаще 0.5 с). Тики DoT (яд, `RequestDamageComponent.IsPeriodic`) не считаются | `Hit` (trigger) | Hit_X |
 | Смерть | HP ≤ 0 или старт сцены смерти | `IsDead` | Death (верхний слой выключается) |
 | Пауза | `PauseState.IsPaused` | `Animator.speed = 0` | замирание |
 

@@ -138,6 +138,9 @@ public struct HealthComponent
 	public float CurrentHealth;
 	public float MaxHealth;
 	public TargetType TargetType;
+	// +1 per direct hit that dealt damage (DamageSystem); DoT ticks (RequestDamageComponent.IsPeriodic) don't count.
+	// PlayerAnimationSystem plays the hit flinch on change.
+	public int HitCounter;
 }
 
 public struct RequestDamageComponent
@@ -147,6 +150,8 @@ public struct RequestDamageComponent
 	// deleted/recycled meanwhile. Use world.PackEntity(target) when raising.
 	public EcsPackedEntity Target;
 	public IEnumerable<Modifier> DamageModifiers;
+	// DoT tick (ModifiersSystem): bypasses the player's post-hit invulnerability and doesn't start it.
+	public bool IsPeriodic;
 }
 
 public struct ColliderComponent

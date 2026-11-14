@@ -24,10 +24,10 @@ namespace ECS
 		private bool _initialized;
 		private int _lastShotCounter;
 		private int _lastThrowCounter;
-		private float _lastHealth;
+		private int _lastHitCounter;
 		private float _hitCooldown;
 
-		// Min interval between hit flinches: poison ticks would otherwise retrigger it constantly.
+		// Min interval between hit flinches (a crowd lands many hits in a row).
 		private const float HitReactionInterval = 0.5f;
 
 		public void Run(IEcsSystems systems)
@@ -43,6 +43,7 @@ namespace ECS
 			int playerEntity = player.Value.Entity;
 			var healthPool = world.GetPool<HealthComponent>();
 			float health = healthPool.Has(playerEntity) ? healthPool.Get(playerEntity).CurrentHealth : 1f;
+			int hitCounter = healthPool.Has(playerEntity) ? healthPool.Get(playerEntity).HitCounter : 0;
 			ref var weapon = ref world.GetAsSingleton<WeaponComponent>();
 			world.TryGetAsSingleton<GrenadeStateComponent>(out var grenade);
 
@@ -51,7 +52,7 @@ namespace ECS
 				_initialized = true;
 				_lastShotCounter = weapon.ShotCounter;
 				_lastThrowCounter = grenade.ThrowCounter;
-				_lastHealth = health;
+				_lastHitCounter = hitCounter;
 			}
 
 			// --- Death: plays even while the game is paused by the fail sequence ---
@@ -116,12 +117,13 @@ namespace ECS
 			// --- Hit reaction ---
 			if (_hitCooldown > 0f)
 				_hitCooldown -= Time.deltaTime;
-			if (health < _lastHealth && _hitCooldown <= 0f)
+			// Direct hits only: DoT ticks (poison) lower the health but don't count as hits.
+			if (hitCounter != _lastHitCounter && _hitCooldown <= 0f)
 			{
 				view.TriggerHit();
 				_hitCooldown = HitReactionInterval;
 			}
-			_lastHealth = health;
+			_lastHitCounter = hitCounter;
 		}
 	}
 }

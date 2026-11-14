@@ -44,6 +44,8 @@ namespace ECS
 
 				// Apply damage to health
 				healthComponent.CurrentHealth -= damage;
+				if (!requestDamageComponent.IsPeriodic && damage > 0f)
+					healthComponent.HitCounter++;
 
 				if (isPlayer)
 				{
