@@ -55,6 +55,7 @@ namespace ECS
 				weapon.IsFiring = true;
 				weapon.CoolDown = weapon.GunConfig.FireCoolDown;
 				weapon.CurrentMagazineCount--;
+				weapon.ShotCounter++;
 
 				var sound = soundHolder.Value.GetClip(weapon.GunConfig.FireSoundId);
 				weapon.Weapon.AudioSource.PlayOneShot(sound);

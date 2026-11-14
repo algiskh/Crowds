@@ -210,6 +210,8 @@ public struct WeaponComponent
 	public bool IsFiring;
 	public int CurrentMagazineCount;
 	public float ReloadTime;
+	// +1 per player shot (WeaponFireSystem); PlayerAnimationSystem fires the "Fire" trigger on change.
+	public int ShotCounter;
 }
 
 // Запас патронов игрока по калибрам. Оружие с одинаковым калибром делит один пул.
@@ -775,6 +777,8 @@ public struct GrenadeStateComponent
 	public float ChargeTime;
 	// Конфиг текущего типа гранаты (задаётся при подборе лута; см. GrenadeConfig).
 	public GrenadeConfig CurrentConfig;
+	// +1 per thrown grenade (GrenadeThrowSystem); PlayerAnimationSystem fires the "Throw" trigger on change.
+	public int ThrowCounter;
 }
 
 /// <summary>

@@ -1,0 +1,207 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87c0a9c053154ba2a7ecbe9b910c9e58, type: 3}
+  m_Name: survivor_boy_5k_PlayerModelSetup
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::Crowds.EditorTools.PlayerModelSetupPreset
+  Model: {fileID: 919132149155446097, guid: 3c97ec3ca9b500244ac843c794aec5cf, type: 3}
+  BaseColor: {fileID: 2800000, guid: aad5156c058a82d4c877fa39ac4c8ec2, type: 3}
+  Normal: {fileID: 2800000, guid: c8dd30fb5dc39a44782bcead3411e7b6, type: 3}
+  MaterialName: 
+  FireClipLength: 0.3
+  ThrowSplit: 0.15
+  Clips:
+  - Slot: 0
+    Fbx: {fileID: 919132149155446097, guid: 9d71a303091882444858421b55d8f039, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 1
+    Fbx: {fileID: 919132149155446097, guid: 59a0a960b4677ba4a9da2f2676895673, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 2
+    Fbx: {fileID: 919132149155446097, guid: 4ed49f6f2352e1d46aaebe9f4a5a3868, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 3
+    Fbx: {fileID: 919132149155446097, guid: 294c072ee40ee0a4e9f8d46bc9f2cb1b, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 4
+    Fbx: {fileID: 919132149155446097, guid: 182f4d9a406f9fb43a8b569355fd7b3c, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 5
+    Fbx: {fileID: 919132149155446097, guid: 6b1c10c59f037a24e95c74daee0a076f, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 6
+    Fbx: {fileID: 919132149155446097, guid: 18a122847fa13854f856b2379c2c0edc, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 7
+    Fbx: {fileID: 919132149155446097, guid: 981f3d3f2db177d4da9169885a03fa89, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 8
+    Fbx: {fileID: 919132149155446097, guid: 0f5568bb54aaf92448f88ffc3d7af65e, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 9
+    Fbx: {fileID: 919132149155446097, guid: 9d71a303091882444858421b55d8f039, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 10
+    Fbx: {fileID: 919132149155446097, guid: f8ac7ab1dd043964c9ee7f6b150aa052, type: 3}
+    Mirror: 0
+    Loop: 0
+    From: 0
+    To: 0
+  - Slot: 11
+    Fbx: {fileID: 919132149155446097, guid: 830e453543897be4292e28450cd0cf7a, type: 3}
+    Mirror: 0
+    Loop: 0
+    From: 0
+    To: 0
+  - Slot: 12
+    Fbx: {fileID: 919132149155446097, guid: d60bfb4250942f44e8130d7d12318d7b, type: 3}
+    Mirror: 0
+    Loop: 0
+    From: 0
+    To: 0
+  - Slot: 13
+    Fbx: {fileID: 919132149155446097, guid: f621e3c8325eb2441b39b90b83a9a6a9, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 14
+    Fbx: {fileID: 919132149155446097, guid: 206ce6779c5cd6542bf61febe31a04cf, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 15
+    Fbx: {fileID: 919132149155446097, guid: fa328a8ba2c1fb04b948614cabc52fb0, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 16
+    Fbx: {fileID: 919132149155446097, guid: 28f45d318a38ea54182d1d781635a832, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 17
+    Fbx: {fileID: 919132149155446097, guid: aac7d0e4967ba3b4cbac6f3dd3a5491e, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 18
+    Fbx: {fileID: 919132149155446097, guid: 206ce6779c5cd6542bf61febe31a04cf, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 19
+    Fbx: {fileID: 919132149155446097, guid: 206ce6779c5cd6542bf61febe31a04cf, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 20
+    Fbx: {fileID: 919132149155446097, guid: fa328a8ba2c1fb04b948614cabc52fb0, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 21
+    Fbx: {fileID: 919132149155446097, guid: fa328a8ba2c1fb04b948614cabc52fb0, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 22
+    Fbx: {fileID: 919132149155446097, guid: f621e3c8325eb2441b39b90b83a9a6a9, type: 3}
+    Mirror: 0
+    Loop: 1
+    From: 0
+    To: 0
+  - Slot: 23
+    Fbx: {fileID: 919132149155446097, guid: f621e3c8325eb2441b39b90b83a9a6a9, type: 3}
+    Mirror: 0
+    Loop: 0
+    From: 0
+    To: 0.3
+  - Slot: 24
+    Fbx: {fileID: 919132149155446097, guid: 830e453543897be4292e28450cd0cf7a, type: 3}
+    Mirror: 0
+    Loop: 0
+    From: 0
+    To: 0
+  - Slot: 25
+    Fbx: {fileID: 919132149155446097, guid: f621e3c8325eb2441b39b90b83a9a6a9, type: 3}
+    Mirror: 0
+    Loop: 0
+    From: 0
+    To: 0.4
+  - Slot: 26
+    Fbx: {fileID: 919132149155446097, guid: a7334a3b2811b904c82464dbe0f9fc32, type: 3}
+    Mirror: 0
+    Loop: 0
+    From: 0
+    To: 0
+  - Slot: 27
+    Fbx: {fileID: 919132149155446097, guid: fdfc525f2e4ce544483732ed97964339, type: 3}
+    Mirror: 0
+    Loop: 0
+    From: 0
+    To: 0.21000002
+  - Slot: 28
+    Fbx: {fileID: 919132149155446097, guid: fdfc525f2e4ce544483732ed97964339, type: 3}
+    Mirror: 0
+    Loop: 0
+    From: 0.21000002
+    To: 0
+  - Slot: 29
+    Fbx: {fileID: 919132149155446097, guid: e3436f8b0b09b4541a28b18c544d4757, type: 3}
+    Mirror: 0
+    Loop: 0
+    From: 0
+    To: 0
+  TargetHeight: 1.85
+  BodyName: Body
+  HideRenderers:
+  - Capsule
+  - Weapon
+  LeftHandIK: 1

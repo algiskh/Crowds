@@ -15,6 +15,7 @@ MonoBehaviour:
   _preview: {fileID: 21300000, guid: 39724dbe3f5ae2540b410dd8f1bd973a, type: 3}
   _id: Shotgun
   _caliber: 4
+  _animationSet: 0
   _model: {fileID: 8539826321768441736, guid: 5940d8ca2747ff24da8e41cfdb08f889, type: 3}
   _fireRate: 1
   _magazineCapacity: 6

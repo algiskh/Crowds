@@ -78,6 +78,7 @@ namespace ECS
 			Vector3 landing = ComputeLandingPosition(world, config, chargeRatio);
 
 			grenade.Count--;
+			grenade.ThrowCounter++;
 			world.CreateSimpleEntity<UpdateGrenadeViewRequestComponent>();
 
 			SpawnProjectile(world, mainHolder.Value, grenadeConfig, landing);

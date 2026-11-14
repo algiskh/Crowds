@@ -584,6 +584,7 @@ namespace ECS
 				.Add(new GrenadeThrowSystem())
 				.Add(new PlayerSystem())
 				.Add(new PlayerMovementSystem())
+				.Add(new PlayerAnimationSystem())
 				.Add(new CheckEndSystem())
 				.Add(new FailSequenceSystem())
 				.Add(new SmartConditionSystem())

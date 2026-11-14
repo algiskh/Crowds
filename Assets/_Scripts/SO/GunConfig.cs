@@ -22,6 +22,11 @@ public class GunConfig : ScriptableObject
 	[SerializeField] private Caliber _caliber;
 
 	[VerticalGroup("Top/Right")]
+	[LabelText("Animation set"), PropertyOrder(-7),
+	 Tooltip("Player animation set for this weapon: Pistol (one-handed) or Rifle (every long gun).")]
+	[SerializeField] private WeaponAnimationSet _animationSet = WeaponAnimationSet.Rifle;
+
+	[VerticalGroup("Top/Right")]
 	[LabelText("Model"), PropertyOrder(-6),
 	 Tooltip("Visual gun model held by the player body (PlayerAnimator puts it into the hand bone). " +
 	         "Its external magazine is hidden while reloading. Visual only. Optional.")]
@@ -91,6 +96,7 @@ public class GunConfig : ScriptableObject
 
 	public string Id => _id;
 	public Caliber Caliber => _caliber;
+	public WeaponAnimationSet AnimationSet => _animationSet;
 	public WeaponModel Model => _model;
 	public Sprite Preview => _preview;
 	public float BulletSpeed => _bulletSpeed;
