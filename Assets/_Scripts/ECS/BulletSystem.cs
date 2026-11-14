@@ -1,10 +1,16 @@
-﻿using Leopotam.EcsLite;
+﻿using System.Collections.Generic;
+using Leopotam.EcsLite;
 using UnityEngine;
 
 namespace ECS
 {
 	public class BulletSystem : IEcsRunSystem
 	{
+		// One pool per projectile prefab: calibers have different meshes (pellet / bullet sizes), so a bullet
+		// returned by one gun must not be reused by another. Instances without SourcePrefab use the shared
+		// BulletPoolComponent stack (legacy).
+		private readonly Dictionary<Bullet, Stack<Bullet>> _pools = new();
+
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
@@ -32,7 +38,7 @@ namespace ECS
 				if (isDisposed.IsDisposed || bullet.LifeTime <= 0)
 				{
 					bullet.Bullet.gameObject.SetActive(false);
-					bulletPoolPool.Value.Push(bullet.Bullet);
+					GetPool(ref bulletPoolPool, bullet.Bullet.SourcePrefab).Push(bullet.Bullet);
 					world.DelEntity(bulletEntity); // delete entity
 				}
 				else
@@ -55,6 +61,15 @@ namespace ECS
 			}
 
 			world.DeleteAllWith<RequestSpawnBulletComponent>();
+		}
+
+		private Stack<Bullet> GetPool(ref BulletPoolComponent shared, Bullet prefab)
+		{
+			if (prefab == null)
+				return shared.Value ??= new Stack<Bullet>();
+			if (!_pools.TryGetValue(prefab, out var pool))
+				_pools[prefab] = pool = new Stack<Bullet>();
+			return pool;
 		}
 
 		// Projectile prefab for the gun's caliber, falling back to the global bullet prefab.
@@ -80,16 +95,17 @@ namespace ECS
 			)
 		{
 			Bullet bullet;
-			if (bulletPoolPool.Value != null &&
-				bulletPoolPool.Value.Count > 0)
+			var pool = GetPool(ref bulletPoolPool, projectilePrefab);
+			if (pool != null && pool.Count > 0)
 			{
-				bullet = bulletPoolPool.Value.Pop();
+				bullet = pool.Pop();
 			}
 			else
 			{
 				bullet = Object.Instantiate(
 					projectilePrefab,
 					bulletPoolPool.Parent);
+				bullet.SourcePrefab = projectilePrefab;
 			}
 
 			bullet.transform.position = bulletRequest.Position;
@@ -119,6 +135,12 @@ namespace ECS
 			// Отклонение только в горизонтальной плоскости
 			float deviationAngle = Random.Range(-maxAngle, maxAngle);
 			Vector3 finalDirection = Quaternion.AngleAxis(deviationAngle, Vector3.up) * bulletRequest.Direction.normalized;
+
+			// Nose (+Z) along the flight; the trail is emitted behind it.
+			if (finalDirection.sqrMagnitude > 1e-6f)
+				bullet.transform.rotation = Quaternion.LookRotation(finalDirection);
+			if (bullet.TryGetComponent<TrailRenderer>(out var trail))
+				trail.Clear();
 
 			moveComponent.Direction = finalDirection;
 			moveComponent.Speed = bulletRequest.GunConfig.BulletSpeed;

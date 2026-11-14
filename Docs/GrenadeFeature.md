@@ -99,7 +99,9 @@ Also: `InputActionsComponent.ThrowAction` (resolved in `InputSystem.Init`, `thro
 
 ## View files
 
-- `Grenade.cs` — bare projectile view (pooled). Prefab assigned to `MainHolder._grenadePrefab`.
+- `Grenade.cs` — bare projectile view (pooled). Prefab assigned to `MainHolder._grenadePrefab`. Its visual (primitive
+  M67 after `Assets/REFs/M67.png`, no pin; root = body centre, fuze +Y) is built by **Tools ▸ Crowds ▸ Build
+  Projectile Models** (`ProjectileModelBuilder`, see `Docs/WeaponModels.md`).
 - `GrenadeAimVisualizer.cs` — `Show(Vector3 pos, float radius)` / `Hide()`; serialized `_root`, `_marker`, `_scaleMarkerToRadius` (scales marker XZ to `radius*2`).
 - `UI/GrenadeCounter.cs` — `SetCount(int)`: whole widget (`_root`) active when count>0; `_countText` (UniText `"x{n}"`) active only when count>1.
 

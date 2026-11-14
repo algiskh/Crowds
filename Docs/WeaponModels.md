@@ -29,7 +29,6 @@ Because every gun shares it, one hand pose fits all (`Mob.ReplaceWeapon` keeps t
 | `AR` | ar.jpeg (M4, carry handle) | `ARConfig` | black steel/polymer | gray aluminium 30-rd | handguard |
 | `SMG` | smg.jpg (M3 grease gun) | `SMGConfig` | parkerized gray | long stick mag | mag housing |
 | `Pistol` | pistol.jpg (Beretta 92) | `PistolConfig` | black | — (inside the grip) | below-left of the grip (two-handed cup grip, as in the Mixamo pistol clips) |
-| `Pistol` | pistol.jpg (Beretta 92) | `PistolConfig` | black | — (inside the grip) | — (one-handed) |
 | `Shotgun` | shotgun.png (Remington 870) | `ShotgunConfig` | polymer + blued | — (tube) | pump |
 | `SawedOff` | sawedoff shotgun.png | `SawedOffConfig` | wood + blued | — (break action) | forend |
 | `MachineGun` | machinegun m60.jpg (M60) | `MachineGunConfig` | polymer + blued, olive ammo box, brass belt | ammo box + belt | handguard |
@@ -56,3 +55,31 @@ passed by `PlayerAnimator`) and reference it in `_leftHandIK`. Bullets still com
 
 Muzzle flash: `WeaponFireSystem` requests `MuzzleEffectId` (default `muzzle_flash`, `Resources/FxHolder.asset`) at
 `PlayerAnimator.CurrentGunModel.Muzzle`, parented to it; without a body/gun model — at the gameplay `Weapon.Muzzle`.
+
+## Projectiles and the grenade (`ProjectileModelBuilder`)
+
+**Tools ▸ Crowds ▸ Build Projectile Models** (`_Scripts/Editor/Weapons/ProjectileModelBuilder.cs`, sizes in code).
+Prefabs are edited in place (guids kept): the root keeps `Bullet`/`Grenade`, `TrailRenderer` and its collider (world
+radius preserved), the legacy root ball mesh is removed (root scale → 1), visuals are collider-less child primitives.
+
+| Prefab | AmmoConfig | Shape | Diameter × length, m |
+|---|---|---|---|
+| `Bullet.prefab` | 556 (+ `MainHolder.BulletPrefab` fallback) | cylinder + hemispherical nose, nose = +Z | 0.07 × 0.20 |
+| `Bullet9mm.prefab` (new, copy of Bullet) | 9mm | same | 0.07 × 0.14 |
+| `Bullet762.prefab` (new) | 762 | same | 0.09 × 0.26 |
+| `Shell.prefab` | 12g | sphere (pellet) | 0.12 |
+| `Grenade.prefab` | `MainHolder._grenadePrefab` | M67: olive body + dark seam, neck, copper ring, aluminium fuze, olive spoon; no pin | body 0.24 |
+
+Gun barrels are 14–22 mm, the old balls were 0.5 m (pellets 0.25 m). Trail head width = 0.9 × diameter, tapering to 0.
+Bullets keep their old material and are tinted by `GunConfig.BulletColor` (`Bullet.SetColor` now tints every child
+`MeshRenderer`); the grenade uses `Weapon_Olive/Aluminum/Brass/Polymer` (run Build Weapon Models first).
+`762Piercer.prefab` is unreferenced and left as is.
+
+### Tracers
+
+`ProjectileModelBuilder` makes bullets and pellets tracers: head material `Assets/_Materials/Projectiles/Tracer_Head.mat`
+(URP Unlit, HDR warm color → glows with the scene Bloom) and trail `Tracer_Trail.mat` (URP Particles/Unlit, additive
+SrcAlpha/One, multiplies the TrailRenderer vertex colors). Trail gradient: warm hue, alpha 1 → 0.6 → 0; shadows off.
+`GunConfig.BulletColor` (alpha > 0) tints both: the head via MaterialPropertyBlock × `Bullet._tintIntensity` (2.5, HDR),
+the trail via its gradient hue — so the gunner's `ZombieGun` (red) shoots red tracers. The old trail used the opaque
+`Lit.mat`, which ignores vertex colors: that's why the red tint never reached the trail before.

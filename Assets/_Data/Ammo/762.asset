@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AmmoConfig
   _lootIcon: {fileID: 21300000, guid: 4c8f390eef5087e49a56d19464e0d22e, type: 3}
   _caliber: 3
-  _projectilePrefab: {fileID: 3834319163352093731, guid: 4ccad587412ec194e812f98752fa1afb, type: 3}
+  _projectilePrefab: {fileID: 3834319163352093731, guid: 6bfbe16e6b95d674d828f811a5496b13, type: 3}
