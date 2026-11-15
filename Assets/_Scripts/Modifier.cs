@@ -14,6 +14,9 @@ public static class ModifierConstants
 	public static string SpeedShotDebuff = "SpeedShotDebuff";
 	public static string SpeedReloadDebuff = "SpeedReloadDebuff";
 	public static string SpeedBonusBuff = "SpeedBoostBuff";
+	public static string SpeedOilSlick = "SpeedOilSlick";
+
+	public static string TractionIce = "TractionIce";
 
 	public static string DamageMeleeBleeding = "DamageMeleeBleeding";
 	public static string DamageMeleeBurning = "DamageMeleeBurning";
@@ -71,6 +74,9 @@ public abstract class Modifier
 		if (type == typeof(ShieldModifier))
 			return GetConstantsByPrefix("Shield");
 
+		if (type == typeof(TractionModifier))
+			return GetConstantsByPrefix("Traction");
+
 		return Enumerable.Empty<string>();
 	}
 
@@ -98,6 +104,17 @@ public abstract class Modifier
 
 [Serializable]
 public class SpeedModifier : Modifier
+{
+
+}
+
+/// <summary>
+/// Slippery ground (ice): Value = grip, the acceleration in m/s² with which the owner can change its velocity.
+/// While present, movement becomes inertial (Inertia.Step in PlayerMovementSystem / MoveSystem): the owner keeps
+/// sliding and turns/stops slowly. Several → the lowest grip wins (Utils.GetMinModifier). See Docs/HockeyLevelFeature.md.
+/// </summary>
+[Serializable]
+public class TractionModifier : Modifier
 {
 
 }

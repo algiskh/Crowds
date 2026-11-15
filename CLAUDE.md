@@ -1,87 +1,96 @@
-# Crowds — Контекст проекта
+# Crowds — Project Context
 
-Top-down шутер на Unity с ECS-архитектурой. «Толпы» мобов атакуют игрока, тот стреляет, собирает лут.
+Top-down Unity shooter with an ECS architecture. "Crowds" of mobs attack the player, who shoots back and collects loot.
 
-## Стек
+## Stack
 
 - **Unity 6000.3.10f1** (URP 17.3)
-- **Leopotam EcsLite** — ECS-фреймворк (github)
-- **Sirenix Odin Inspector** — атрибуты `[BoxGroup]`, `[Title]`, `[Required]`, `[Button]` повсюду в инспекторах
-- **Unity Input System** (new) — `InputSystem_Actions.inputactions` в `Assets/`
+- **Leopotam EcsLite** — ECS framework (github)
+- **Sirenix Odin Inspector** — `[BoxGroup]`, `[Title]`, `[Required]`, `[Button]` attributes throughout the inspectors
+- **Unity Input System** (new) — `InputSystem_Actions.inputactions` in `Assets/`
 - **UniTask** — `com.cysharp.unitask`
-- **Unity AI Navigation** (NavMesh) — для патфайндинга мобов
-- **MPUIKit**, **ParticleEffectForUGUI**, **UniText** — UI-плагины
+- **Unity AI Navigation** (NavMesh) — for mob pathfinding
+- **MPUIKit**, **ParticleEffectForUGUI**, **UniText** — UI plugins
 
-## Архитектура
+## Architecture
 
-**Точка входа:** `Assets/_Scripts/ECS/EntryPoint.cs` — `MonoBehaviour`, создаёт `EcsWorld`, `EcsSystems`, регистрирует все singleton-сущности и системы в `Awake`, гоняет `_systems.Run()` в `Update`.
+**Entry point:** `Assets/_Scripts/ECS/EntryPoint.cs` — a `MonoBehaviour` that creates the `EcsWorld`, `EcsSystems`, registers all singleton entities and systems in `Awake`, and runs `_systems.Run()` in `Update`.
 
-**Паттерн singleton:** многие «singleton»-данные хранятся как одиночная сущность с одним компонентом (`MainHolderComponent`, `SpawnRequestComponent` и т.д.). Доступ — через расширения в `Extensions.cs`:
-- `world.CreateSimpleEntity<T>()` — создать singleton-сущность
-- `world.GetAsSingleton<T>()` / `TryGetAsSingleton<T>(out value)` — получить
-- `world.GetAsSingleton<T1,T2>()` — с доп. фильтром
-- `world.ForEachComponentInTheWorld<T>(action, deleteAfter)` — итерация
-- `world.DeleteAllWith<T>()` — удалить все сущности с компонентом
+**Singleton pattern:** much of the "singleton" data is stored as a single entity with a single component (`MainHolderComponent`, `SpawnRequestComponent`, etc.). Access goes through the extensions in `Extensions.cs`:
+- `world.CreateSimpleEntity<T>()` — create a singleton entity
+- `world.GetAsSingleton<T>()` / `TryGetAsSingleton<T>(out value)` — get it
+- `world.GetAsSingleton<T1,T2>()` — with an extra filter
+- `world.ForEachComponentInTheWorld<T>(action, deleteAfter)` — iteration
+- `world.DeleteAllWith<T>()` — delete all entities with the component
 
-**Все компоненты** объявлены в одном файле `Assets/_Scripts/ECS/Components.cs` (struct'ы).
+**All components** are declared in a single file, `Assets/_Scripts/ECS/Components.cs` (structs).
 
-**Системы** (`IEcsRunSystem`) — по одному файлу на систему в `Assets/_Scripts/ECS/`. Порядок регистрации важен, см. `EntryPoint.RegisterSystems()`.
+**Systems** (`IEcsRunSystem`) — one file per system in `Assets/_Scripts/ECS/`. Registration order matters, see `EntryPoint.RegisterSystems()`.
 
-**Конфиги** — ScriptableObject'ы в `Assets/_Scripts/SO/`. Корень — `MainHolder` (ссылки на `MobConfigHolder`, `GunConfigHolder`, `EffectsHolder`, `DecalsConfigHolder`, `SoundHolder`, `SpriteHolder`, `PlayerConfig`). Уровни — `LevelConfig`.
+**Configs** — ScriptableObjects in `Assets/_Scripts/SO/`. The root is `MainHolder` (references to `MobConfigHolder`, `GunConfigHolder`, `EffectsHolder`, `DecalsConfigHolder`, `SoundHolder`, `SpriteHolder`, `PlayerConfig`). Levels are `LevelConfig`.
 
-**Пулы** (Mob, Bullet, Effect, Decal, Loot, MapLoot) — singleton-компоненты со `Stack<>`/`List<>`/`Dictionary<>` и родительским `Transform`.
+**Pools** (Mob, Bullet, Effect, Decal, Loot, MapLoot) — singleton components holding `Stack<>`/`List<>`/`Dictionary<>` plus a parent `Transform`.
 
-## Структура `Assets/_Scripts/`
+## `Assets/_Scripts/` Structure
 
-- `ECS/` — системы, `Components.cs`, `EntryPoint.cs`, `Extensions.cs`
-- `SO/` — ScriptableObject-конфиги
-- `UI/` — MonoBehaviour-view для UI (`AmmoCounter`, `FailWindow`, `DifficultyTimerView`, `ValueBar`)
+- `ECS/` — systems, `Components.cs`, `EntryPoint.cs`, `Extensions.cs`
+- `SO/` — ScriptableObject configs
+- `UI/` — MonoBehaviour views for UI (`AmmoCounter`, `FailWindow`, `DifficultyTimerView`, `ValueBar`)
 - `Animation/` — `SimpleAnimator` (Animator cross-fade wrapper, hash-cached), `AnimationType` (+ `AnimationTypes` enum→state-name/hash map)
-- `SmartConditions/` — обёртки условий (`FragsConditionWrapper`, `NoAmmoAroundConditionWrapper`)
-- `Enums/` — enum-типы
+- `SmartConditions/` — condition wrappers (`FragsConditionWrapper`, `NoAmmoAroundConditionWrapper`)
+- `Enums/` — enum types
 - `Input/InputActionsHolder.cs`
-- Корень `_Scripts/` — MonoBehaviour'ы сцены: `Player`, `Mob`, `Weapon`, `Bullet`, `Loot`, `SpawnPoint`, `FloorSector`, `NavMeshManager`, `AimVisualizer`, `PathGizmoDrawer` и enum'ы вроде `DamageType`, `AimType`, `BonusType`
+- `Remote/Leaderboard/` — leaderboard
+- `_Scripts/` root — scene MonoBehaviours: `Player`, `Mob`, `Weapon`, `Bullet`, `Loot`, `SpawnPoint`, `FloorSector`, `NavMeshManager`, `AimVisualizer`, `PathGizmoDrawer`, plus enums like `DamageType`, `AimType`, `BonusType`
 
-## Ассеты
+## Assets
 
-- `Assets/_Prefabs/` — игровые префабы (`Mobs/`, `UI/`, `MapLoot/`, `Effects/`, `Decals/`, оружие `762Piercer.prefab`, `Bullet.prefab`, `Shell.prefab`, `FloorSector.prefab`, `Loot.prefab`)
-- `Assets/_Data/` — ассеты `ScriptableObject`
-- `Assets/Scenes/SampleScene.unity` — основная сцена
-- `Assets/_Animations/`, `_Materials/`, `_Sounds/`, `Shader/`, `Sprites/` — ресурсы
-- Вендорные папки: `Epic Toon FX/`, `MPUIKit/`, `UniText/`, `Modern GDR - Free icons pack/`, `Plugins/`
+- `Assets/_Prefabs/` — gameplay prefabs (`Mobs/`, `UI/`, `MapLoot/`, `Effects/`, `Decals/`, weapons `762Piercer.prefab`, `Bullet.prefab`, `Shell.prefab`, `FloorSector.prefab`, `Loot.prefab`)
+- `Assets/_Data/` — ScriptableObject assets
+- `Assets/Scenes/SampleScene.unity` — main scene
+- `Assets/_Animations/`, `_Materials/`, `_Sounds/`, `Shader/`, `Sprites/` — resources
+- Vendor folders: `Epic Toon FX/`, `MPUIKit/`, `UniText/`, `Modern GDR - Free icons pack/`, `Plugins/`
 
-## Соглашения
+## Conventions
 
-- Namespace `ECS` для систем/компонентов (хотя компоненты живут в глобальном namespace).
-- MonoBehaviour-поля приватные с `[SerializeField]`, префикс `_`. Группируются через `[BoxGroup]`.
-- Комментарии и заголовки `[Title(...)]` иногда на русском (не ломать кодировку при правках `EntryPoint.cs`).
-- Файлы `.meta` коммитим — не удалять и не создавать файлы в обход Unity.
-- Новые системы: добавить класс `IEcsRun/Init/DestroySystem` → зарегистрировать в `EntryPoint.RegisterSystems()` в правильном порядке.
-- Новые компоненты: добавить `struct` в `Components.cs`.
+- Namespace `ECS` for systems/components (though components live in the global namespace).
+- MonoBehaviour fields are private with `[SerializeField]`, `_` prefix. Grouped via `[BoxGroup]`.
+- Comments and `[Title(...)]` headers are written in English.
+- Commit `.meta` files — don't delete or create files behind Unity's back.
+- New systems: add an `IEcsRun/Init/DestroySystem` class → register it in `EntryPoint.RegisterSystems()` in the correct order.
+- New components: add a `struct` to `Components.cs`.
 
-## Команды
+## Commands
 
-Билды и проверка типов — через Unity Editor (открыть сцену, Play). CLI-билда в репо нет. Перед выводами «готово по UI» — нужно явно прогнать в плей-моде; автотестов нет.
+Builds and type checks go through the Unity Editor (open the scene, Play). There's no CLI build in the repo. Before claiming "done on the UI side" — explicitly run it in play mode; there are no automated tests.
 
-## Документация по фичам
+## Feature Documentation
 
-- `Docs/ModifierSystem.md` — общая система модификаторов (баффы/дебаффы/DoT на любой сущности): модель `Modifier` и подтипы, `ModifiersSystem`, пути применения (прямой add vs `TryApplyModifierComponent`), потребители (`GetModifier<T>`), линковка с эффектами, плюс краткая сводка по бонусам. Читать вместо повторного обхода кода.
-- `Docs/GrenadeFeature.md` — система гранат (лут → бросок с зарядкой и прицеливанием → дуговой полёт → радиальный взрыв). Читать вместо повторного обхода кода.
-- `Docs/BonusFeature.md` — подбираемые бонусы (speed up, shield) поверх общей системы модификаторов: `BonusConfig`/`BonusConfigHolder` SO, `LootType.Bonus`, `BonusSystem`, бары speed/shield в `PlayerStats` с таймером. Читать вместо повторного обхода кода.
-- `Docs/MeleeMobFeature.md` — моб ближнего боя с телеграфированной атакой (как у игрока): фазы замах→удар→кулдаун в одной анимации `attack`, `MeleeMobConfig : MobConfig` + общий `MeleeConfig`, `MeleeAttackerComponent`/`MeleeAttackerSystem`, отключение контактного урона в `CollisionSystem`. Читать вместо повторного обхода кода.
-- `Docs/RangedMobFeature.md` — моб-стрелок: телеграфированный выстрел (замах→выстрел→кулдаун в анимации `attack`), `RangedMobConfig : MobConfig` с вложенным `GunConfig` (как у игрока), `RangedAttackerComponent`/`RangedAttackerSystem`. Ключ фичи — `BulletComponent.Team` (`BulletTeam` Player/Enemy): Player-пули бьют мобов/разрушаемое, Enemy-пули — игрока (свипт-проверка дистанции, у игрока нет коллайдер-карты). Переиспользует весь пайплайн пуль игрока. Побочно чинит: не выставлявшийся `Bullet.Radius`, ранний выход `BulletOverlapSystem` без пуль, активацию `GunConfig.ShotDebuffs`, recycle-safety `RequestDamage.DamageModifiers`. Читать вместо повторного обхода кода.
-- `Docs/LootFeature.md` — система лута целиком: типы (`LootType`), источники спауна (`RequestSpawnSource`: моб/карта/доп.спаун), поток `DamageSystem`→`RequestLootSpawn`→`LootSystem` (розыгрыш drop-таблицы, выбор спрайта, пул), подбор в `CollisionSystem` по типам, и **настраиваемый таймер деспауна лута с мобов (по типам, на `MainHolder`)**. Читать вместо повторного обхода кода.
-- `Docs/AmmoSystem.md` — патроны по калибрам (enum `Caliber`): запас хранится в `AmmoInventoryComponent` (словарь `Caliber`→кол-во), оружие с одинаковым `GunConfig.Caliber` делит пул; магазин остаётся в `WeaponComponent`. Лут патронов несёт калибр в поле `AmmoCaliber` (`None` → калибр текущего оружия). Новый калибр = добавить член enum с `[InspectorName]`. `AmmoConfig`/`AmmoConfigHolder` (на `MainHolder`) задают по калибру префаб снаряда (убран из `GunConfig`, fallback `MainHolder.BulletPrefab`) и иконку лута. Читать вместо повторного обхода кода.
-- `Docs/SectorFeature.md` — система секторов пола под игроком: два режима в `LevelConfig.SectorMode` — `Recycling` (бесконечный скролл, 3 сектора переиспользуются с переносом объектов) и `Sliding` (конечный уровень, заранее расставленные секторы включаются/выключаются окном вокруг игрока). `CheckSectorSystem`, `NavMeshManager`, `FloorSector`. Читать вместо повторного обхода кода.
-- `Docs/FailSequenceFeature.md` — кинематографичная концовка при гибели игрока: фазы блок управления → красная пелена → меню+пауза по 0.5с (`FailSequenceSystem`, `FailSequenceComponent`, `InputLockComponent`, рантайм-оверлей `FailScreenOverlay`), общий `GameOverActions.StopAllMoves`, рабочая кнопка рестарта. Читать вместо повторного обхода кода.
-- `Docs/ControlsSettingsFeature.md` — перепривязка управления: сериализация биндингов в JSON (Input System `SaveBindingOverridesAsJson`) в PlayerPrefs через подменяемое хранилище (`IControlSettingsStore`/`ControlSettings`), страница настроек со списком контролов (`ControlsSettingsMenu` строит строки из `InputActionAsset` в `ScrollRect`+`VerticalLayoutGroup`, `ControlBindingRow` — имя/клавиша/геймпад, интерактивная перепривязка клавиатуры/мыши). Читать вместо повторного обхода кода.
-- `Docs/CrowdRenderingFeature.md` — конвертация обычного риггованного FBX-моба (SkinnedMeshRenderer + Animator) в GPU-инстансированный Vertex Animation Texture (VAT): офлайн-запекание анимаций в текстуру (`VatBakerWindow`, **Tools ▸ Crowds ▸ VAT Baker**), URP-шейдер `CrowdVat`, ассет `CrowdAnimationLibrary`, рантайм-отрисовка `CrowdRenderSystem` через `Graphics.DrawMeshInstanced`. Опционально и гибридно: моб использует VAT только если у его `MobConfig` задан `CrowdLibrary` (иначе классический скин); движение/коллизии/хелсбары/пул не трогаются. Читать вместо повторного обхода кода.
-- `Docs/LoadingScreenFeature.md` — занавес загрузки между меню/рестартом и готовым уровнем: рантайм-оверлей `LoadingScreen` (спиннер + `UniText` + прогресс-бар, `DontDestroyOnLoad`, анимация на unscaledDeltaTime), неблокирующий бут `EntryPoint.InitializeAsync` (UniTask, покадровые шаги), асинхронное запекание navmesh (`NavMeshManager.Configure(bake:false)` + `RebuildNavMeshAsync`), `LoadSceneAsync` из меню/окон рестарта. Читать вместо повторного обхода кода.
-- `Docs/LevelEventsFeature.md` — сценовые скрипт-события уровня: пустой объект `LevelEventTrigger` со списком записей, каждая вооружается на старте нужного `DifficultyLevel` (опц. гейт из `SmartConditionWrapper[]`) и спаунит breakable'ы (`SpawnBreakableAction`). `LevelEventSystem` (после `AdditionalLootSpawnSystem`), `LevelEventHolderComponent`/`LevelEventObserverComponent`. Зависимость старта следующего стейджа от разрушения — через `BreakablesClearedCondition` в `DifficultyStage.EndConditions` (latch `_sawAny` против гонки на старте). Читать вместо повторного обхода кода.
-- `Docs/BreakableFeature.md` — разрушаемое окружение (ящики/бочки/стены): карвит navmesh через carving-`NavMeshObstacle` (мобы обходят, без запекания), урон только от настраиваемых источников (`BreakableDamageSources`: пули/взрывы/ближний/контакт мобов; пуля блокируется и гасится), при разрушении — ступенчатые эффекты по точкам меша (`RequestEffectComponent.Delay`), разброс лута, исход Vanish/Debris + форс-репас ближних мобов. Конфиги в `BreakableConfigHolder` (на `MainHolder`), каждый несёт свой префаб; рантайм-спаун по запросу с позицией (`RequestSpawnBreakableComponent` / `world.RequestSpawnBreakable(id,pos)`), пул по id (`BreakableSpawnSystem`). `Breakable`, `BreakableConfig`, `BreakableComponent`, `BreakableSystem`. Читать вместо повторного обхода кода.
-- `Docs/KnownIssues.md` — бэклог известных, но сознательно не исправленных багов и оптимизаций по итогам аудита кода (бой, мобы/ИИ, мир/лут, UI, производительность), с файлами/строками и предлагаемыми решениями; плюс заметки по безопасной работе с EcsLite (`EcsPackedEntity` для ссылок, живущих дольше кадра). Сверяться перед правками в затронутых системах.
+- `Docs/ModifierSystem.md` — the shared modifier system (buffs/debuffs/DoT on any entity): the `Modifier` model and subtypes, `ModifiersSystem`, application paths (direct add vs `TryApplyModifierComponent`), consumers (`GetModifier<T>`), effect linking, plus a short bonus summary. Read instead of re-walking the code.
+- `Docs/GrenadeFeature.md` — grenade system (loot → hold-to-charge throw with aiming → arcing flight → radial explosion). Read instead of re-walking the code.
+- `Docs/BonusFeature.md` — pickable bonuses (speed up, shield) on top of the shared modifier system: `BonusConfig`/`BonusConfigHolder` SOs, `LootType.Bonus`, `BonusSystem`, speed/shield bars in `PlayerStats` with a timer. Read instead of re-walking the code.
+- `Docs/MeleeMobFeature.md` — melee mob with a telegraphed attack (like the player's): windup→strike→cooldown phases in a single `attack` animation, `MeleeMobConfig : MobConfig` + shared `MeleeConfig`, `MeleeAttackerComponent`/`MeleeAttackerSystem`, contact damage disabled in `CollisionSystem`. Read instead of re-walking the code.
+- `Docs/RangedMobFeature.md` — ranged mob: telegraphed shot (windup→shot→cooldown in the `attack` animation), `RangedMobConfig : MobConfig` with an embedded `GunConfig` (like the player's), `RangedAttackerComponent`/`RangedAttackerSystem`. Key: `BulletComponent.Team` (`BulletTeam` Player/Enemy): player bullets hit mobs/breakables, enemy bullets hit the player (distance sweep check; the player has no collider map). Reuses the whole player bullet pipeline. Also fixes: unset `Bullet.Radius`, early exit of `BulletOverlapSystem` with no bullets, activation of `GunConfig.ShotDebuffs`, recycle-safety of `RequestDamage.DamageModifiers`. Read instead of re-walking the code.
+- `Docs/LootFeature.md` — the loot system end to end: types (`LootType`), spawn sources (`RequestSpawnSource`: mob/map/bonus spawn), flow `DamageSystem`→`RequestLootSpawn`→`LootSystem` (drop-table roll, sprite selection, pool), pickup in `CollisionSystem` by type, and a **configurable despawn timer for mob loot (per type, on `MainHolder`)**. Ground aura under every loot item (`LootAura`: bright tinted ring + dark halo, readable on dark and light floors). Read instead of re-walking the code.
+- `Docs/AmmoSystem.md` — per-caliber ammo (enum `Caliber`): the reserve lives in `AmmoInventoryComponent` (dictionary `Caliber`→count), weapons with the same `GunConfig.Caliber` share the pool; the magazine stays in `WeaponComponent`. Ammo loot carries the caliber in the `AmmoCaliber` field (`None` → current weapon's caliber). New caliber = add an enum member with `[InspectorName]`. `AmmoConfig`/`AmmoConfigHolder` (on `MainHolder`) define the projectile prefab per caliber (removed from `GunConfig`, fallback `MainHolder.BulletPrefab`) and the loot icon. Read instead of re-walking the code.
+- `Docs/SectorFeature.md` — floor sector system under the player: two modes in `LevelConfig.SectorMode` — `Recycling` (infinite scroll, 3 sectors reused with object carry-over) and `Sliding` (finite level, pre-placed sectors toggled by a window around the player). `CheckSectorSystem`, `NavMeshManager`, `FloorSector`. Read instead of re-walking the code.
+- `Docs/FailSequenceFeature.md` — cinematic ending on player death: phases control lock → red veil → menu+pause at 0.5s (`FailSequenceSystem`, `FailSequenceComponent`, `InputLockComponent`, runtime overlay `FailScreenOverlay`), shared `GameOverActions.StopAllMoves`, working restart button. Read instead of re-walking the code.
+- `Docs/ControlsSettingsFeature.md` — control rebinding: binding serialization to JSON (Input System `SaveBindingOverridesAsJson`) in PlayerPrefs via a replaceable store (`IControlSettingsStore`/`ControlSettings`), settings page with a control list (`ControlsSettingsMenu` builds rows from the `InputActionAsset` into a `ScrollRect`+`VerticalLayoutGroup`, `ControlBindingRow` — name/key/gamepad, interactive keyboard/mouse rebinding). Read instead of re-walking the code.
+- `Docs/CrowdRenderingFeature.md` — converting a regular rigged FBX mob (SkinnedMeshRenderer + Animator) into a GPU-instanced Vertex Animation Texture (VAT): offline animation baking into a texture (`VatBakerWindow`, **Tools ▸ Crowds ▸ VAT Baker**), URP shader `CrowdVat`, `CrowdAnimationLibrary` asset, runtime rendering `CrowdRenderSystem` via `Graphics.DrawMeshInstanced`. Optional and hybrid: a mob uses VAT only if its `MobConfig` has a `CrowdLibrary` set (otherwise the classic skin); movement/collisions/healthbars/pool untouched. Read instead of re-walking the code.
+- `Docs/LoadingScreenFeature.md` — loading curtain between menu/restart and the ready level: runtime overlay `LoadingScreen` (spinner + `UniText` + progress bar, `DontDestroyOnLoad`, unscaledDeltaTime animation), non-blocking boot `EntryPoint.InitializeAsync` (UniTask, per-frame steps), async navmesh baking (`NavMeshManager.Configure(bake:false)` + `RebuildNavMeshAsync`), `LoadSceneAsync` from menu/restart windows. Read instead of re-walking the code.
+- `Docs/LevelEventsFeature.md` — level script events: an empty `LevelEventTrigger` object with a list of entries, each arming at the start of the required `DifficultyLevel` (optional gate from `SmartConditionWrapper[]`) and spawning breakables (`SpawnBreakableAction`). `LevelEventSystem` (after `AdditionalLootSpawnSystem`), `LevelEventHolderComponent`/`LevelEventObserverComponent`. Next-stage start gated on destruction — via `BreakablesClearedCondition` in `DifficultyStage.EndConditions` (latch `_sawAny` against a start race). Read instead of re-walking the code.
+- `Docs/BreakableFeature.md` — breakable environment (crates/barrels/walls): carves navmesh via carving `NavMeshObstacle` (mobs path around, no rebaking), damage only from configurable sources (`BreakableDamageSources`: bullets/explosions/melee/mob contact; a bullet is blocked and dies), on destruction — staged effects at mesh points (`RequestEffectComponent.Delay`), loot scatter, outcome Vanish/Debris + force-repath of nearby mobs. Configs in `BreakableConfigHolder` (on `MainHolder`), each carries its prefab; runtime spawn by request with position (`RequestSpawnBreakableComponent` / `world.RequestSpawnBreakable(id,pos)`), pool by id (`BreakableSpawnSystem`). `Breakable`, `BreakableConfig`, `BreakableComponent`, `BreakableSystem`. Read instead of re-walking the code.
+- `Docs/PlayerAnimation.md` — player body animation (in Russian, with diagrams): Humanoid Mixamo pipeline, which clips to download per weapon set (`WeaponAnimationSet` Rifle/Pistol on `GunConfig`), generated `Player.controller` (Tools ▸ Crowds ▸ Create Player Animator Controller: Base layer 2D strafe blend trees + Death, UpperBody masked layer Aim/Fire/Reload/Hit + Melee/Throw), `PlayerAnimator` view and read-only `PlayerAnimationSystem` (after `PlayerMovementSystem`); muzzle stays on the root. Automated import: `PlayerModelSetupPreset` + `PlayerModelPipeline` (clips sorted into `Rifle/`/`Pistol/`/`Common/` next to the model, keyword scan → slots, Humanoid import, controller fill, `Body` under the scene `Player`). Read instead of re-walking the code.
+- `Docs/GameDesignReview.md` — game-design review of the current mechanics (in Russian): weapon DPS/range table and role overlaps, mob roster and crowd-death issues, loot/ammo economy math, difficulty curve of `Level1`, feedback/UI/meta gaps, plus a prioritized 12-item improvement plan. Check before balancing configs or adding gameplay features.
+- `Docs/WeaponModels.md` — primitive-style gun models (Mini14/AR/SMG/Pistol/Shotgun/SawedOff/MachineGun after `Assets/REFs`) generated by **Tools ▸ Crowds ▸ Build Weapon Models** (`WeaponModelBuilder`, specs in code), `WeaponModel` view (grip/muzzle/left-hand target/magazines; `MobWeapon` is a subclass), `GunConfig.Model` shown by `PlayerAnimator` with the magazine hidden during reload, and `WeaponHandIK` (two-bone left-hand IK on the forend, Generic rigs; on `Gunner.prefab`). Read instead of re-walking the code.
+- `Docs/PauseMenuFeature.md` — Esc/Start pause menu (Continue / Main menu): `Pause` input action, runtime `PauseMenu` overlay, `PauseMenuSystem` (before `PauseSystem`, `SignalSource.UI`). Read instead of re-walking the code.
+- `Docs/DamageFeedbackFeature.md` — player injury feedback: red edge vignette proportional to the hit + low-HP pulse, short camera shake (`CameraShakeSystem` registered twice around `FollowSystem`), edge arc toward the hit source (`RequestDamageComponent.HasSource/SourcePosition`); `PlayerDamagedEventComponent` from `DamageSystem` → `DamageFeedbackSystem` → runtime `DamageFeedbackOverlay`; settings in `PlayerConfig.DamageFeedback`. Read instead of re-walking the code.
+- `Docs/HelmetFeature.md` — mob helmets: `Headwear` prefabs (construction hard hat, PASGT) built by **Tools ▸ Crowds ▸ Build Helmet Models** (`HelmetModelBuilder`, procedural shells), `MobConfig.Headwear` fitted to the Mixamo Head→HeadTop bones at instance creation (`MobSpawnSystem.SetupNewInstance`, also used by the pool prewarm); `ToxicHelmet` (Toxic x2 HP, stages 4–6) and the Gunner's AR 3-round burst. Read instead of re-walking the code.
+- `Docs/KeyLevelFeature.md` — 2nd campaign level "Запертая дверь" (ref `Assets/REFs/LEVEL_KEY.png`) built by **Tools ▸ Crowds ▸ Build Key Level** (`KeyLevelBuilder`): 3 platforms, wave stages (`DifficultyStage.SpawnOnlyWhileTimer` + `MobsClearedCondition`), gates (`LevelGate`: carving obstacle, OnStage/WithKey, re-close behind the player), walls/gates stop bullets (`BulletBlocker`, checked in `BulletOverlapSystem`), zone-aware ammo fallback (`NoAmmoAroundCondition` options + `AdditionalLootSpawnSystem`), oil slicks that slow via `SpeedModifier` (`OilSlick` ModifierZone + `ModifierZoneSystem`), open wall pipes as spawns, key (`LevelKeyPickup`), zones (`LevelZone` + `PlayerInZoneCondition`), `StageLoot`, objective banner (`DifficultyStage.Objective` → `MissionSystem` → `ObjectiveBanner`), `LevelRoot.PlayerStart`, `LevelConfig` spawn-distance override + mob weapon-drop whitelist, sewer hatches with toxic stench. Read instead of re-walking the code.
+- `Docs/HockeyLevelFeature.md` — 3rd campaign level "Ледовая арена" built by **Tools ▸ Crowds ▸ Build Hockey Level** (`HockeyLevelBuilder`, reuses the now-`internal` `KeyLevelBuilder` helpers): rink + boards + primitive stands with tunnel spawns; ice sliding (`TractionModifier` → `Inertia`/`InertiaComponent` in `PlayerMovementSystem`/`MoveSystem`); generic area modifiers (`ModifierZone` → `OilSlick`, `IceRink`; `ModifierZoneSystem`); quota waves (`DifficultyStage.MobQuota`, `WaveQuota`); per-level mob loot bans (`LevelConfig.IsMobLootAllowed`); `GunnerBare` config. Read instead of re-walking the code.
+- `Docs/KnownIssues.md` — backlog of known but deliberately unfixed bugs and optimizations from the code audit (combat, mobs/AI, world/loot, UI, performance), with files/lines and suggested fixes; plus notes on safe EcsLite usage (`EcsPackedEntity` for references living longer than a frame). Check before edits in affected systems.
 
 ## Git
 
-- Главная ветка — `main`, текущая — `master`.
-- `.csproj`/`.sln` в `.gitignore` — Unity их регенерирует, не коммитить.
+- Main branch is `main`, current is `master`.
+- `.csproj`/`.sln` are in `.gitignore` — Unity regenerates them; don't commit.

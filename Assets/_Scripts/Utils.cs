@@ -22,6 +22,26 @@ public static class Utils
 		return modifier;
 	}
 
+	/// <summary>Lowest Value among modifiers of type T, or <paramref name="fallback"/> when there is none.</summary>
+	public static float GetMinModifier<T>(this ModifierOwnerComponent modifiers, float fallback)
+	{
+		float result = fallback;
+		bool found = false;
+		if (modifiers.Modifiers != null)
+		{
+			for (int i = 0; i < modifiers.Modifiers.Count; i++)
+			{
+				var mod = modifiers.Modifiers[i];
+				if (mod is T && (!found || mod.Value < result))
+				{
+					result = mod.Value;
+					found = true;
+				}
+			}
+		}
+		return result;
+	}
+
 	public static bool HasModifierWithDamageType(this ModifierOwnerComponent modifiers, DamageType type)
 	{
 		if (modifiers.Modifiers != null && modifiers.Modifiers.Count > 0)
@@ -51,9 +71,9 @@ public static class Utils
 	}
 
 	/// <summary>
-	/// Достаёт эффект из пула по конфигу (или инстанцирует новый). Зеркало приватного
-	/// SpawnEffect в EffectsSystem — для систем, которым нужен прямой контроль над
-	/// временем жизни эффекта (например, сопровождающий гранату трейл).
+	/// Pops an effect from the pool by config (or instantiates a new one). A mirror of the private
+	/// SpawnEffect in EffectsSystem — for systems that need direct control over the effect's
+	/// lifetime (e.g. the grenade's escorting trail).
 	/// </summary>
 	public static SceneEffect SpawnFromPool(this EffectPoolComponent pool, FxWrapper config)
 	{

@@ -12,6 +12,7 @@ namespace ECS
 			var movementPool = world.GetPool<MoveComponent>();
 			var playerPool = world.GetPool<PlayerComponent>();
 			var modifierPool = world.GetPool<ModifierOwnerComponent>();
+			var inertiaPool = world.GetPool<InertiaComponent>();
 			ref var weapon = ref world.GetAsSingleton<WeaponComponent>();
 
 			var filter = world.Filter<PlayerComponent>().Inc<PlayerInputComponent>().Inc<MoveComponent>().Inc<ModifierOwnerComponent>().End();
@@ -20,16 +21,22 @@ namespace ECS
 				ref var input = ref inputPool.Get(entity);
 
 				Vector3 dir = new Vector3(input.Move.x, input.Move.y, input.Move.z);
+				bool hasInput = dir.sqrMagnitude > 0.01f;
+				ref var modifierOwner = ref modifierPool.Get(entity);
+				// Ice (TractionModifier): inertial movement — keeps sliding without input, turns/stops slowly.
+				float grip = Inertia.GetGrip(modifierOwner);
+				bool inertial = !float.IsPositiveInfinity(grip) || inertiaPool.Has(entity);
+				if (!hasInput && !inertial)
+					continue;
 
-				if (dir.sqrMagnitude > 0.01f)
-				{
-					ref var movement = ref movementPool.Get(entity);
-					ref var player = ref playerPool.Get(entity);
-					ref var modifierOwner = ref modifierPool.Get(entity);
-
-					var speedMod = modifierOwner.GetModifier<SpeedModifier>();
-					player.Value.transform.position += dir.normalized * movement.Speed * speedMod * Time.deltaTime;
-				}
+				ref var movement = ref movementPool.Get(entity);
+				ref var player = ref playerPool.Get(entity);
+				var speedMod = modifierOwner.GetModifier<SpeedModifier>();
+				Vector3 desired = hasInput ? dir.normalized * movement.Speed * speedMod : Vector3.zero;
+				var playerTransform = player.Value.transform;
+				playerTransform.position += inertial
+					? Inertia.Displacement(inertiaPool, entity, playerTransform.position, desired, grip, Time.deltaTime)
+					: desired * Time.deltaTime;
 			}
 		}
 	}

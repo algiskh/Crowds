@@ -13,6 +13,8 @@ namespace ECS
 			var movePool = world.GetPool<MoveComponent>();
 			var pathPool = world.GetPool<MovePath>();
 			var modifierOwnerPool = world.GetPool<ModifierOwnerComponent>();
+			var inertiaPool = world.GetPool<InertiaComponent>();
+			var playerPool = world.GetPool<PlayerComponent>();
 
 			foreach (var entity in world.Filter<MoveComponent>().Inc<ModifierOwnerComponent>().End())
 			{
@@ -21,11 +23,11 @@ namespace ECS
 
 				if (pathPool.Has(entity))
 				{
-					MoveByPath(pathPool, entity, ref moveComponent, modifierOwnerComponent);
+					MoveByPath(pathPool, inertiaPool, entity, ref moveComponent, modifierOwnerComponent);
 				}
 				else
 				{
-					MoveDirect(world, moveComponent, modifierOwnerComponent);
+					MoveDirect(inertiaPool, entity, playerPool.Has(entity), moveComponent, modifierOwnerComponent);
 				}
 			}
 		}
@@ -34,7 +36,8 @@ namespace ECS
 		/// <summary>
 		/// Move agent by path if it exists
 		/// </summary>
-		private void MoveByPath(EcsPool<MovePath> pathPool, int entity, ref MoveComponent moveComponent, ModifierOwnerComponent modifierOwnerComponent)
+		private void MoveByPath(EcsPool<MovePath> pathPool, EcsPool<InertiaComponent> inertiaPool, int entity,
+			ref MoveComponent moveComponent, ModifierOwnerComponent modifierOwnerComponent)
 		{
 			ref var movePath = ref pathPool.Get(entity);
 
@@ -52,7 +55,11 @@ namespace ECS
 			float moveSpeed = moveComponent.Speed * compositeModifier;
 			float step = moveSpeed * Time.deltaTime;
 
-			if (Vector3.Distance(currentPosition, targetWaypoint) < 0.05f)
+			// On ice (TractionModifier) the mob slides past waypoints — accept them from further away.
+			float grip = Inertia.GetGrip(modifierOwnerComponent);
+			float arriveDistance = float.IsPositiveInfinity(grip) ? 0.05f : 0.75f;
+
+			if (Vector3.Distance(currentPosition, targetWaypoint) < arriveDistance)
 			{
 				if (movePath.CurrentIndex < movePath.Waypoints.Count - 1)
 				{
@@ -80,13 +87,16 @@ namespace ECS
 				);
 			}
 
-			transform.position += dir * step;
+			transform.position += float.IsPositiveInfinity(grip) && !inertiaPool.Has(entity)
+				? dir * step
+				: Inertia.Displacement(inertiaPool, entity, currentPosition, dir * moveSpeed, grip, Time.deltaTime);
 		}
 
 		/// <summary>
 		/// Move agent directly in the direction specified in MoveComponent
 		/// </summary>
-		private void MoveDirect(EcsWorld world, MoveComponent moveComponent, ModifierOwnerComponent modifierOwner)
+		private void MoveDirect(EcsPool<InertiaComponent> inertiaPool, int entity, bool isPlayer, MoveComponent moveComponent,
+			ModifierOwnerComponent modifierOwner)
 		{
 			if (moveComponent.Transform == null)
 			{
@@ -98,7 +108,18 @@ namespace ECS
 			var move = moveComponent.Direction;
 
 			var compositeModifier = modifierOwner.GetModifier<SpeedModifier>();
-			moveComponent.Transform.position += moveComponent.Speed * compositeModifier * Time.deltaTime * move;
+			Vector3 velocity = moveComponent.Speed * compositeModifier * move;
+			// Mobs on ice keep sliding even without a path. The player's inertia is owned by PlayerMovementSystem —
+			// never touch its InertiaComponent here (resetting it every frame left the player stuck on the ice).
+			if (isPlayer)
+			{
+				moveComponent.Transform.position += velocity * Time.deltaTime;
+				return;
+			}
+			float grip = Inertia.GetGrip(modifierOwner);
+			moveComponent.Transform.position += float.IsPositiveInfinity(grip) && !inertiaPool.Has(entity)
+				? velocity * Time.deltaTime
+				: Inertia.Displacement(inertiaPool, entity, moveComponent.Transform.position, velocity, grip, Time.deltaTime);
 		}
 		#endregion
 	}

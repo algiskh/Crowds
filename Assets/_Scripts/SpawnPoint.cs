@@ -40,4 +40,12 @@ public class SpawnPoint : MonoBehaviour
 		config = configs.GetRandomByWeight();
 		return config != null;
 	}
+
+	/// <summary>Same, restricted to configs accepted by <paramref name="filter"/> (e.g. mob ids with wave quota left).</summary>
+	public bool TryGetRandomSpawnConfig(DifficultyLevel level, Func<MobSpawnConfig, bool> filter, out MobSpawnConfig config)
+	{
+		var configs = _spawnConfigs.Where(c => filter(c) && c.SpawnPresets.Any(preset => preset.DifficultyLevel == level));
+		config = configs.GetRandomByWeight();
+		return config != null;
+	}
 }

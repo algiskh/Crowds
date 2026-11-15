@@ -44,6 +44,7 @@ so each owner gets its own `Lifetime` countdown. Producers do this (`GetAllModif
 | Class | Extra fields | `Value` means | Consumed by |
 |-------|-------------|---------------|-------------|
 | `SpeedModifier` | — | movement-speed **multiplier** (1.5 = +50%, 0.8 = −20%) | `MoveSystem`, `PlayerMovementSystem` |
+| `TractionModifier` | — | **grip**, m/s²: present → inertial sliding (`Inertia`); several → the lowest wins (`GetMinModifier`) | `MoveSystem`, `PlayerMovementSystem` — see `HockeyLevelFeature.md` |
 | `ShieldModifier` | `DamageType ImmuneType` | incoming-damage **multiplier** (0.5 = −50%) | `DamageSystem` (player). `ImmuneType` currently unused |
 | `DamageModifier` | `Interval`, `DamageType Type`, `Chance`, `_iterationTimer` | damage dealt **per tick** | `ModifiersSystem` (DoT) — see §4 |
 | `HealthModifier` | `Interval`, `HealthModifierType Type` | (intended periodic heal/harm) | **none yet** — defined but no consumer |
@@ -254,3 +255,5 @@ auto-VFX). Always clone — never share a config instance across owners.
 - Expecting an `Id` to change behaviour — it doesn't; behaviour is type + `Value`.
 - No automated tests — verify modifier feel (durations, stacking, DoT cadence) in Play mode.
 ```
+
+> **Area modifiers.** `ModifierZone` (oil slicks, hockey ice) together with `ModifierZoneSystem` is a producer: while an owner stands in a zone, it gets the zone's modifiers, refreshed every frame and never stacked. See `Docs/HockeyLevelFeature.md`.

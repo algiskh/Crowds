@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa41ed0609c2630489e7af77f84f5053, type: 3}
+  m_Name: GunnerBare
+  m_EditorClassIdentifier: Assembly-CSharp::RangedMobConfig
+  _id: GunnerBare
+  _health: 50
+  _speed: 2
+  _damage: 0
+  _collisionRadius: 0
+  _hitCooldown: 0
+  _prefab: {fileID: 4635986969134950211, guid: ab94542c69d344b9a2b9c62c165ff178, type: 3}
+  _possibleLoots:
+  - LootType: 0
+    Id: 
+    Count: 10
+    Chance: 0.35
+    AmmoCaliber: 0
+  - LootType: 1
+    Id: 
+    Count: 15
+    Chance: 0.1
+    AmmoCaliber: 0
+  - LootType: 3
+    Id: Grenade
+    Count: 1
+    Chance: 0.08
+    AmmoCaliber: 0
+  _targetType: 2
+  _attackModifiers: []
+  _damageDecals: []
+  _deathEffectId: zombie_dead
+  _crowdLibrary: {fileID: 0}
+  _tint: {r: 1, g: 1, b: 1, a: 1}
+  _scale: 1
+  _headwear: {fileID: 0}
+  _deathAnimationTime: 2
+  _attackRange: 8
+  _gunConfig: {fileID: 11400000, guid: 24d6e97ecc5e57f41bee107b1c83c1d6, type: 2}
+  _windupDelay: 0.4
+  _cooldown: 1
+  _muzzleHeight: 1.2
+  _muzzleForwardOffset: 1
+  _burstCount: 3
+  _burstInterval: 0.1
+  _restartFireAnimationPerShot: 1
+  _weaponOverride: {fileID: 7752111259041326788, guid: 74503f1953a3e614dbe4bee0e1b2579b, type: 3}
+  _chaseAnimation: 1
+  _windupAnimation: 7
+  _fireAnimation: 8
+  references:
+    version: 2
+    RefIds: []

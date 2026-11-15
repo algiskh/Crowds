@@ -5,26 +5,26 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// Главное меню с несколькими страницами.
-// Стартовая страница: Campaign / Survival / Settings / Exit.
-// Campaign и Survival открывают одну и ту же страницу со скролл-списком превью уровней
-// (LevelSelectButton в Content у ScrollRect), но наполняют её из своей LevelLibrary.
-// По клику уровень и режим запоминаются в GameSession, после чего грузится геймплейная
-// сцена — EntryPoint там читает GameSession.SelectedLevel.
+// Main menu with several pages.
+// Start page: Campaign / Survival / Settings / Exit.
+// Campaign and Survival open the same page with a scroll list of level previews
+// (LevelSelectButton in the ScrollRect's Content), but fill it from their own LevelLibrary.
+// On click, the level and mode are remembered in GameSession, after which the gameplay
+// scene loads — EntryPoint there reads GameSession.SelectedLevel.
 public class MainMenuController : MonoBehaviour
 {
 	#region FIELDS
 	[Title("Scenes")]
 	[SerializeField, BoxGroup("Scenes"),
-	 Tooltip("Имя геймплейной сцены (обязательно добавить в Build Settings).")]
+		Tooltip("Gameplay scene name (must be added to Build Settings).")]
 	private string _gameplaySceneName = "SampleScene";
 
 	[Title("Libraries")]
 	[SerializeField, Required, BoxGroup("Libraries"),
-	 Tooltip("Уровни кампании.")]
+		Tooltip("Campaign levels.")]
 	private LevelLibrary _campaignLibrary;
 	[SerializeField, Required, BoxGroup("Libraries"),
-	 Tooltip("Уровни режима выживания.")]
+		Tooltip("Survival mode levels.")]
 	private LevelLibrary _survivalLibrary;
 
 	[Title("Pages")]
@@ -41,10 +41,10 @@ public class MainMenuController : MonoBehaviour
 	[Title("Level list page")]
 	[SerializeField, BoxGroup("Level list page")] private UniText _levelListTitle;
 	[SerializeField, BoxGroup("Level list page"),
-	 Tooltip("ScrollRect списка уровней (для сброса прокрутки в начало при открытии).")]
+		Tooltip("Level list ScrollRect (to reset the scroll to the top on open).")]
 	private ScrollRect _levelScroll;
 	[SerializeField, BoxGroup("Level list page"),
-	 Tooltip("Куда инстанцируются кнопки уровней. Обычно это Content у ScrollRect.")]
+		Tooltip("Where the level buttons are instantiated. Usually the ScrollRect's Content.")]
 	private Transform _buttonsContainer;
 	[SerializeField, Required, BoxGroup("Level list page")] private LevelSelectButton _buttonPrefab;
 	[SerializeField, BoxGroup("Level list page")] private Button _levelListBackButton;
@@ -85,7 +85,7 @@ public class MainMenuController : MonoBehaviour
 	{
 		if (_settingsPage == null)
 		{
-			Debug.LogWarning("[MainMenu] Settings Page не задана — кнопка Settings ничего не открывает.");
+			Debug.LogWarning("[MainMenu] Settings Page not assigned — the Settings button opens nothing.");
 			return;
 		}
 
@@ -104,7 +104,7 @@ public class MainMenuController : MonoBehaviour
 		BuildLevelList(library);
 		ShowPage(_levelListPage);
 
-		// Прокрутить список в начало при каждом открытии.
+		// Scroll the list to the top on every open.
 		if (_levelScroll != null)
 			_levelScroll.verticalNormalizedPosition = 1f;
 	}
@@ -126,12 +126,14 @@ public class MainMenuController : MonoBehaviour
 
 		if (library == null || container == null || _buttonPrefab == null)
 		{
-			Debug.LogWarning("[MainMenu] Не заданы LevelLibrary / Buttons Container / Button Prefab — " +
-				"список уровней не построен.");
+			Debug.LogWarning("[MainMenu] LevelLibrary / Buttons Container / Button Prefab not assigned — " +
+				"level list not built.");
 			return;
 		}
 
-		// Очистить ранее созданные кнопки (список перестраивается под выбранный режим).
+		EnsureListLayout(container);
+
+		// Clear previously created buttons (the list is rebuilt for the selected mode).
 		for (int i = container.childCount - 1; i >= 0; i--)
 			Destroy(container.GetChild(i).gameObject);
 
@@ -145,18 +147,46 @@ public class MainMenuController : MonoBehaviour
 		}
 	}
 
+	/// <summary>
+	/// The list container needs a layout, otherwise every button is instantiated at the same spot and they overlap —
+	/// only one level is visible. If the scene's Content has no LayoutGroup, a vertical one (+ ContentSizeFitter so
+	/// the ScrollRect can scroll) is added at runtime; a layout set up in the scene is left as is.
+	/// </summary>
+	private static void EnsureListLayout(Transform container)
+	{
+		if (container.GetComponent<LayoutGroup>() != null)
+			return;
+
+		var layout = container.gameObject.AddComponent<VerticalLayoutGroup>();
+		layout.childAlignment = TextAnchor.UpperCenter;
+		layout.spacing = 24f;
+		layout.padding = new RectOffset(0, 0, 16, 16);
+		// Buttons keep their prefab size (500×200); the group only stacks them.
+		layout.childControlWidth = false;
+		layout.childControlHeight = false;
+		layout.childForceExpandWidth = false;
+		layout.childForceExpandHeight = false;
+
+		if (container.GetComponent<ContentSizeFitter>() == null)
+		{
+			var fitter = container.gameObject.AddComponent<ContentSizeFitter>();
+			fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+			fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+		}
+	}
+
 	private void Play(LevelDefinition level)
 	{
 		if (level == null)
 		{
-			Debug.LogError("[MainMenu] Уровень не выбран / не задан в LevelLibrary.");
+			Debug.LogError("[MainMenu] Level not selected / not assigned in LevelLibrary.");
 			return;
 		}
 
 		GameSession.Select(_currentMode, level);
 		Time.timeScale = 1f;
-		// Показываем занавес и грузим сцену асинхронно: занавес успевает отрисоваться поверх меню
-		// и накрывает переход, а EntryPoint снимет его, когда уровень готов и отрисован.
+		// Show the curtain and load the scene asynchronously: the curtain manages to render over the menu
+		// and covers the transition, and EntryPoint lifts it once the level is ready and rendered.
 		LoadingScreen.Show();
 		SceneManager.LoadSceneAsync(_gameplaySceneName);
 	}

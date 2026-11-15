@@ -10,7 +10,7 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// Singleton component for holding main configuration data
 /// </summary>
-/// 
+///
 public struct CurrentLevelConfigComponent
 {
 public LevelConfig Value;
@@ -56,7 +56,11 @@ public struct MobPoolComponent
 
 public struct BulletPoolComponent
 {
+	// Instances without a SourcePrefab (legacy MainHolder.BulletPrefab path).
 	public Stack<Bullet> Value;
+	// Per projectile prefab (AmmoConfig.ProjectilePrefab): a bullet returned by one caliber isn't reused by another.
+	// Lives here (not in BulletSystem) so PoolPrewarmer can fill it at load.
+	public Dictionary<Bullet, Stack<Bullet>> ByPrefab;
 	public Transform Parent;
 }
 
@@ -127,9 +131,9 @@ public struct PathRecalculation
 }
 
 /// <summary>
-/// Tag-signal: требует внеочередного пересчёта пути (в обход Interval).
-/// Выставляется извне (смена препятствий, динамические блокеры и т.п.),
-/// снимается в MobPathfindingSystem после обработки.
+/// Tag-signal: requests an out-of-turn path recalculation (bypassing Interval).
+/// Set externally (obstacle changes, dynamic blockers, etc.),
+/// cleared in MobPathfindingSystem after processing.
 /// </summary>
 public struct PathRecalculationRequest { }
 
@@ -152,6 +156,24 @@ public struct RequestDamageComponent
 	public IEnumerable<Modifier> DamageModifiers;
 	// DoT tick (ModifiersSystem): bypasses the player's post-hit invulnerability and doesn't start it.
 	public bool IsPeriodic;
+	// Optional world point the hit came from (mob, shooter, explosion center). Only read for the player:
+	// DamageFeedbackSystem shows a directional hit marker toward it. HasSource=false → no marker.
+	public bool HasSource;
+	public Vector3 SourcePosition;
+}
+
+/// <summary>
+/// Event (one entity per hit, raised by DamageSystem): the player actually took damage this frame
+/// (after invulnerability and shield). Consumed and deleted by DamageFeedbackSystem (vignette, shake, hit marker).
+/// </summary>
+public struct PlayerDamagedEventComponent
+{
+	public float Damage;
+	public float CurrentHealth;
+	public float MaxHealth;
+	public bool IsPeriodic;
+	public bool HasSource;
+	public Vector3 SourcePosition;
 }
 
 public struct ColliderComponent
@@ -205,6 +227,8 @@ public struct PlayerInputComponent
 	public bool IsFiring;
 	public bool IsMeleeing;
 	public float MeleeCooldown;
+	// Interact action (hold) completed this frame; read by CollisionSystem next frame (weapon pickup).
+	public bool InteractPressed;
 }
 
 public struct WeaponComponent
@@ -215,12 +239,14 @@ public struct WeaponComponent
 	public bool IsFiring;
 	public int CurrentMagazineCount;
 	public float ReloadTime;
+	// Seconds the trigger has been held (GunConfig.SpinUpTime gate); reset on release.
+	public float SpinUp;
 	// +1 per player shot (WeaponFireSystem); PlayerAnimationSystem fires the "Fire" trigger on change.
 	public int ShotCounter;
 }
 
-// Запас патронов игрока по калибрам. Оружие с одинаковым калибром делит один пул.
-// Магазин (CurrentMagazineCount) хранится в WeaponComponent, резерв — здесь.
+// Player's ammo reserve per caliber. Weapons with the same caliber share one pool.
+// The magazine (CurrentMagazineCount) lives in WeaponComponent; the reserve lives here.
 public struct AmmoInventoryComponent
 {
 	public Dictionary<Caliber, int> Ammo;
@@ -259,9 +285,9 @@ public struct RequestFireComponent
 }
 
 /// <summary>
-/// Кто выпустил пулю — определяет, кого она может ранить. Player-пули бьют мобов/разрушаемое
-/// окружение (как раньше), Enemy-пули (мобы-стрелки, RangedAttackerSystem) — игрока.
-/// default = Player: старый путь стрельбы игрока остаётся корректным без явной установки.
+/// Who fired the bullet — determines what it can hit. Player bullets hit mobs/breakable
+/// environment (as before), Enemy bullets (ranged mobs, RangedAttackerSystem) hit the player.
+/// default = Player: the existing player firing path stays correct without explicit assignment.
 /// </summary>
 public enum BulletTeam : byte
 {
@@ -278,15 +304,17 @@ public struct BulletComponent
 	public BulletCheckType CheckType;
 	public BulletTeam Team;
 	public Modifier[] Modifiers;
+	// How many mobs this bullet may hit (GunConfig.PierceCount, else the prefab's MaxPierceCount).
+	public int MaxPierce;
 	public FixedList32Bytes<int> PiercedTargets;
 }
 
 public struct BulletOverlapComponent
 {
 	/// <summary>
-	/// Mob entity-ids, попавшие в overlap текущего кадра.
-	/// Заполняется в BulletOverlapSystem, читается в CollisionSystem.
-	/// Никаких managed-аллокаций: FixedList — inline value-type.
+	/// Mob entity-ids caught by this frame's overlap.
+	/// Filled in BulletOverlapSystem, read in CollisionSystem.
+	/// No managed allocations: FixedList is an inline value-type.
 	/// </summary>
 	public Unity.Collections.FixedList128Bytes<int> MobHits;
 
@@ -297,8 +325,8 @@ public struct BulletOverlapComponent
 	public Unity.Collections.FixedList128Bytes<int> BreakableHits;
 
 	/// <summary>
-	/// True если Enemy-пуля дотянулась до игрока в этом кадре (единственная цель — проверяется
-	/// по дистанции, а не по коллайдер-карте). Заполняется в BulletOverlapSystem, читается в
+	/// True if an Enemy bullet reached the player this frame (the only target — checked
+	/// by distance, not via a collider map). Filled in BulletOverlapSystem, read in
 	/// CollisionSystem (BulletVsPlayer).
 	/// </summary>
 	public bool PlayerHit;
@@ -324,6 +352,8 @@ public struct LootComponent
 	public int Count;
 	// LootType.Ammo only: ammo caliber. None = "ammo for the current weapon".
 	public Caliber AmmoCaliber;
+	// LootType.Weapon only: the "hold Interact to pick up" hint was already logged for this loot.
+	public bool PickupHintShown;
 }
 
 // For loot placed at map at the start of the level
@@ -385,11 +415,11 @@ public struct EndGameComponent
 
 #region FailSequence
 /// <summary>
-/// Фазы кинематографичной концовки при гибели игрока. Каждая длится FailSequenceSystem.PhaseDuration (0.5с):
-///  BlockControls — заблокировано только управление игроком (мир продолжает жить);
-///  RedScreen — поверх экрана плавно проявляется красная пелена;
-///  Menu — игра ставится на паузу и показывается окно поражения.
-/// Done — последовательность завершена.
+/// Phases of the cinematic fail sequence on player death. Each lasts FailSequenceSystem.PhaseDuration (0.5s):
+///  BlockControls — only player controls are locked (the world keeps running);
+///  RedScreen — a red veil gradually fades in over the screen;
+///  Menu — the game is paused and the defeat window is shown.
+/// Done — the sequence is complete.
 /// </summary>
 public enum FailSequencePhase : byte
 {
@@ -400,23 +430,23 @@ public enum FailSequencePhase : byte
 	Done
 }
 
-/// <summary>Singleton: состояние кинематографичной концовки (см. FailSequenceSystem).</summary>
+/// <summary>Singleton: state of the cinematic fail sequence (see FailSequenceSystem).</summary>
 public struct FailSequenceComponent
 {
 	public FailSequencePhase Phase;
 	public float Timer;
 }
 
-/// <summary>Singleton-обёртка над рантайм-оверлеем красной пелены (создаётся лениво).</summary>
+/// <summary>Singleton wrapper over the runtime red-veil overlay (created lazily).</summary>
 public struct FailScreenOverlayComponent
 {
 	public FailScreenOverlay Value;
 }
 
 /// <summary>
-/// Singleton: блокировка пользовательского ввода игрока отдельно от общей паузы. Пока Locked=true,
-/// InputSystem/GrenadeThrowSystem игнорируют ввод, при этом остальной мир может продолжать жить
-/// (используется в фазах BlockControls/RedScreen концовки).
+/// Singleton: locks the player's user input separately from the global pause. While Locked=true,
+/// InputSystem/GrenadeThrowSystem ignore input, while the rest of the world may keep running
+/// (used in the BlockControls/RedScreen phases of the fail sequence).
 /// </summary>
 public struct InputLockComponent
 {
@@ -469,6 +499,20 @@ public struct CameraComponent
 	public Camera Value;
 }
 
+/// <summary>
+/// Singleton: additive camera shake. DamageFeedbackSystem (or anyone) calls <c>world.ShakeCamera(...)</c>.
+/// CameraShakeSystem removes the last offset before FollowSystem (so following sees the clean position)
+/// and applies a fresh one at the end of the frame (so rendering sees the shaken one).
+/// </summary>
+public struct CameraShakeComponent
+{
+	public Transform Camera;
+	public Vector3 AppliedOffset;
+	public float Timer;
+	public float Duration;
+	public float Amplitude;
+}
+
 public struct DisposableComponent
 {
 	public bool IsDisposed;
@@ -499,7 +543,7 @@ public struct RequestDecalComponent
 	public string Id;
 	public Vector3 Direction;
 	public Vector3 Position;
-	// Ориентировать декаль строго по Direction (напр. по траектории пули), без случайного разворота.
+	// Orient the decal strictly along Direction (e.g. along the bullet trajectory), without random rotation.
 	public bool AlignToDirection;
 }
 #endregion
@@ -629,6 +673,7 @@ public struct InputActionsComponent
 	public InputAction MeleeAction;
 	public InputAction ReloadAction;
 	public InputAction ThrowAction;
+	public InputAction InteractAction;
 	// Esc / gamepad Start (PauseMenuSystem). Optional: null if the asset has no "Pause" action.
 	public InputAction PauseAction;
 }
@@ -649,7 +694,7 @@ public struct RequestSpawnBulletComponent
 	public Vector3 Position;
 	public Vector3 Direction;
 	public GunConfig GunConfig;
-	// Кто стреляет: Player (WeaponFireSystem) или Enemy (RangedAttackerSystem). default = Player.
+	// Who is firing: Player (WeaponFireSystem) or Enemy (RangedAttackerSystem). default = Player.
 	public BulletTeam Team;
 }
 
@@ -705,23 +750,58 @@ public struct LootSpawnedEventComponent
 
 // --- Level events (scene-scripted stage-start actions) ---
 
-// Singleton: разложенные в сцене LevelEventTrigger'ы (найдены EntryPoint через FindObjectsByType).
-// LevelEventSystem.Init строит из них observer-сущности. См. Docs/LevelEventsFeature.md.
+// Singleton: scene-placed LevelEventTriggers (found by EntryPoint via FindObjectsByType).
+// LevelEventSystem.Init builds observer entities from them. See Docs/LevelEventsFeature.md.
 public struct LevelEventHolderComponent
 {
 	public List<LevelEventTrigger> Triggers;
 }
 
-// Рантайм-состояние одной записи (LevelEventEntry): вооружается на старте нужного стейджа сложности,
-// затем при выполнении опциональных smart-условий выполняет спаун breakable'ов.
+/// <summary>
+/// Singleton: scene-placed mission objects of the level (gates, keys, zones, stage loot — found by EntryPoint) and
+/// the mission state. Driven by MissionSystem; read by GateOpenedCondition / PlayerInZoneCondition.
+/// See Docs/KeyLevelFeature.md.
+/// </summary>
+public struct MissionComponent
+{
+	public List<LevelGate> Gates;
+	public List<LevelKeyPickup> Keys;
+	public List<LevelZone> Zones;
+	public List<StageLoot> StageLoots;
+	public HashSet<string> CollectedKeys;
+	public HashSet<string> OpenedGates;
+}
+
+// Runtime state of one entry (LevelEventEntry): armed at the start of the required difficulty stage,
+// then spawns breakables once the optional smart-conditions are met.
 public struct LevelEventObserverComponent
 {
 	public LevelEventEntry Entry;
-	public Transform Origin;              // трансформ триггера (фолбэк-точка спауна)
-	public DifficultyLevel Level;         // стейдж, на старте которого запись вооружается
-	public ISmartCondition[] Conditions;  // инстансы-копии условий (вооружены); null = не вооружено / без гейта
+	public Transform Origin;              // trigger transform (fallback spawn point)
+	public DifficultyLevel Level;         // stage whose start arms the entry
+	public ISmartCondition[] Conditions;  // condition copies (armed); null = not armed / no gate
 	public bool Armed;
 	public bool Fired;
+}
+
+// Inertial movement state (Inertia.Step): added lazily to the player / mobs the first time they step on slippery
+// ground (TractionModifier). See Docs/HockeyLevelFeature.md.
+public struct InertiaComponent
+{
+	public Vector3 Velocity;      // real planar velocity, m/s
+	public Vector3 PrevPosition;  // position before last frame's step (to detect a blocked step)
+	public Vector3 LastStep;      // displacement applied last frame
+	public float LastDt;
+	public bool Sliding;          // last frame was on slippery ground
+}
+
+// Wave quota of the current stage (DifficultyStage.MobQuota): mobs left to spawn per mob id. Rebuilt by
+// WaveQuota.Sync when the stage changes; SpawnPointSystem spends it, MobsClearedCondition / MissionSystem read it.
+public struct WaveQuotaComponent
+{
+	public DifficultyStage Stage;
+	public Dictionary<string, int> Remaining;
+	public int RemainingTotal;
 }
 
 public struct ModifierOwnerComponent
@@ -745,24 +825,24 @@ public struct ApplyModifierResponseComponent
 }
 
 #region Bonus
-// Запрос на применение бонуса игроку (создаётся при подборе Bonus-лута).
+// Request to apply a bonus to the player (raised when Bonus loot is picked up).
 public struct RequestApplyBonusComponent
 {
 	public string ConfigId;
 }
 
-// Один активный бонус игрока: его модификатор + изначальная длительность (для нормализации бара/таймера).
+// One active player bonus: its modifier + original duration (for bar/timer normalization).
 public struct ActiveBonus
 {
 	public BonusType Type;
 	public Modifier Modifier;
 	public float TotalDuration;
-	// Сопровождающий игрока VFX (запарентен к игроку). BonusSystem владеет его жизненным циклом:
-	// переиспользует при рефреше того же типа (без дублей) и возвращает в пул при истечении.
+	// Player-following VFX (parented to the player). BonusSystem owns its lifecycle:
+	// reused on a same-type refresh (no duplicates) and returned to the pool on expiry.
 	public SceneEffect Effect;
 }
 
-// Singleton: список активных бонусов игрока. BonusSystem прунит протухшие и гонит UI.
+// Singleton: list of the player's active bonuses. BonusSystem prunes expired ones and drives the UI.
 public struct ActiveBonusesComponent
 {
 	public List<ActiveBonus> Value;
@@ -780,22 +860,22 @@ public struct RequestMeleeComponent
 
 #region Grenade
 /// <summary>
-/// Singleton: текущее число гранат у игрока + состояние зарядки броска.
-/// Зарядка копится, пока зажат Throw; на отпускании рассчитывается дальность.
+/// Singleton: current grenade count of the player + throw charging state.
+/// Charge accumulates while Throw is held; range is computed on release.
 /// </summary>
 public struct GrenadeStateComponent
 {
 	public int Count;
 	public bool IsCharging;
 	public float ChargeTime;
-	// Конфиг текущего типа гранаты (задаётся при подборе лута; см. GrenadeConfig).
+	// Config of the current grenade type (set on loot pickup; see GrenadeConfig).
 	public GrenadeConfig CurrentConfig;
 	// +1 per thrown grenade (GrenadeThrowSystem); PlayerAnimationSystem fires the "Throw" trigger on change.
 	public int ThrowCounter;
 }
 
 /// <summary>
-/// Singleton-ссылка на UI-вью счётчика гранат.
+/// Singleton reference to the grenade counter UI view.
 /// </summary>
 public struct GrenadeCounterUIComponent
 {
@@ -803,7 +883,7 @@ public struct GrenadeCounterUIComponent
 }
 
 /// <summary>
-/// Singleton-ссылка на визуализатор точки приземления броска.
+/// Singleton reference to the throw landing-point visualizer.
 /// </summary>
 public struct GrenadeAimVisualizerComponent
 {
@@ -811,7 +891,7 @@ public struct GrenadeAimVisualizerComponent
 }
 
 /// <summary>
-/// Singleton: пул брошенных гранат-снарядов.
+/// Singleton: pool of thrown grenade projectiles.
 /// </summary>
 public struct GrenadePoolComponent
 {
@@ -820,9 +900,9 @@ public struct GrenadePoolComponent
 }
 
 /// <summary>
-/// Летящая граната. Движется по параболической дуге от Start к Target;
-/// при приземлении (Elapsed >= FlightTime) порождает RequestExplosionComponent
-/// и возвращается в пул. Параметры взрыва несёт сама — независимо от конфига.
+/// Flying grenade. Moves along a parabolic arc from Start to Target;
+/// on landing (Elapsed >= FlightTime) raises a RequestExplosionComponent
+/// and returns to the pool. Carries its own explosion params — independent of the config.
 /// </summary>
 public struct GrenadeProjectileComponent
 {
@@ -832,30 +912,30 @@ public struct GrenadeProjectileComponent
 	public float Elapsed;
 	public float FlightTime;
 	public float ArcHeight;
-	// параметры взрыва, передаваемые при приземлении
+	// explosion params passed on landing
 	public float Radius;
 	public float MaxDamage;
 	public float MinDamage;
 	public float FuseDelay;
 	public string EffectId;
-	// Доля урона по мобам / по игроку (0..1). Взрыв задевает всех в радиусе, scale масштабирует урон.
+	// Share of damage to mobs / to the player (0..1). The explosion hits everyone in radius; scale scales the damage.
 	public float MobDamageScale;
 	public float PlayerDamageScale;
-	// сопровождающий эффект-трейл (ребёнок гранаты); при взрыве возвращается в пул эффектов.
+	// escorting trail effect (child of the grenade); returned to the effect pool on explosion.
 	public SceneEffect TrailEffect;
 }
 
 /// <summary>
-/// Tag-request: обновить отображение счётчика гранат в UISystem.
+/// Tag-request: refresh the grenade counter display in UISystem.
 /// </summary>
 public struct UpdateGrenadeViewRequestComponent
 {
 }
 
 /// <summary>
-/// Request: устроить взрыв по требованию в заданной точке.
-/// Delay — фитиль (сек): пока > 0, взрыв откладывается. Урон линейно
-/// падает от MaxDamage (центр) до MinDamage (край радиуса).
+/// Request: trigger an on-demand explosion at a given point.
+/// Delay — fuse (sec): while > 0 the explosion is deferred. Damage falls linearly
+/// from MaxDamage (center) to MinDamage (radius edge).
 /// </summary>
 public struct RequestExplosionComponent
 {
@@ -865,15 +945,15 @@ public struct RequestExplosionComponent
 	public float MinDamage;
 	public float Delay;
 	public string EffectId;
-	// Доля урона по мобам / по игроку (0..1). Взрыв бьёт всех в радиусе; 0 = эту цель не задевает.
+	// Share of damage to mobs / to the player (0..1). The explosion hits everyone in radius; 0 = doesn't touch that target.
 	public float MobDamageScale;
 	public float PlayerDamageScale;
 }
 
 /// <summary>
-/// Состояние моба-гренадёра. Chase — подходит к игроку; Throw — стоит и кидает гранату
-/// (анимация "throw"); Cooldown — стоит на перезарядке (анимация "throw_cooldown");
-/// Flee — отходит на свободное место, когда игрок ближе минимальной дистанции.
+/// Grenadier mob state. Chase — approaches the player; Throw — stands and throws a grenade
+/// (animation "throw"); Cooldown — stands reloading (animation "throw_cooldown");
+/// Flee — retreats to a free spot when the player is closer than the minimum distance.
 /// </summary>
 public enum GrenadierState : byte
 {
@@ -884,16 +964,16 @@ public enum GrenadierState : byte
 }
 
 /// <summary>
-/// Per-entity: моб, кидающий гранаты. Висит поверх обычного MobComponent.
-/// Дистанции/кулдаун/тип гранаты берутся из GrenadierMobConfig.
+/// Per-entity: a grenade-throwing mob. Sits on top of the regular MobComponent.
+/// Distances/cooldown/grenade type come from GrenadierMobConfig.
 /// </summary>
 public struct GrenadierComponent
 {
 	public GrenadierMobConfig Config;
 	public GrenadierState State;
-	// В Throw — отсчёт замаха до вылета гранаты; в Cooldown — отсчёт перезарядки.
+	// In Throw — windup countdown until the grenade leaves; in Cooldown — reload countdown.
 	public float Timer;
-	// Точка отхода (на NavMesh), выбранная в состоянии Flee.
+	// Retreat point (on the NavMesh) picked in the Flee state.
 	public Vector3 FleeTarget;
 	public bool HasFleeTarget;
 }
@@ -901,9 +981,9 @@ public struct GrenadierComponent
 
 #region MeleeAttacker
 /// <summary>
-/// Состояние моба ближнего боя. Chase — подходит к игроку (обычный патфайндинг);
-/// Windup — стоит и замахивается (анимация "attack", фаза до удара); Cooldown — стоит
-/// в фазе восстановления той же анимации, пока не истечёт кулдаун, затем снова Chase.
+/// Melee mob state. Chase — approaches the player (regular pathfinding);
+/// Windup — stands and winds up (animation "attack", pre-strike phase); Cooldown — stands
+/// in the recovery phase of the same animation until the cooldown expires, then Chase again.
 /// </summary>
 public enum MeleeAttackerState : byte
 {
@@ -913,17 +993,17 @@ public enum MeleeAttackerState : byte
 }
 
 /// <summary>
-/// Per-entity: моб, бьющий телеграфированной ближней атакой (как игрок), а не контактным уроном.
-/// Висит поверх обычного MobComponent. Дистанция атаки берётся из MeleeMobConfig, а параметры
-/// самого удара (урон/радиус/цель/замах/кулдаун) — из вложенного MeleeConfig. Все три фазы
-/// (замах → удар → восстановление) проигрываются одной анимацией "attack". Контактный урон для
-/// таких мобов отключён в CollisionSystem.
+/// Per-entity: a mob striking with a telegraphed melee attack (like the player) instead of contact damage.
+/// Sits on top of the regular MobComponent. Attack distance comes from MeleeMobConfig, while the
+/// strike params (damage/radius/targets/windup/cooldown) come from the embedded MeleeConfig. All three
+/// phases (windup → strike → recovery) play in a single "attack" animation. Contact damage is
+/// disabled for such mobs in CollisionSystem.
 /// </summary>
 public struct MeleeAttackerComponent
 {
 	public MeleeMobConfig Config;
 	public MeleeAttackerState State;
-	// В Windup — отсчёт замаха до удара; в Cooldown — отсчёт восстановления.
+	// In Windup — windup countdown until the strike; in Cooldown — recovery countdown.
 	public float Timer;
 }
 #endregion
@@ -938,16 +1018,16 @@ public enum RangedAttackerState : byte
 }
 
 /// <summary>
-/// Per-entity: моб-стрелок. Поверх обычного MobComponent — телеграфированная дальняя атака (как у
-/// игрока: замах → выстрел → восстановление, одна анимация "attack"). Дистанция боя и параметры
-/// выстрела берутся из RangedMobConfig (вложенный GunConfig — тот же тип, что у оружия игрока).
-/// Добавляется MobSpawnSystem только когда MobConfig is RangedMobConfig. Поведение — RangedAttackerSystem.
+/// Per-entity: a ranged mob. On top of the regular MobComponent — a telegraphed ranged attack (like the
+/// player's: windup → shot → recovery, a single "attack" animation). Combat distance and shot
+/// params come from RangedMobConfig (the embedded GunConfig — the same type as the player's weapon).
+/// Added by MobSpawnSystem only when MobConfig is RangedMobConfig. Behavior — RangedAttackerSystem.
 /// </summary>
 public struct RangedAttackerComponent
 {
 	public RangedMobConfig Config;
 	public RangedAttackerState State;
-	// В Windup — отсчёт замаха до выстрела; в Cooldown — отсчёт восстановления.
+	// In Windup — windup countdown until the shot; in Burst — time to the next shot; in Cooldown — recovery countdown.
 	public float Timer;
 	// Shots still to fire in the current burst (Burst state).
 	public int ShotsLeft;
@@ -968,23 +1048,24 @@ public struct DyingMobComponent
 
 #region Formation
 /// <summary>
-/// Per-entity: моб-ведомый, идущий в строю за ведущим. Висит поверх обычного MobComponent.
-/// Ведущий — обычный моб, который патфайндит к игроку; ведомый каждый кадр считает мировую
-/// позицию своего «слота» от позиции/поворота ведущего и рулит к ней (FormationSystem,
-/// без navmesh — прямое движение через MoveComponent.Direction). Ссылка на ведущего —
-/// EcsPackedEntity, а не Transform: при гибели ведущего поколение сущности меняется и Unpack
-/// вернёт false, даже если GameObject ведущего успели переиспользовать из пула.
+/// Per-entity: a follower mob marching in formation behind the leader. Sits on top of the regular MobComponent.
+/// The leader is a regular mob that pathfinds to the player; the follower computes the world
+/// position of its "slot" from the leader's position/rotation each frame and steers toward it (FormationSystem,
+/// no navmesh — direct movement via MoveComponent.Direction). The leader reference is an
+/// EcsPackedEntity, not a Transform: when the leader dies the entity generation changes and Unpack
+/// returns false, even if the leader's GameObject was already reused from the pool.
 /// </summary>
 public struct FormationFollowerComponent
 {
 	public Leopotam.EcsLite.EcsPackedEntity Leader;
-	public Vector3 SlotOffset; // локальный офсет от ведущего (x — вправо, z — вперёд), посчитан при спауне
-	public bool InFormation;   // гистерезис из §7c: попал в слот — держаться легче
+	public Vector3 SlotOffset; // local offset from the leader (x — right, z — forward), computed at spawn
+	public bool InFormation;   // hysteresis from §7c: easier to stay in formation than to enter it
 }
 
 /// <summary>
-/// Точка спауна группы (отряда) мобов в строю. По кулдауну GroupSpawnSystem разом спаунит
-/// ведущего + ведомых по GroupSpawnConfig и связывает их в строй. Таймер — отсчёт до спауна.
+/// Group spawn point (squad of mobs in formation). On the point's cooldown GroupSpawnSystem spawns
+/// the leader (slot 0) + followers (slots 1..N) at once per GroupSpawnConfig and links them into a
+/// formation. Timer — countdown to spawn.
 /// </summary>
 public struct GroupSpawnPointComponent
 {
@@ -995,23 +1076,22 @@ public struct GroupSpawnPointComponent
 
 #region Breakable
 /// <summary>
-/// Per-entity: разрушаемый объект окружения. Висит на сущности вместе с HealthComponent (HP) и
-/// ColliderComponent (CollisionType.Breakable, для попаданий). Урон принимают только источники,
-/// разрешённые в <see cref="BreakableConfig"/>; при HP<=0 BreakableSystem проигрывает эффекты,
-/// сыплет лут и применяет исход (Vanish/Debris), после чего удаляет сущность.
-/// ContactCooldown — троттлинг урона от контакта мобов (источник MobContact).
+/// Per-entity: a breakable environment object. Sits on the entity together with HealthComponent (HP) and
+/// ColliderComponent (CollisionType.Breakable, for hits). Only sources allowed in <see cref="BreakableConfig"/> deal damage;
+/// at HP<=0 BreakableSystem plays effects, scatters loot and applies the outcome (Vanish/Debris), then deletes the entity.
+/// ContactCooldown — throttling of mob contact damage (MobContact source).
 /// </summary>
 public struct BreakableComponent
 {
 	public Breakable Value;
 	public BreakableConfig Config;
 	public float ContactCooldown;
-	// true — объект создан в рантайме из пула (RequestSpawnBreakable) и при Vanish возвращается в пул;
-	// false — расставлен в сцене (scene-placed), при Vanish просто деактивируется.
+	// true — the object was created at runtime from the pool (RequestSpawnBreakable) and returns to the pool on Vanish;
+	// false — placed in the scene (scene-placed), on Vanish simply deactivates.
 	public bool Pooled;
 }
 
-// Singleton: пул разрушаемых объектов по id конфига (как MobPool/EffectPool).
+// Singleton: pool of breakable objects by config id (like MobPool/EffectPool).
 public struct BreakablePoolComponent
 {
 	public Dictionary<string, Stack<Breakable>> Pools;
@@ -1019,9 +1099,9 @@ public struct BreakablePoolComponent
 }
 
 /// <summary>
-/// Request: заспаунить разрушаемый объект окружения в заданной точке. Конфиг задаётся либо напрямую
-/// (Config), либо по id (Id, резолвится через MainHolder.BreakableConfigHolder). Rotation — поворот
-/// вокруг Y (град). Обрабатывается BreakableSpawnSystem.
+/// Request: spawn a breakable environment object at a given point. The config is given either directly
+/// (Config) or by id (Id, resolved via MainHolder.BreakableConfigHolder). Rotation — Y rotation
+/// (degrees). Handled by BreakableSpawnSystem.
 /// </summary>
 public struct RequestSpawnBreakableComponent
 {

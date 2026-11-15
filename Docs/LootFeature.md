@@ -109,7 +109,7 @@ The billboard itself is the `LookerAtCamera` component (`FlatBillboard = true`) 
 | Type | Effect |
 |---|---|
 | `Ammo` | `AmmoInventory.Add(caliber, Count)` (caliber from loot; `None` → current weapon) → `UpdateAmmoViewRequestComponent` |
-| `Weapon` | swap `WeaponComponent.GunConfig` to `GunConfigHolder.GetConfig(Id)`, refill magazine → `UpdateWeaponViewRequestComponent` |
+| `Weapon` | swap `WeaponComponent.GunConfig` to `GunConfigHolder.GetConfig(Id)`, refill magazine → `UpdateWeaponViewRequestComponent`. By default on contact, like any loot (losing a good gun by accident is intended). Optional mode `PlayerConfig.WeaponPickupRequiresInteract` (off; reserved for a future perk): **only on Interact** (the `Interact` action, Hold interaction: E / gamepad north) unless it's the gun already in hands (then it's automatic — just a magazine refill). Standing on it without Interact logs a one-time hint "Hold [E] to pick up X" (`LootComponent.PickupHintShown`, `LootLogFormatter.FormatPickupHint`). One weapon per press. `InputSystem` writes `PlayerInputComponent.InteractPressed`; `CollisionSystem` runs earlier in the frame, so it reads it one frame later. |
 | `Health` | `CurrentHealth += Count` (clamped to `MaxHealth`) → `UpdateHealthViewRequestComponent` |
 | `Grenade` | set `GrenadeStateComponent.CurrentConfig` (`Default` if `Id` empty), `Count += Count` → `UpdateGrenadeViewRequestComponent` |
 | `Bonus` | `RequestApplyBonusComponent { ConfigId = Id }` (consumed by `BonusSystem`, see `Docs/BonusFeature.md`) |
@@ -187,3 +187,23 @@ clean.
 - `Docs/AmmoSystem.md` — ammo loot caliber resolution and the per-caliber reserve.
 - `Docs/BonusFeature.md` — what `LootType.Bonus` applies (speed/shield modifiers).
 - `Docs/GrenadeFeature.md` — what `LootType.Grenade` feeds into.
+
+## Ground aura (`LootAura`)
+
+Every loot item gets a flat ring on the ground under it (`LootAura.cs`, created in `Loot.Awake`). The ring is designed to read on any floor:
+- On dark floors, you see the bright ring and the soft inner glow, tinted by loot type.
+- On light floors (ice, concrete), you see the dark outer halo and the thin dark inner edge. The tint doesn't affect them because black stays black.
+
+Colours (`LootAura.ColorFor`, set by `LootSystem` on every spawn through `Loot.SetAuraColor`):
+
+| Loot type | Colour |
+|---|---|
+| Ammo | Gold |
+| Health | Green |
+| Weapon | Orange |
+| Grenade | Red |
+| Bonus | Cyan |
+
+The ring is 1.7 m wide and pulses slowly (scale ±4%, alpha 0.8–1, random phase per instance).
+
+Implementation: a tiny world-space Canvas with a UI `Image`. The UI shader is always in the build, unlit and transparent. The texture is a 128 px radial profile generated once and shared. Map loot goes through the same `LootSystem` spawn path, so it gets the aura too.

@@ -14,19 +14,19 @@ namespace ECS
 		#region FIELDS
 		[Title("Level")]
 		[SerializeField, BoxGroup("Level"),
-		 Tooltip("Уровень для прямого запуска геймплейной сцены (когда не выбран через меню/GameSession).")]
+			Tooltip("Level for launching the gameplay scene directly (when not chosen via menu/GameSession).")]
 		private LevelDefinition _fallbackLevel;
 		[SerializeField, BoxGroup("Level"),
-		 Tooltip("Запасной конфиг, если уровень не разрешён и в сцене нет LevelRoot.")]
+			Tooltip("Fallback config when the level can't be resolved and there's no LevelRoot in the scene.")]
 		private LevelConfig _levelConfig;
 
-		[Title("�������� ������")]
+		[Title("Game References")]
 		[SerializeField, Required, BoxGroup("Game References")] private MainHolder _mainHolder;
 		[SerializeField, Required, BoxGroup("Game References")] private Player _player;
 		[SerializeField, Required, BoxGroup("Game References")] private Camera _mainCamera;
 
 		[Space]
-		[Title("�������� ��������")]
+		[Title("Parents")]
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _mobParent;
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _bulletParent;
 		[SerializeField, Required, BoxGroup("Parents")] private Transform _effectParent;
@@ -35,10 +35,10 @@ namespace ECS
 		[SerializeField, BoxGroup("Parents")] private Transform _grenadeParent;
 		[SerializeField, BoxGroup("Parents")] private Transform _breakableParent;
 		[Space]
-		[Title("����� ������ �����")]
+		[Title("Mob Spawn Points")]
 		[SerializeField, Required, ListDrawerSettings, BoxGroup("Spawn Points")]
 		private Transform[] _spawnPoints;
-		[Title("����� ������ ��� ����"), SerializeField]
+		[Title("Additional Loot Points"), SerializeField]
 		private Transform[] _additionalLootPoints;
 		[Title("UI")]
 		[SerializeField, Required, BoxGroup("UI")] private PlayerStats _playerStats;
@@ -56,13 +56,13 @@ namespace ECS
 		private EcsWorld _world;
 		private EcsSystems _systems;
 
-		// Level (разрешается в LoadLevel)
+		// Level (resolved in LoadLevel)
 		private LevelRoot _levelRoot;
 		private LevelConfig _activeLevelConfig;
 
-		// NavMesh-менеджер уровня (кэшируется в SetupSpawnData для асинхронного запекания).
+		// Level NavMesh manager (cached in SetupSpawnData for async baking).
 		private NavMeshManager _navMeshManager;
-		// Пока false — уровень ещё грузится, системы не крутятся (см. Update).
+		// While false — the level is still loading, systems don't run (see Update).
 		private bool _initialized;
 
 		#endregion
@@ -77,13 +77,13 @@ namespace ECS
 			QualitySettings.vSyncCount = 0;
 			Application.targetFrameRate = 60;
 
-			// Занавес загрузки обычно уже показан из меню/окна рестарта перед сменой сцены.
-			// На случай прямого запуска геймплейной сцены (из редактора) показываем его здесь —
-			// вызов идемпотентный.
+			// The loading curtain is usually already shown from the menu/restart window before the scene change.
+			// For a direct launch of the gameplay scene (from the editor) we show it here —
+			// the call is idempotent.
 			LoadingScreen.Show();
 
-			// Тяжёлую инициализацию разносим по кадрам, чтобы занавес отрисовывался и анимировался,
-			// а самый крупный хитч (запекание navmesh) ушёл в асинхронную операцию.
+			// We spread the heavy initialization across frames so the curtain renders and animates,
+			// and the biggest hitch (navmesh baking) goes into an async operation.
 			InitializeAsync(this.GetCancellationTokenOnDestroy()).Forget();
 		}
 
@@ -95,36 +95,44 @@ namespace ECS
 			_systems?.Run();
 		}
 
-		// Пошаговый асинхронный бут уровня. Между шагами уступаем кадр, чтобы занавес обновлялся;
-		// navmesh печём асинхронно; занавес снимаем только после того, как камера отрисует
-		// первый настоящий кадр уровня.
+		// Step-by-step async level boot. Between steps we yield a frame so the curtain updates;
+		// navmesh is baked asynchronously; the curtain is lifted only after the camera renders
+		// the first real frame of the level.
 		private async UniTaskVoid InitializeAsync(CancellationToken token)
 		{
 			bool completed = false;
 			try
 			{
-				// 1) Инстанс префаба уровня (весь контент сцены должен существовать до Find*-сканов).
+				// 1) Level prefab instance (all scene content must exist before the Find* scans).
 				LoadLevel();
 				LoadingScreen.SetProgress(0.2f);
 				await UniTask.Yield(PlayerLoopTiming.Update, token);
 
-				// 2) Данные сцены: пулы, игрок, UI, точки спауна. NavMesh здесь НЕ печём (bake:false).
+				// 2) Scene data: pools, player, UI, spawn points. NavMesh is NOT baked here (bake:false).
 				SetupSpawnData();
 				LoadingScreen.SetProgress(0.5f);
 				await UniTask.Yield(PlayerLoopTiming.Update, token);
 
-				// 3) Асинхронное запекание navmesh — не блокирует кадр.
+				// 3) Async navmesh baking — doesn't block the frame.
 				if (_navMeshManager != null)
 					await _navMeshManager.RebuildNavMeshAsync().ToUniTask(cancellationToken: token);
+				// The player's agent was enabled before the navmesh existed — bind it to the fresh mesh.
+				var playerAgent = _player.GetComponent<UnityEngine.AI.NavMeshAgent>();
+				if (playerAgent != null && playerAgent.isActiveAndEnabled)
+					playerAgent.Warp(_player.transform.position);
+				LoadingScreen.SetProgress(0.7f);
+
+				// 3b) Pool + shader warm-up under the curtain (first explosion/decal/bullet won't hitch).
+				await PoolPrewarmer.RunAsync(_world, _mainHolder, _player.transform.position, token);
 				LoadingScreen.SetProgress(0.8f);
 
-				// 4) Регистрируем системы и разрешаем их прогон.
+				// 4) Register systems and allow them to run.
 				RegisterSystems();
 				_initialized = true;
 				LoadingScreen.SetProgress(1f);
 
-				// 5) Даём кадр отработать системам (позиционирование камеры и т.п.) и дожидаемся конца
-				//    кадра — уровень уже отрисован камерой. Затем плавно снимаем занавес.
+				// 5) Give a frame for the systems to work (camera positioning, etc.) and wait for the end of
+				//    the frame — the level is already rendered by the camera. Then smoothly lift the curtain.
 				await UniTask.Yield(PlayerLoopTiming.Update, token);
 				await UniTask.WaitForEndOfFrame(this, token);
 				completed = true;
@@ -136,9 +144,9 @@ namespace ECS
 			}
 			finally
 			{
-				// Бут упал — снимаем занавес (он DontDestroyOnLoad и блокирует ввод), иначе игра зависает
-				// на экране загрузки. При отмене (сцену выгрузили/рестарт) не трогаем: занавес уже нужен
-				// следующей сцене.
+				// Boot failed — lift the curtain (it's DontDestroyOnLoad and blocks input), otherwise the game hangs
+				// on the loading screen. On cancellation (scene unloaded/restart) we don't touch it: the curtain is
+				// already needed by the next scene.
 				if (!completed && !token.IsCancellationRequested)
 					LoadingScreen.HideAndDestroy();
 			}
@@ -161,18 +169,19 @@ namespace ECS
 		private void SetupSpawnData()
 		{
 			SetUpLevel();
+			PlacePlayerAtLevelStart();
 
-			// --- ����� �������� ���������� ---
+			// --- App config ---
 			int appEntity = _world.NewEntity();
 			ref var config = ref _world.GetPool<MainHolderComponent>().Add(appEntity);
 			config.Value = _mainHolder;
 
 			ref var navMeshManager = ref _world.CreateSimpleEntity<NavMeshManagerComponent>();
 			navMeshManager.Value = FindFirstObjectByType<NavMeshManager>();
-			// Скармливаем секторы из префаба уровня, но НЕ печём navmesh здесь: запекание крупное
-			// и уходит в асинхронную операцию (InitializeAsync → RebuildNavMeshAsync), чтобы не
-			// подвешивать кадр под занавесом загрузки.
-			// Если уровень загружен из сцены без LevelRoot — Configure(null) использует ссылки из инспектора.
+			// Feed the sectors from the level prefab, but do NOT bake navmesh here: the bake is big
+			// and goes into an async operation (InitializeAsync → RebuildNavMeshAsync), so as not to
+			// hang the frame under the loading curtain.
+			// If the level was loaded from a scene without LevelRoot — Configure(null) uses the inspector references.
 			navMeshManager.Value.Configure(_levelRoot != null ? _levelRoot.Sectors : null, bake: false);
 			_navMeshManager = navMeshManager.Value;
 			ref var fragCount = ref _world.CreateSimpleEntity<FragCountComponent>();
@@ -180,10 +189,10 @@ namespace ECS
 
 			ref var inputActions = ref _world.CreateSimpleEntity<InputActionsComponent>();
 			inputActions.Value = _inputActions;
-			// Наложить кастомные биндинги игрока (из настроек управления) до чтения инпута.
+			// Apply the player's custom bindings (from control settings) before reading input.
 			Game.Settings.ControlSettings.Apply(_inputActions);
 
-			// --- UI ���������� ---
+			// --- UI components ---
 			ref var weaponViewComponent = ref _world.CreateSimpleEntity<WeaponUIViewComponent>();
 			weaponViewComponent.Value = _weaponView;
 
@@ -202,7 +211,7 @@ namespace ECS
 			ref var uiLogViewComponent = ref _world.CreateSimpleEntity<UILogViewComponent>();
 			uiLogViewComponent.Value = _uiLogView;
 
-			// --- ����� ������ ---
+			// --- Spawn points ---
 			var spawnPointPool = _world.GetPool<SpawnPointComponent>();
 			var spawnTimerPool = _world.GetPool<SpawnTimer>();
 			var spawnPoints = FindObjectsByType<SpawnPoint>(FindObjectsSortMode.None);
@@ -217,7 +226,7 @@ namespace ECS
 			ref var spawnPointsComponent = ref _world.CreateSimpleEntity<SpawnPointsComponent>();
 			spawnPointsComponent.Value = _spawnPoints;
 
-			// --- Точки спауна отрядов в строю (GroupSpawnPoint) ---
+			// --- Formation squad spawn points (GroupSpawnPoint) ---
 			var groupSpawnPointPool = _world.GetPool<GroupSpawnPointComponent>();
 			var groupSpawnPoints = FindObjectsByType<GroupSpawnPoint>(FindObjectsSortMode.None);
 			foreach (var groupSpawnPoint in groupSpawnPoints)
@@ -228,7 +237,7 @@ namespace ECS
 				gsp.Timer = groupSpawnPoint.Config != null ? groupSpawnPoint.Config.InitialDelay : 0f;
 			}
 
-			// --- ������� ������ ---
+			// --- Spawn requests ---
 			ref var spawnRequest = ref _world.CreateSimpleEntity<SpawnRequestComponent>();
 			spawnRequest.MaxCoolDown = _mainHolder.MaxSpawnCoolDown;
 			spawnRequest.MinCoolDown = _mainHolder.MinSpawnCoolDown;
@@ -236,7 +245,7 @@ namespace ECS
 			spawnRequest.LastSpawnTime = 0;
 			spawnRequest.IsBlocked = false;
 
-			// --- ��������� � ���� ---
+			// --- Sounds and effects ---
 			ref var soundHolderComponent = ref _world.CreateSimpleEntity<SoundHolderComponent>();
 			soundHolderComponent.Value = _mainHolder.SoundHolder;
 
@@ -256,8 +265,8 @@ namespace ECS
 			mobPoolComponent.Pools = new Dictionary<string, Stack<Mob>>();
 			mobPoolComponent.Parent = _mobParent;
 
-			// Заранее наполняем пул неактивными клонами каждого типа мобов уровня,
-			// чтобы Instantiate не давал хитчи во время волн (spawnPoints найдены выше).
+			// Prewarm the pool with inactive clones of each mob type on the level,
+			// so Instantiate doesn't hitch during waves (spawnPoints found above).
 			PrewarmMobPool(spawnPoints);
 
 			ref var bulletPool = ref _world.CreateSimpleEntity<BulletPoolComponent>();
@@ -288,37 +297,39 @@ namespace ECS
 				}
 			}
 
-			// --- Разрушаемое окружение (Breakable) ---
-			// Пул рантайм-объектов (RequestSpawnBreakable кладёт/берёт инстансы по id конфига).
-			// Если родитель не назначен в сцене — создаём в рантайме, чтобы инстансы не плодились в корне.
+			// --- Breakable environment ---
+			// Runtime object pool (RequestSpawnBreakable puts/takes instances by config id).
+			// If the parent isn't assigned in the scene — create it at runtime so instances don't pile up at the root.
 			if (_breakableParent == null)
 				_breakableParent = new GameObject("Breakables").transform;
 			ref var breakablePoolComponent = ref _world.CreateSimpleEntity<BreakablePoolComponent>();
 			breakablePoolComponent.Pools = new Dictionary<string, Stack<Breakable>>();
 			breakablePoolComponent.Parent = _breakableParent;
 
-			// Сценовые объекты (уже расставлены в префабе уровня, найдены как SpawnPoint/MapLoot).
-			// Регистрируем их ECS-состояние тем же путём, что и рантайм-спаун — RegisterBreakable(pooled:false).
+			// Scene objects (already placed in the level prefab, found like SpawnPoint/MapLoot).
+			// We register their ECS state the same way as runtime spawn — RegisterBreakable(pooled:false).
 			var breakables = FindObjectsByType<Breakable>(FindObjectsSortMode.None);
 			foreach (var breakable in breakables)
 			{
 				if (breakable == null || breakable.Config == null || breakable.Collider == null)
 				{
 					if (breakable != null)
-						Debug.LogWarning($"[EntryPoint] Breakable '{breakable.name}' без Config/Collider — пропущен.");
+						Debug.LogWarning($"[EntryPoint] Breakable '{breakable.name}' has no Config/Collider — skipped.");
 					continue;
 				}
 
 				BreakableSpawnSystem.RegisterBreakable(_world, breakable, breakable.Config, pooled: false);
 			}
 
-			// Сценовые скрипт-события уровня (пустые объекты со списком записей). LevelEventSystem.Init
-			// построит из них observer'ы. Холдер создаём всегда — даже пустой (система сама no-op'ит).
+			// Scene level script-events (empty objects with an entry list). LevelEventSystem.Init
+			// will build observers from them. We always create the holder — even an empty one (the system no-ops itself).
 			var levelEventTriggers = FindObjectsByType<LevelEventTrigger>(FindObjectsSortMode.None);
 			ref var levelEventHolder = ref _world.CreateSimpleEntity<LevelEventHolderComponent>();
 			levelEventHolder.Triggers = new List<LevelEventTrigger>(levelEventTriggers);
 
-				// --- ����� ---
+			RegisterMissionObjects();
+
+				// --- Player ---
 
 			int playerEntity = _world.NewEntity();
 			ref var playerComponent = ref _world.GetPool<PlayerComponent>().Add(playerEntity);
@@ -330,8 +341,8 @@ namespace ECS
 			ref var healthComponent = ref _world.GetPool<HealthComponent>().Add(playerEntity);
 			healthComponent.MaxHealth = _mainHolder.PlayerConfig.MaxHealth;
 			healthComponent.CurrentHealth = healthComponent.MaxHealth;
-			// Без этого health.TargetType = None, и любой урон по TargetType (ближняя атака мобов
-			// через MeleeSpawnSystem) проходит мимо игрока — ContainsFlags(None) всегда false.
+			// Without this health.TargetType = None, and any damage checked by TargetType (mob melee attack
+			// via MeleeSpawnSystem) passes the player by — ContainsFlags(None) is always false.
 			healthComponent.TargetType = TargetType.Player;
 			_playerStats.SetHealthValue(healthComponent.CurrentHealth);
 
@@ -340,7 +351,7 @@ namespace ECS
 			playerModifiers.Modifiers = new();
 			playerModifiers.Transform = _player.transform;
 
-			// --- Бонусы (speed/shield) ---
+			// --- Bonuses (speed/shield) ---
 			ref var activeBonuses = ref _world.CreateSimpleEntity<ActiveBonusesComponent>();
 			activeBonuses.Value = new List<ActiveBonus>();
 			// --- Input
@@ -352,7 +363,7 @@ namespace ECS
 			ref var aimVisualizerComponent = ref _world.CreateSimpleEntity<AimVisualizerComponent>();
 			aimVisualizerComponent.Value = aimVisualizer;
 
-			// --- ������ ---
+			// --- Camera ---
 			int cameraFollowerEntity = _world.NewEntity();
 			ref var follower = ref _world.GetPool<FollowerComponent>().Add(cameraFollowerEntity);
 			follower.Value = _mainCamera.transform;
@@ -375,7 +386,7 @@ namespace ECS
 			ref var cameraComponent = ref _world.GetPool<CameraComponent>().Add(cameraEntity);
 			cameraComponent.Value = _mainCamera;
 
-			// --- ������/������� ---
+			// --- Weapon/muzzle ---
 			ref var muzzle = ref _world.CreateSimpleEntity<WeaponComponent>();
 			muzzle.Weapon = _player.Weapon;
 			muzzle.GunConfig = _mainHolder.GunConfigHolder.GetConfig("Pistol");
@@ -383,7 +394,7 @@ namespace ECS
 			ref var reloadingComponent = ref _world.GetPool<ReloadingComponent>().Add(playerEntity);
 			reloadingComponent.ReloadTime = 0;
 
-			// --- Запас патронов по калибрам: стартовый запас идёт в калибр стартового оружия ---
+			// --- Ammo reserve per caliber: the starting reserve goes into the starting weapon's caliber ---
 			ref var ammoInventory = ref _world.CreateSimpleEntity<AmmoInventoryComponent>();
 			ammoInventory.Ammo = new Dictionary<Caliber, int>();
 			ammoInventory.Add(muzzle.GunConfig.Caliber, _mainHolder.StartAmmo);
@@ -411,8 +422,8 @@ namespace ECS
 
 			ref var grenadePool = ref _world.CreateSimpleEntity<GrenadePoolComponent>();
 			grenadePool.Value = new();
-			// Гранаты всегда складываем под выделенный родитель: если он не назначен в сцене,
-			// создаём его в рантайме, чтобы снаряды не плодились в корне иерархии.
+			// Grenades always go under a dedicated parent: if it isn't assigned in the scene,
+			// we create it at runtime so projectiles don't pile up at the hierarchy root.
 			if (_grenadeParent == null)
 				_grenadeParent = new GameObject("Grenades").transform;
 			grenadePool.Parent = _grenadeParent;
@@ -424,12 +435,12 @@ namespace ECS
 				grenadeAimVisualizer.Hide();
 
 
-			// --- ������� LookAtCursor ---
+			// --- LookAtCursor singleton ---
 			ref var lookAtCursor = ref _world.CreateSimpleEntity<LookAtCursor>();
 			lookAtCursor.Transform = _player.transform;
 			lookAtCursor.Mode3D = true;
 
-			// --- ����� ��� ��������� ���� ---
+			// --- Path drawing ---
 			var drawer = FindFirstObjectByType<PathGizmoDrawer>();
 			if (drawer != null)
 				drawer.Initialize(_world);
@@ -447,13 +458,13 @@ namespace ECS
 			additionalLootSpawnComponent.LootConfigs = _activeLevelConfig.GetAdditionalLootConfigs();
 		}
 
-		// Разрешает выбранный уровень и инстанциирует его префаб ДО SetupSpawnData,
-		// чтобы Find*-сканы (SpawnPoint / MapLoot / тег AdditionalSpawn) подхватили его контент.
-		// Заранее создаёт неактивные клоны каждого типа мобов, который может появиться
-		// на уровне (по MobId всех SpawnPoint'ов), и кладёт их в пул. Так первые волны
-		// берут мобов через Pop() вместо Instantiate и не дают хитчей.
-		// Кол-во на тип берётся из MainHolder.MobPrewarmPerType (0 = выключено),
-		// и не превышает ActiveMobLimit — больше мобов одновременно всё равно не живёт.
+		// Resolves the selected level and instantiates its prefab BEFORE SetupSpawnData,
+		// so the Find* scans (SpawnPoint / MapLoot / AdditionalSpawn tag) pick up its content.
+		// Prewarms inactive clones of every mob type that can appear on the level
+		// (by MobId of all SpawnPoints) into the pool. This way the first waves take mobs via Pop()
+		// instead of Instantiate and don't hitch.
+		// The per-type count comes from MainHolder.MobPrewarmPerType (0 = disabled),
+		// and doesn't exceed ActiveMobLimit — more mobs aren't alive at once anyway.
 		private void PrewarmMobPool(SpawnPoint[] spawnPoints)
 		{
 			int perType = _mainHolder.MobPrewarmPerType;
@@ -477,7 +488,7 @@ namespace ECS
 				foreach (var spawnConfig in configs)
 				{
 					var id = spawnConfig.MobId;
-					// Каждый тип греем один раз, даже если он встречается на нескольких точках.
+					// Warm each type only once, even if it appears at several points.
 					if (string.IsNullOrEmpty(id) || !warmed.Add(id))
 						continue;
 
@@ -494,7 +505,7 @@ namespace ECS
 					for (int i = stack.Count; i < perType; i++)
 					{
 						var mob = Object.Instantiate(mobConfig.Prefab, mobPool.Parent);
-						mob.SetId(id);
+						MobSpawnSystem.SetupNewInstance(mob, mobConfig); // id + weapon override + helmet
 						mob.gameObject.SetActive(false);
 						stack.Push(mob);
 					}
@@ -511,11 +522,11 @@ namespace ECS
 				var instance = Instantiate(level.LevelPrefab);
 				_levelRoot = instance.GetComponentInChildren<LevelRoot>(true);
 				if (_levelRoot == null)
-					Debug.LogError($"[EntryPoint] Префаб уровня '{level.LevelPrefab.name}' без LevelRoot.");
+					Debug.LogError($"[EntryPoint] Level prefab '{level.LevelPrefab.name}' has no LevelRoot.");
 			}
 			else
 			{
-				// Прямой запуск геймплейной сцены без выбора уровня: контент уже лежит в сцене.
+				// Direct launch of the gameplay scene without choosing a level: content is already in the scene.
 				_levelRoot = FindFirstObjectByType<LevelRoot>(FindObjectsInactive.Include);
 			}
 
@@ -524,7 +535,38 @@ namespace ECS
 				: _levelConfig;
 
 			if (_activeLevelConfig == null)
-				Debug.LogError("[EntryPoint] Не удалось разрешить LevelConfig (нет LevelRoot и нет запасного конфига).");
+				Debug.LogError("[EntryPoint] Failed to resolve LevelConfig (no LevelRoot and no fallback config).");
+		}
+
+		// Scripted-level objects (gates / keys / zones / stage loot, see Docs/KeyLevelFeature.md). Keys start hidden
+		// (inactive) — hence FindObjectsInactive.Include. No objects → no MissionComponent (MissionSystem no-ops).
+		private void RegisterMissionObjects()
+		{
+			var gates = FindObjectsByType<LevelGate>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+			var keys = FindObjectsByType<LevelKeyPickup>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+			var zones = FindObjectsByType<LevelZone>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+			var stageLoots = FindObjectsByType<StageLoot>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+			if (gates.Length + keys.Length + zones.Length + stageLoots.Length == 0)
+				return;
+
+			ref var mission = ref _world.CreateSimpleEntity<MissionComponent>();
+			mission.Gates = new List<LevelGate>(gates);
+			mission.Keys = new List<LevelKeyPickup>(keys);
+			mission.Zones = new List<LevelZone>(zones);
+			mission.StageLoots = new List<StageLoot>(stageLoots);
+			mission.CollectedKeys = new HashSet<string>();
+			mission.OpenedGates = new HashSet<string>();
+		}
+
+		// LevelRoot.PlayerStart: move the player there (facing = its Y rotation); the camera keeps its offset.
+		private void PlacePlayerAtLevelStart()
+		{
+			var start = _levelRoot != null ? _levelRoot.PlayerStart : null;
+			if (start == null)
+				return;
+			Vector3 delta = start.position - _player.transform.position;
+			_player.transform.SetPositionAndRotation(start.position, Quaternion.Euler(0f, start.eulerAngles.y, 0f));
+			_mainCamera.transform.position += delta;
 		}
 
 		private void SetUpLevel()
@@ -542,6 +584,7 @@ namespace ECS
 				.Add(new SpawnPointSystem())
 				.Add(new AdditionalLootSpawnSystem())
 				.Add(new LevelEventSystem())
+				.Add(new MissionSystem())
 				// Mob systems
 				.Add(new MobSpawnSystem())
 				.Add(new GroupSpawnSystem())
@@ -553,12 +596,14 @@ namespace ECS
 				.Add(new MeleeAttackerSystem())
 				.Add(new RangedAttackerSystem())
 				.Add(new MoveSystem())
+				.Add(new CameraShakeSystem(apply: false)) // remove last frame's shake before following
 				.Add(new FollowSystem())
 				.Add(new LookAtCameraSystem())
 				.Add(new LookAtCursorSystem())
-			
+
 				.Add(new AnimationSystem())
 				.Add(new CrowdRenderSystem())
+				.Add(new ModifierZoneSystem()) // oil slicks / ice hand out their modifiers before they tick
 				.Add(new ModifiersSystem())
 
 				// Fire and Reload Systems
@@ -572,6 +617,7 @@ namespace ECS
 				.Add(new GrenadeProjectileSystem())
 				.Add(new ExplosionSystem())
 				.Add(new DamageSystem())
+				.Add(new DamageFeedbackSystem())
 				.Add(new DyingMobSystem())
 				.Add(new BreakableSystem())
 				.Add(new BonusSystem())
@@ -594,6 +640,7 @@ namespace ECS
 				.Add(new PauseMenuSystem())
 				.Add(new PauseSystem())
 				.Add(new WorldFreezeSystem())
+				.Add(new CameraShakeSystem(apply: true)) // last: the frame renders shaken
 				.Init();
 			#endregion
 		}

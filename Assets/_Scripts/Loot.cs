@@ -8,12 +8,23 @@ public class Loot : MonoBehaviour
 
 	private Color _defaultColor = Color.white;
 	private bool _defaultColorCached;
+	private LootAura _aura;
 
 	public Canvas SpriteLooker => _spriteLooker;
 
 	private void Awake()
 	{
 		CacheDefaultColor();
+		// Ground ring under the item: readable on dark and light floors alike (see LootAura).
+		_aura = LootAura.Create(transform);
+	}
+
+	/// <summary>Tints the ground aura (LootAura.ColorFor(type)); called by LootSystem on every spawn.</summary>
+	public void SetAuraColor(Color color)
+	{
+		if (_aura == null)
+			_aura = LootAura.Create(transform);
+		_aura.SetColor(color);
 	}
 
 	public void SetSprite(Sprite sprite)

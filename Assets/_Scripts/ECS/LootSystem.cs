@@ -111,13 +111,17 @@ namespace ECS
 			{
 				ref var requestLootSpawn = ref requestLootSpawnPool.Get(entity);
 
-				// Снимаем поля запроса в локали: спаун лута создаёт новые сущности и
-				// может инвалидировать ссылку requestLootSpawn (resize пулов).
+				// Snapshot the request fields into locals: loot spawn creates new entities and
+				// may invalidate the requestLootSpawn reference (pool resize).
 				var requestSource = requestLootSpawn.Source;
 				var requestSourceEntity = requestLootSpawn.SourceEntity;
 
 				var possibleLoots = requestLootSpawn.PossibleLoots;
 				PossibleLoot selectedLoot = null;
+
+				// Level weapon restriction (LevelConfig.AllowedMobWeaponDrops): banned weapon drops roll as "no loot".
+				if (requestSource == RequestSpawnSource.Mob && possibleLoots != null)
+					possibleLoots = FilterMobWeaponDrops(world, possibleLoots);
 
 				if (possibleLoots.Length > 1)
 				{
@@ -125,21 +129,21 @@ namespace ECS
 					for (int i = 0; i < possibleLoots.Length; i++)
 						totalChance += possibleLoots[i].Chance;
 
-					// Если суммарный шанс < 1, нормируем до 1: разыгрываем возможность "нет лута".
+					// If the total chance < 1, normalize to 1: roll the "no loot" possibility.
 					float rollRange = Mathf.Max(totalChance, 1f);
 					float roll = Random.value * rollRange;
 
 					if (roll > totalChance)
 					{
-						// Выпал "пустой" сектор вне суммарного шанса. Лут не появился, но
-						// AdditionalSpawn-observer обязан узнать результат, иначе он навсегда
-						// зависнет в Requesting (отсюда «нет лута при выполненном условии»).
+						// Rolled the "empty" sector outside the total chance. No loot appeared, but
+						// the AdditionalSpawn observer must learn the result, otherwise it hangs forever
+						// in Requesting (hence "no loot when the condition is met").
 						EmitSpawnResult(world, requestSource, requestSourceEntity, -1);
 						world.DelEntity(entity);
 						continue;
 					}
 
-					// Кумулятивный выбор: первый сегмент, накрывающий roll.
+					// Cumulative pick: the first segment covering the roll.
 					float acc = 0f;
 					for (int i = 0; i < possibleLoots.Length; i++)
 					{
@@ -150,9 +154,11 @@ namespace ECS
 							break;
 						}
 					}
-					// Страховка от numerical drift — обычно не срабатывает.
+					// Numerical-drift safeguard — usually doesn't trigger.
 					if (selectedLoot == null)
 						selectedLoot = possibleLoots[possibleLoots.Length - 1];
+					if (selectedLoot == BannedDrop)
+						selectedLoot = null;
 				}
 				else if (possibleLoots != null && possibleLoots.Length > 0)
 				{
@@ -184,9 +190,11 @@ namespace ECS
 
 					// Ensure LootComponent has LootType and Value properties
 					lootComponent.LootType = selectedLoot.LootType;
+					loot.SetAuraColor(LootAura.ColorFor(selectedLoot.LootType));
 					lootComponent.Count = selectedLoot.Count;
 					lootComponent.Loot = loot;
 					lootComponent.Id = selectedLoot.Id;
+					lootComponent.PickupHintShown = false;
 					// Ammo caliber is fixed at spawn: an unassigned (None) ammo loot becomes the
 					// current weapon's caliber (or the holder's first), so its icon and pickup match.
 					var resolvedAmmoCaliber = selectedLoot.AmmoCaliber;
@@ -265,7 +273,7 @@ namespace ECS
 				}
 				else
 				{
-					// Лут не выбран (пустая таблица) — всё равно сообщаем результат observer'у.
+					// No loot selected (empty table) — still report the result to the observer.
 					EmitSpawnResult(world, requestSource, requestSourceEntity, -1);
 				}
 				world.DelEntity(entity); // delete request entity
@@ -273,10 +281,39 @@ namespace ECS
 			#endregion
 		}
 
-		// Сообщает результат спауна обратно запросившему AdditionalSpawn-observer'у.
-		// Событие нужно только этому источнику (единственный потребитель), поэтому для
-		// прочих источников ничего не создаём — иначе события копились бы без удаления.
-		// lootEntity < 0 означает «лут не появился» (пустой розыгрыш дроп-таблицы).
+		// Zero-chance stand-in for a banned weapon drop: keeps the table length (single-entry tables are taken
+		// unconditionally) while the cumulative roll can never land on it.
+		private static readonly PossibleLoot BannedDrop = new() { LootType = LootType.Ammo, Chance = 0f };
+
+		/// <summary>
+		/// Applies the level's mob-loot rules (LevelConfig.IsMobLootAllowed: weapon whitelist, banned ammo calibers,
+		/// banned bonus ids): forbidden entries get chance 0 (rolled as "no loot").
+		/// Returns the original array (no allocation) when nothing is banned.
+		/// </summary>
+		private static PossibleLoot[] FilterMobWeaponDrops(EcsWorld world, PossibleLoot[] loots)
+		{
+			if (!world.TryGetAsSingleton<CurrentLevelConfigComponent>(out var level) || level.Value == null)
+				return loots;
+
+			PossibleLoot[] filtered = null;
+			for (int i = 0; i < loots.Length; i++)
+			{
+				var loot = loots[i];
+				if (loot == null || level.Value.IsMobLootAllowed(loot))
+					continue;
+				filtered ??= (PossibleLoot[])loots.Clone();
+				filtered[i] = BannedDrop;
+			}
+			if (filtered == null)
+				return loots;
+			// A single banned entry would be taken unconditionally (no roll for length 1) — drop nothing instead.
+			return filtered.Length == 1 ? System.Array.Empty<PossibleLoot>() : filtered;
+		}
+
+		// Reports the spawn result back to the requesting AdditionalSpawn observer.
+		// The event is needed only by this source (the only consumer), so for other
+		// sources we create nothing — otherwise events would pile up without being deleted.
+		// lootEntity < 0 means "no loot appeared" (empty drop-table roll).
 		private void EmitSpawnResult(EcsWorld world, RequestSpawnSource source, int sourceEntity, int lootEntity)
 		{
 			if (source != RequestSpawnSource.AdditionalSpawn)
