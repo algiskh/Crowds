@@ -3,11 +3,11 @@ using UnityEngine.InputSystem;
 
 namespace Game.Settings
 {
-	// Кастомные настройки управления, сериализуемые в JSON.
-	// Формат — биндинг-оверрайды Unity Input System (SaveBindingOverridesAsJson):
-	// компактный JSON, который хранит только изменённые пользователем биндинги.
-	// Абстракция IControlSettingsStore позволяет позже перенести этот JSON куда угодно
-	// (файл, облачный сейв, бэкенд) — достаточно подменить реализацию через ControlSettings.SetStore.
+	// Custom control settings serialized to JSON.
+	// The format is Unity Input System binding overrides (SaveBindingOverridesAsJson):
+	// a compact JSON that stores only the user-changed bindings.
+	// The IControlSettingsStore abstraction allows moving this JSON anywhere later
+	// (file, cloud save, backend) — just swap the implementation via ControlSettings.SetStore.
 	public interface IControlSettingsStore
 	{
 		bool HasData { get; }
@@ -16,7 +16,7 @@ namespace Game.Settings
 		void Clear();
 	}
 
-	// Реализация по умолчанию — PlayerPrefs.
+	// Default implementation — PlayerPrefs.
 	public class PlayerPrefsControlSettingsStore : IControlSettingsStore
 	{
 		public const string DefaultKey = "controls.bindings.v1";
@@ -43,23 +43,23 @@ namespace Game.Settings
 		}
 	}
 
-	// Статический фасад: применяет/сохраняет/сбрасывает оверрайды биндингов на InputActionAsset.
-	// Вызывается из EntryPoint (геймплей) и из меню настроек (сцена меню), чтобы кастомные
-	// биндинги подхватывались в обеих сценах.
+	// Static facade: applies/saves/resets binding overrides on an InputActionAsset.
+	// Called from EntryPoint (gameplay) and from the settings menu (menu scene), so custom
+	// bindings are picked up in both scenes.
 	public static class ControlSettings
 	{
 		private static IControlSettingsStore _store = new PlayerPrefsControlSettingsStore();
 
 		public static IControlSettingsStore Store => _store;
 
-		// Подменить хранилище (например, чтобы перенести JSON в файл/облако).
+		// Swap the store (e.g. to move the JSON to a file/cloud).
 		public static void SetStore(IControlSettingsStore store)
 		{
 			if (store != null)
 				_store = store;
 		}
 
-		// Загрузить сохранённые оверрайды и наложить их на ассет.
+		// Load the saved overrides and apply them to the asset.
 		public static void Apply(InputActionAsset actions)
 		{
 			if (actions == null || !_store.HasData)
@@ -68,7 +68,7 @@ namespace Game.Settings
 			actions.LoadBindingOverridesFromJson(_store.Load());
 		}
 
-		// Сохранить текущие оверрайды ассета в хранилище.
+		// Save the asset's current overrides to the store.
 		public static void Save(InputActionAsset actions)
 		{
 			if (actions == null)
@@ -77,7 +77,7 @@ namespace Game.Settings
 			_store.Save(actions.SaveBindingOverridesAsJson());
 		}
 
-		// Сбросить все кастомные биндинги (и на ассете, и в хранилище).
+		// Reset all custom bindings (both on the asset and in the store).
 		public static void ResetAll(InputActionAsset actions)
 		{
 			if (actions != null)

@@ -105,3 +105,16 @@ MonoBehaviour:
       Cooldown: 8
     - DifficultyLevel: 7
       Cooldown: 7
+  - _mobId: GunnerMob
+    _weight: 0.5
+    _spawnPresets:
+    - DifficultyLevel: 3
+      Cooldown: 18
+    - DifficultyLevel: 4
+      Cooldown: 14
+    - DifficultyLevel: 5
+      Cooldown: 12
+    - DifficultyLevel: 6
+      Cooldown: 10
+    - DifficultyLevel: 7
+      Cooldown: 9

@@ -6,15 +6,15 @@ using UnityEngine.UI;
 
 namespace Game.Settings
 {
-	// Вью одной строки настроек управления в списке (ScrollRect -> Content с VerticalLayoutGroup).
-	// Слева — имя контрола (напр. "Move Left"), затем назначенная клавиша/мышь
-	// (кликабельно — запускает перепривязку), альтернативная клавиша и контрол геймпада.
+	// View of a single control-settings row in the list (ScrollRect -> Content with VerticalLayoutGroup).
+	// On the left — the control name (e.g. "Move Left"), then the assigned key/mouse button
+	// (clickable — starts rebinding), the alternative key and the gamepad control.
 	//
-	// Флоу перепривязки:
-	//   1) клик по слоту -> слот подсвечивается ("listening"), надпись "Press a key...";
-	//   2) игрок жмёт клавишу/кнопку мыши -> она применяется, надпись обновляется, вызывается сохранение;
-	//   3) Esc или повторный клик -> отмена, слот возвращается к прежнему виду.
-	// На первом этапе перепривязывается только клавиатура/мышь; колонка геймпада — только показ.
+	// Rebinding flow:
+	//   1) click the slot -> the slot highlights ("listening"), the label shows "Press a key...";
+	//   2) the player presses a key/mouse button -> it's applied, the label updates, saving is invoked;
+	//   3) Esc or another click -> cancel, the slot returns to its previous state.
+	// In the first phase only keyboard/mouse is rebound; the gamepad column is display-only.
 	public class ControlBindingRow : MonoBehaviour
 	{
 		[SerializeField] private UniText _nameLabel;
@@ -24,15 +24,15 @@ namespace Game.Settings
 		[SerializeField] private UniText _gamepadLabel;
 
 		[Header("Listening feedback")]
-		[Tooltip("Графика слота, подсвечиваемая во время ожидания клавиши. " +
-			"Если не задана — берётся targetGraphic кнопки.")]
+		[Tooltip("The slot graphic highlighted while waiting for a key. " +
+			"If not assigned — the button's targetGraphic is used.")]
 		[SerializeField] private Graphic _listeningTarget;
 		[SerializeField] private Color _listeningColor = new Color(1f, 0.55f, 0.15f, 1f);
 		[SerializeField] private string _listeningText = "Press a key...";
 
 		private const string EmptyText = "—";
 
-		// Одновременно «слушает» только одна строка на всё меню.
+		// Only one row "listens" at a time across the whole menu.
 		private static ControlBindingRow s_active;
 
 		private InputAction _action;
@@ -89,7 +89,7 @@ namespace Game.Settings
 		private string DisplayString(int bindingIndex) =>
 			_action.GetBindingDisplayString(bindingIndex, InputBinding.DisplayStringOptions.DontIncludeInteractions);
 
-		// Стики не имеют читаемого display-string у Input System — подписываем их вручную.
+		// Sticks have no readable display string in the Input System — label them manually.
 		private string GamepadDisplayString(int bindingIndex)
 		{
 			string path = _action.bindings[bindingIndex].effectivePath;
@@ -103,7 +103,7 @@ namespace Game.Settings
 		#region REBIND
 		private void ToggleRebind()
 		{
-			// Повторный клик по «слушающему» слоту — отмена (слот вернётся к показу текущей клавиши).
+			// A repeated click on a "listening" slot — cancel (the slot returns to showing the current key).
 			if (_rebind != null)
 				CancelRebind();
 			else
@@ -115,32 +115,32 @@ namespace Game.Settings
 			if (_action == null || _keyboardBindingIndex < 0)
 				return;
 
-			// Защита от повторного onClick в том же кадре (двойное событие клика): не даём
-			// заново войти в режим ожидания в кадре, где перепривязку только что отменили.
+			// Guard against a repeated onClick in the same frame (double click event): don't let
+			// re-entering the listening state happen in the frame where the rebind was just canceled.
 			if (Time.frameCount == _lastFinishFrame)
 				return;
 
-			// Прервать перепривязку, начатую в другой строке.
+			// Interrupt the rebind started in another row.
 			if (s_active != null && s_active != this)
 				s_active.CancelRebind();
 
 			s_active = this;
 
-			// На время интерактивной перепривязки экшен ОБЯЗАН быть отключён:
-			// PerformInteractiveRebinding().Start() кидает InvalidOperationException, если он enabled.
+			// During interactive rebinding the action MUST be disabled:
+			// PerformInteractiveRebinding().Start() throws InvalidOperationException if it's enabled.
 			_actionWasEnabled = _action.enabled;
 			_action.Disable();
 
 			EnterListeningState();
 
 			_rebind = _action.PerformInteractiveRebinding(_keyboardBindingIndex)
-				// Первый этап — только клавиатура и мышь: исключаем геймпад и «шумные» оси мыши.
+				// First phase — keyboard and mouse only: exclude the gamepad and "noisy" mouse axes.
 				.WithControlsExcluding("<Gamepad>")
 				.WithControlsExcluding("<Mouse>/position")
 				.WithControlsExcluding("<Mouse>/delta")
 				.WithControlsExcluding("<Mouse>/scroll")
-				// ЛКМ — это клик, которым открывают слот. Если её не исключить, тот же клик
-				// сразу «ловится» перепривязкой (слот не входит в режим ожидания с первого раза).
+				// LMB is the click that opens the slot. If we don't exclude it, that same click
+				// is immediately "caught" by the rebinding (the slot doesn't enter the listening state the first time).
 				.WithControlsExcluding("<Mouse>/leftButton")
 				.WithCancelingThrough("<Keyboard>/escape")
 				.OnComplete(_ =>
@@ -152,15 +152,15 @@ namespace Game.Settings
 				.Start();
 		}
 
-		// Явная отмена (повторный клик по слоту / переход к другому слоту): гасим операцию и
-		// синхронно возвращаем слот к показу текущей клавиши, не полагаясь только на колбэк.
+		// Explicit cancel (repeated click on the slot / switching to another row): kill the operation and
+		// synchronously return the slot to showing the current key, not relying on the callback alone.
 		private void CancelRebind()
 		{
 			if (_rebind == null)
 				return;
 
 			var op = _rebind;
-			_rebind = null; // чтобы OnCancel-колбэк не пошёл по второму кругу
+			_rebind = null; // so the OnCancel callback doesn't go a second round
 			op.Cancel();
 			op.Dispose();
 			FinishRebind();
@@ -179,7 +179,7 @@ namespace Game.Settings
 			_lastFinishFrame = Time.frameCount;
 
 			ExitListeningState();
-			Refresh(); // всегда возвращаем надпись к актуальной клавише
+			Refresh(); // always return the label to the actual key
 		}
 
 		private void EnterListeningState()
@@ -218,8 +218,8 @@ namespace Game.Settings
 
 		private void OnDisable()
 		{
-			// Не оставляем висящую операцию (и отключённый экшен), если строку выключили/уничтожили
-			// во время перепривязки.
+			// Don't leave a dangling operation (and a disabled action) if the row was disabled/destroyed
+			// during rebinding.
 			CancelRebind();
 		}
 	}

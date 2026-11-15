@@ -130,7 +130,7 @@ namespace Localization
 		[PropertySpace(15)]
 		public void ApplyParsedData(string data)
 		{
-			// ������ ���������� ������ �� csv/json
+			// Mark the asset dirty after applying data parsed from csv/json
 			UnityEditor.EditorUtility.SetDirty(this);
 		}
 #endif

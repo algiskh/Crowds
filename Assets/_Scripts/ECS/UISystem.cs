@@ -5,7 +5,7 @@ namespace ECS
 {
 	public class UISystem : IEcsRunSystem
 	{
-		// Был ли активен цикл перезарядки в прошлом кадре — чтобы по завершении дорисовать иконку до 1.
+		// Whether the reload cycle was active last frame — to top the icon up to 1 when it finishes.
 		private bool _wasReloading;
 
 		public void Run(IEcsSystems systems)
@@ -135,8 +135,8 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Прогресс цикла перезарядки 0..1. Фазы идут последовательно: сначала ReloadTime, потом ShutteringTime,
-		/// поэтому прошедшее время = (R - reloadLeft) в первой фазе и R + (S - shutterLeft) во второй.
+		/// Reload cycle progress 0..1. Phases run sequentially: first ReloadTime, then ShutteringTime,
+		/// so elapsed time = (R - reloadLeft) in the first phase and R + (S - shutterLeft) in the second.
 		/// </summary>
 		private static float GetReloadProgress(ReloadingComponent reloading, GunConfig config)
 		{

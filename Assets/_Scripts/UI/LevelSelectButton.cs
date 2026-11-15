@@ -3,8 +3,8 @@ using LightSide;
 using UnityEngine;
 using UnityEngine.UI;
 
-// Кнопка выбора одного уровня в главном меню. Заполняется из LevelDefinition,
-// по клику пробрасывает выбранный уровень в колбэк меню.
+// Level-select button in the main menu. Filled from a LevelDefinition,
+// on click passes the selected level to the menu's callback.
 public class LevelSelectButton : MonoBehaviour
 {
 	[SerializeField] private Button _button;

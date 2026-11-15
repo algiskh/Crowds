@@ -5327,6 +5327,9 @@ MonoBehaviour:
   _keyboardLabel: {fileID: 0}
   _keyboardAlternativeLabel: {fileID: 0}
   _gamepadLabel: {fileID: 0}
+  _listeningTarget: {fileID: 0}
+  _listeningColor: {r: 1, g: 0.55, b: 0.15, a: 1}
+  _listeningText: Press a key...
 --- !u!222 &2246252731893964736
 CanvasRenderer:
   m_ObjectHideFlags: 0

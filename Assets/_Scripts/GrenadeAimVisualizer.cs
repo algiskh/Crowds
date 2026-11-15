@@ -1,14 +1,14 @@
 using UnityEngine;
 
 /// <summary>
-/// Визуализатор предполагаемой точки попадания броска гранаты.
-/// Аналог AimVisualizer для оружия, но показывает место приземления/взрыва.
-/// Драйвится из GrenadeThrowSystem: Show во время зарядки, Hide после броска.
+/// Visualizer of the expected grenade-throw landing point.
+/// Analogous to the weapon AimVisualizer, but shows the landing/explosion spot.
+/// Driven from GrenadeThrowSystem: Show while charging, Hide after the throw.
 /// </summary>
 public class GrenadeAimVisualizer : MonoBehaviour
 {
-	[SerializeField] private GameObject _root;            // контейнер маркера (вкл/выкл)
-	[SerializeField] private Transform _marker;           // наземный маркер (кольцо/декаль)
+	[SerializeField] private GameObject _root;            // marker container (on/off)
+	[SerializeField] private Transform _marker;           // ground marker (ring/decal)
 	[SerializeField] private bool _scaleMarkerToRadius = true;
 
 	public void Show(Vector3 worldPosition, float radius)

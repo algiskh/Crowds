@@ -7,11 +7,11 @@ namespace ECS
 {
 	public class MobPathfindingSystem : IEcsRunSystem
 	{
-		// Переиспользуемый буфер пути — один объект на всю систему.
+		// Reusable path buffer — one object for the whole system.
 		private readonly NavMeshPath _navPath = new NavMeshPath();
 		private Vector3[] _cornersBuffer = new Vector3[32];
 
-		// Пул List<Vector3> под waypoints, чтобы не аллоцировать при каждом пересчёте.
+		// A pool of List<Vector3> for waypoints, to avoid allocating on every recalculation.
 		private readonly Stack<List<Vector3>> _waypointListPool = new Stack<List<Vector3>>();
 
 		public void Run(IEcsSystems systems)
@@ -54,7 +54,7 @@ namespace ECS
 					int cornerCount = _navPath.GetCornersNonAlloc(_cornersBuffer);
 					if (cornerCount == _cornersBuffer.Length)
 					{
-						// Буфер был переполнен — расширяемся и пересчитываем разово.
+						// The buffer was full — grow it and recalculate once.
 						_cornersBuffer = new Vector3[_cornersBuffer.Length * 2];
 						cornerCount = _navPath.GetCornersNonAlloc(_cornersBuffer);
 					}

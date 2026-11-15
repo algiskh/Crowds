@@ -20,10 +20,10 @@ public class Decal : MonoBehaviour
 	}
 
 	/// <summary>
-	/// Применяет случайную вариацию (ячейка атласа, разворот, масштаб) на спауне.
-	/// Вызывается при каждом доставании из пула, а не только при создании.
-	/// Если <paramref name="alignToDirection"/> — случайный разворот пропускается, чтобы
-	/// сохранить ориентацию по заданному направлению (напр. по траектории пули).
+	/// Applies a random variation (atlas cell, rotation, scale) on spawn.
+	/// Called on every pop from the pool, not only on creation.
+	/// If <paramref name="alignToDirection"/> — the random rotation is skipped, to
+	/// keep the orientation along the given direction (e.g. along the bullet trajectory).
 	/// </summary>
 	public void ApplyVariation(DecalConfig config, bool alignToDirection = false)
 	{

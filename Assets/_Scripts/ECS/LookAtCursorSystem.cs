@@ -16,7 +16,7 @@ namespace ECS
 
 			Vector2 screenPos = cursor.ScreenPosition;
 
-			// Луч из курсора — одинаковый для всех сущностей, считаем один раз.
+			// The ray from the cursor is the same for all entities — compute it once.
 			Ray cursorRay = camera.ScreenPointToRay(screenPos);
 
 			foreach (var entity in world.Filter<LookAtCursor>().End())
@@ -28,7 +28,7 @@ namespace ECS
 
 				if (comp.Mode3D)
 				{
-					// Плоскость зависит от высоты цели, поэтому строим её индивидуально.
+					// The plane depends on the target's height, so build it individually.
 					var plane = new Plane(Vector3.up, comp.Transform.position);
 					if (!plane.Raycast(cursorRay, out float distance))
 						continue;

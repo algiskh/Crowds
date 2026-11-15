@@ -1,16 +1,16 @@
-// Передаёт выбранный в меню режим и уровень в геймплейную сцену.
-// static переживает SceneManager.LoadScene (в т.ч. рестарт по гибели игрока), поэтому
-// EntryPoint видит тот же уровень и после перезагрузки сцены. Значение сбрасывается только
-// при выходе из приложения / domain reload (вход в Play Mode).
+// Passes the mode and level chosen in the menu to the gameplay scene.
+// static survives SceneManager.LoadScene (incl. restart on player death), so
+// EntryPoint sees the same level even after the scene reloads. The value is reset only
+// on application exit / domain reload (entering Play Mode).
 public static class GameSession
 {
 	public static LevelDefinition SelectedLevel { get; private set; }
 	public static GameMode SelectedMode { get; private set; } = GameMode.Campaign;
 
-	// Совместимость со старым вызовом: выбрать только уровень, режим не трогаем.
+	// Compatibility with the old call: select only the level, don't touch the mode.
 	public static void Select(LevelDefinition level) => SelectedLevel = level;
 
-	// Выбрать режим и уровень одновременно (из главного меню).
+	// Select mode and level at the same time (from the main menu).
 	public static void Select(GameMode mode, LevelDefinition level)
 	{
 		SelectedMode = mode;

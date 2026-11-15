@@ -19,6 +19,7 @@ MonoBehaviour:
   _model: {fileID: 8024247302665627930, guid: 723f8b7dbaa1f234784f35f778bd8aea, type: 3}
   _fireRate: 0.05
   _magazineCapacity: 2
+  _spinUpTime: 0
   _fireSoundId: shotgun_fire
   _reloadSoundId: shotgun_reload
   _reloadEndSoundId: 
@@ -28,9 +29,16 @@ MonoBehaviour:
   _bulletDamage: 18
   _bulletLifeTime: 0.25
   _radius: 0.1
+  _pierceCount: 0
+  _bulletColor: {r: 1, g: 1, b: 1, a: 0}
   _reloadTime: 1
   _shutterTime: 0
   _speedModifier: 0.99
   _accuracy: 0.6
   _singleLoad: 0
   _fireOnDemand: 0
+  _shotDebuffs: []
+  _reloadDebuffs: []
+  references:
+    version: 2
+    RefIds: []

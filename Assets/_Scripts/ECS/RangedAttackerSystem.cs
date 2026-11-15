@@ -5,23 +5,26 @@ using UnityEngine;
 namespace ECS
 {
 	/// <summary>
-	/// Поведение моба-стрелка. Во всём остальном это обычный моб (MobComponent), но вместо
-	/// контактного урона он бьёт телеграфированным выстрелом — так же, как моб ближнего боя
-	/// (см. MeleeAttackerSystem), только на дистанции:
+	/// Ranged mob behavior. In every other respect it's a regular mob (MobComponent), but instead of
+	/// contact damage it strikes with a telegraphed shot — just like the melee mob
+	/// (see MeleeAttackerSystem), only at range:
 	///
-	///  • Chase    — игрок дальше AttackRange: подходит обычным патфайндингом (систему не трогаем).
-	///  • Windup   — игрок в пределах AttackRange: останавливается, целится, проигрывает "attack" и
-	///               через RangedMobConfig.WindupDelay (замах) делает выстрел (RequestSpawnBulletComponent,
-	///               Team=Enemy).
-	///  • Cooldown — после выстрела стоит RangedMobConfig.Cooldown секунд; затем снова Chase.
+	///  • Chase    — player beyond AttackRange: approaches via regular pathfinding (this system doesn't touch it).
+	///  • Windup   — player within AttackRange: stops, aims, plays WindupAnimation and
+	///               after RangedMobConfig.WindupDelay (windup) fires (RequestSpawnBulletComponent,
+	///               Team=Enemy) and switches to FireAnimation.
+	///  • Burst    — only if BurstCount > 1: the remaining shots, BurstInterval apart, still tracking the player
+	///               (FireAnimation restarted per shot if RestartFireAnimationPerShot).
+	///  • Cooldown — after the last shot stands for RangedMobConfig.Cooldown seconds; then aims again if the
+	///               player is still in range, otherwise Chase.
 	///
-	/// Выстрел использует тот же путь, что и оружие игрока: RequestSpawnBulletComponent → BulletSystem.
-	/// Отличается только Team=Enemy (пуля бьёт игрока, а не мобов — см. BulletOverlapSystem/CollisionSystem)
-	/// и точкой спауна (дуло моба). Урон/скорость/радиус/разброс/калибр берутся из вложенного GunConfig.
+	/// The shot uses the same path as the player's weapon: RequestSpawnBulletComponent → BulletSystem.
+	/// Only Team=Enemy differs (the bullet hits the player, not mobs — see BulletOverlapSystem/CollisionSystem)
+	/// and the spawn point (the mob's muzzle). Damage/speed/radius/spread/caliber come from the embedded GunConfig.
 	///
-	/// Запускается после MobPathfindingSystem и до MoveSystem (рядом с MeleeAttackerSystem): в
-	/// Windup/Cooldown чистит путь к игроку, тем самым останавливая моба. Контактный урон для таких
-	/// мобов отключён в CollisionSystem.
+	/// Runs after MobPathfindingSystem and before MoveSystem (next to MeleeAttackerSystem): in
+	/// Windup/Cooldown it clears the path to the player, thereby stopping the mob. Contact damage is
+	/// disabled for such mobs in CollisionSystem.
 	/// </summary>
 	public sealed class RangedAttackerSystem : IEcsRunSystem
 	{
@@ -71,7 +74,7 @@ namespace ECS
 					case RangedAttackerState.Chase:
 						if (distance <= config.AttackRange)
 							EnterWindup(entity, ref attacker, mob, mobPos, playerPos, animPool);
-						// иначе остаёмся в Chase — движение к игроку обеспечивает MobPathfindingSystem/MoveSystem.
+						// otherwise we stay in Chase — movement toward the player is handled by MobPathfindingSystem/MoveSystem.
 						break;
 
 					case RangedAttackerState.Windup:
@@ -136,7 +139,7 @@ namespace ECS
 			attacker.State = RangedAttackerState.Windup;
 			attacker.Timer = attacker.Config.WindupDelay;
 			FacePlayer(mob, mobPos, playerPos);
-			// Одна анимация "attack" на все три фазы (замах → выстрел → восстановление).
+			// Windup clip (default "attack" for all three phases; a shooter with aim/shoot clips sets them in the config).
 			RequestAnimation(animPool, entity, attacker.Config.WindupAnimation);
 		}
 
@@ -145,7 +148,7 @@ namespace ECS
 			attacker.State = RangedAttackerState.Cooldown;
 			attacker.Timer = attacker.Config.Cooldown;
 			attacker.ShotsLeft = 0;
-			// Анимацию не трогаем — клип "attack" доигрывает фазу восстановления.
+			// The fire clip (requested on the first shot) plays through the recovery phase.
 		}
 
 		private void EnterChase(int entity, ref RangedAttackerComponent attacker,
@@ -154,7 +157,7 @@ namespace ECS
 			attacker.State = RangedAttackerState.Chase;
 			RequestAnimation(animPool, entity, attacker.Config.ChaseAnimation);
 
-			// Заставляем патфайндинг проложить путь к игроку сразу же, а не ждать интервала.
+			// Make pathfinding build a path to the player right away, not wait for the interval.
 			if (!recalcRequestPool.Has(entity))
 				recalcRequestPool.Add(entity);
 		}
@@ -164,9 +167,11 @@ namespace ECS
 		#region Fire
 
 		/// <summary>
-		/// Момент выстрела: создаёт RequestSpawnBulletComponent (Team=Enemy) от дула моba по направлению
-		/// к игроку. Дальше пулю поднимает BulletSystem — тот же путь, что у оружия игрока. Разброс,
-		/// количество снарядов, урон/скорость/радиус/калибр — из вложенного GunConfig.
+		/// The shot moment: creates a RequestSpawnBulletComponent (Team=Enemy) from the muzzle toward
+		/// the player. BulletSystem picks the bullet up from here — same path as the player's weapon. Spread,
+		/// projectile count, damage/speed/radius/caliber — from the embedded GunConfig.
+		/// Spawn point = the held weapon's muzzle (<see cref="Mob.Weapon"/>) if the prefab has one, otherwise the
+		/// config offsets. The direction is always flat toward the player (the animated muzzle only gives the origin).
 		/// </summary>
 		private void Fire(EcsWorld world, EcsPool<RequestSpawnBulletComponent> bulletRequestPool,
 			in SoundHolderComponent soundHolder, RangedMobConfig config, Mob mob, Vector3 mobPos, Vector3 playerPos)
@@ -179,7 +184,7 @@ namespace ECS
 			toPlayer.y = 0f;
 			Vector3 dir = toPlayer.sqrMagnitude > 0.0001f ? toPlayer.normalized : mob.transform.forward;
 
-			// Дуло: приподнято над origin и сдвинуто вперёд, чтобы пуля не спаунилась внутри своего коллайдера.
+			// Fallback muzzle: raised above the origin and shifted forward so the bullet doesn't spawn inside its collider.
 			Vector3 muzzlePos = muzzle != null
 				? muzzle.position
 				: mobPos + Vector3.up * config.MuzzleHeight + dir * config.MuzzleForwardOffset;
@@ -201,8 +206,8 @@ namespace ECS
 			request.GunConfig = config.GunConfig;
 			request.Team = BulletTeam.Enemy;
 
-			// Звук выстрела (если задан в GunConfig и есть SoundHolder). У мобов нет общего AudioSource —
-			// проигрываем позиционно, как ближняя атака мобов (см. MeleeSpawnSystem).
+			// Shot sound (if set in GunConfig and a SoundHolder exists). Mobs have no shared AudioSource —
+			// play it positionally, like mob melee attacks (see MeleeSpawnSystem).
 			if (soundHolder.Value != null && !string.IsNullOrEmpty(config.GunConfig.FireSoundId))
 			{
 				var clip = soundHolder.Value.GetClip(config.GunConfig.FireSoundId);
@@ -216,8 +221,8 @@ namespace ECS
 		#region Movement / view helpers
 
 		/// <summary>
-		/// Полная остановка: гасит направление и обнуляет путь к игроку, проложенный патфайндингом
-		/// (waypoints чистим, но компонент пути не удаляем — список переиспользуется патфайндингом).
+		/// Full stop: kills the direction and clears the path to the player built by pathfinding
+		/// (waypoints are cleared, but the path component isn't deleted — the list is reused by pathfinding).
 		/// </summary>
 		private void StopMovement(int entity, EcsPool<MoveComponent> movePool, EcsPool<MovePath> pathPool)
 		{

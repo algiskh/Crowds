@@ -5,22 +5,22 @@ using UnityEngine;
 namespace ECS
 {
 	/// <summary>
-	/// Поведение моба ближнего боя. Во всём остальном это обычный моб (MobComponent), но вместо
-	/// контактного урона он бьёт телеграфированной ближней атакой — так же, как игрок (см. MeleeSpawnSystem):
+	/// Melee mob behavior. In every other respect it's a regular mob (MobComponent), but instead of
+	/// contact damage it strikes with a telegraphed melee attack — just like the player (see MeleeSpawnSystem):
 	///
-	///  • Chase    — игрок дальше AttackRange: подходит обычным патфайндингом (систему не трогаем).
-	///  • Windup   — игрок в пределах AttackRange: останавливается, проигрывает "attack" и
-	///               через MeleeConfig.Delay (замах) наносит урон (RequestMeleeComponent).
-	///  • Cooldown — после удара стоит MeleeConfig.Cooldown секунд (та же анимация доигрывает фазу
-	///               восстановления); затем снова Chase.
+	///  • Chase    — player beyond AttackRange: approaches via regular pathfinding (this system doesn't touch it).
+	///  • Windup   — player within AttackRange: stops, plays "attack" and
+	///               after MeleeConfig.Delay (windup) deals damage (RequestMeleeComponent).
+	///  • Cooldown — after the strike stands for MeleeConfig.Cooldown seconds (the same animation plays
+	///               through the recovery phase); then Chase again.
 	///
-	/// Все три фазы (замах → удар → восстановление) проигрываются одной анимацией "attack",
-	/// запускаемой один раз при входе в Windup. Между отдельными атаками моб на кадр возвращается
-	/// в Chase (анимация "run"), чтобы клип "attack" гарантированно переигрался заново.
+	/// All three phases (windup → strike → recovery) play in a single "attack" animation,
+	/// started once on entering Windup. Between individual attacks the mob returns to Chase
+	/// (animation "run") for one frame, so the "attack" clip is guaranteed to replay.
 	///
-	/// Запускается после MobPathfindingSystem и до MoveSystem: в Windup/Cooldown чистит путь,
-	/// проложенный патфайндингом к игроку, тем самым останавливая моба. Контактный урон для таких
-	/// мобов отключён в CollisionSystem — иначе урон удвоился бы.
+	/// Runs after MobPathfindingSystem and before MoveSystem: in Windup/Cooldown it clears the path
+	/// built by pathfinding toward the player, thereby stopping the mob. Contact damage is
+	/// disabled for such mobs in CollisionSystem — otherwise the damage would double.
 	/// </summary>
 	public sealed class MeleeAttackerSystem : IEcsRunSystem
 	{
@@ -68,7 +68,7 @@ namespace ECS
 					case MeleeAttackerState.Chase:
 						if (distance <= attacker.Config.AttackRange)
 							EnterWindup(entity, ref attacker, mob, mobPos, playerPos, animPool);
-						// иначе остаёмся в Chase — движение к игроку обеспечивает MobPathfindingSystem/MoveSystem.
+						// otherwise we stay in Chase — movement toward the player is handled by MobPathfindingSystem/MoveSystem.
 						break;
 
 					case MeleeAttackerState.Windup:
@@ -100,7 +100,7 @@ namespace ECS
 			attacker.State = MeleeAttackerState.Windup;
 			attacker.Timer = attacker.Config.MeleeConfig.Delay;
 			FacePlayer(mob, mobPos, playerPos);
-			// Одна анимация "attack" на все три фазы (замах → удар → восстановление).
+			// One "attack" animation for all three phases (windup → strike → recovery).
 			RequestAnimation(animPool, entity, AnimationType.Attack);
 		}
 
@@ -108,7 +108,7 @@ namespace ECS
 		{
 			attacker.State = MeleeAttackerState.Cooldown;
 			attacker.Timer = attacker.Config.MeleeConfig.Cooldown;
-			// Анимацию не трогаем — клип "attack" доигрывает фазу восстановления.
+			// Don't touch the animation — the "attack" clip plays through the recovery phase.
 		}
 
 		private void EnterChase(int entity, ref MeleeAttackerComponent attacker,
@@ -117,7 +117,7 @@ namespace ECS
 			attacker.State = MeleeAttackerState.Chase;
 			RequestAnimation(animPool, entity, AnimationType.Run);
 
-			// Заставляем патфайндинг проложить путь к игроку сразу же, а не ждать интервала.
+			// Make pathfinding build a path to the player right away, not wait for the interval.
 			if (!recalcRequestPool.Has(entity))
 				recalcRequestPool.Add(entity);
 		}
@@ -127,9 +127,9 @@ namespace ECS
 		#region Attack
 
 		/// <summary>
-		/// Момент удара: создаёт RequestMeleeComponent в точке перед мобом (по направлению к игроку).
-		/// Урон/радиус/цель/дебаффы берутся из MeleeConfig — та же модель, что у атаки игрока
-		/// (см. MeleeSpawnSystem). Delay=0: бьём сразу, замах уже отыгран фазой Windup.
+		/// The strike moment: creates a RequestMeleeComponent at the point in front of the mob (toward
+		/// the player). Damage/radius/targets/debuffs come from MeleeConfig — the same model as the player's
+		/// attack (see MeleeSpawnSystem). Delay=0: hit right away, the windup was already played by the Windup phase.
 		/// </summary>
 		private void Strike(EcsWorld world, EcsPool<RequestMeleeComponent> meleeRequestPool, int entity,
 			MeleeConfig meleeConfig, in MobComponent mob, Vector3 mobPos, Vector3 playerPos)
@@ -152,8 +152,8 @@ namespace ECS
 		#region Movement / view helpers
 
 		/// <summary>
-		/// Полная остановка: гасит направление и обнуляет путь к игроку, проложенный патфайндингом
-		/// (waypoints чистим, но компонент пути не удаляем — список переиспользуется патфайндингом).
+		/// Full stop: kills the direction and clears the path to the player built by pathfinding
+		/// (waypoints are cleared, but the path component isn't deleted — the list is reused by pathfinding).
 		/// </summary>
 		private void StopMovement(int entity, EcsPool<MoveComponent> movePool, EcsPool<MovePath> pathPool)
 		{

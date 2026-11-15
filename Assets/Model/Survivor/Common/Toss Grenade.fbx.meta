@@ -36,7 +36,7 @@ ModelImporter:
       takeName: mixamo.com
       internalID: -203655887218126122
       firstFrame: 0
-      lastFrame: 6.3000007
+      lastFrame: 1
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -64,7 +64,7 @@ ModelImporter:
       name: Throw
       takeName: mixamo.com
       internalID: 4061839508520268033
-      firstFrame: 6.3000007
+      firstFrame: 0.9450001
       lastFrame: 42
       wrapMode: 0
       orientationOffsetY: 0

@@ -72,6 +72,11 @@ gun. `GunConfig` keeps only ballistics (damage, speed, spread, lifetime, check t
 - **Loot icon** (`LootSystem`): ammo loot uses `AmmoConfig.LootIcon` for its caliber, falling back
   to `SpriteHolder.GetSpriteById("Ammo")` (used when `AmmoCaliber == None` or no config/icon).
 
+> Piercing: `GunConfig.PierceCount` (> 0) overrides the prefab's `Bullet.MaxPierceCount` and is stamped on
+> `BulletComponent.MaxPierce` at spawn, so per-gun piercing is reliable despite the shared pool (max 8,
+> the `PiercedTargets` capacity). The rifle uses it (`.50 cal`, pierce 4); `.50` has no `AmmoConfig` yet,
+> so it falls back to `MainHolder.BulletPrefab` and the generic ammo icon.
+
 > Pooling: `BulletSystem` keeps one `Stack<Bullet>` per projectile prefab (`Bullet.SourcePrefab`, set on
 > instantiate), so a pooled bullet is always of the requested caliber's prefab. `BulletPoolComponent.Value` is
 > only the fallback stack for instances without a source prefab; its `Parent` is still the pool parent.

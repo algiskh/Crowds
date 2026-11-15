@@ -39,6 +39,16 @@ public static class LootLogFormatter
 		}
 	}
 
+	/// <summary>
+	/// Hint shown when the player steps on a weapon that isn't picked up automatically,
+	/// e.g. "Hold [E] to pick up Rifle".
+	/// </summary>
+	public static string FormatPickupHint(in LootComponent loot, MainHolder holder, string keyName)
+	{
+		var key = string.IsNullOrEmpty(keyName) ? "Interact" : keyName;
+		return $"Hold [{key}] to pick up {Loc(holder, loot.Id, loot.Id)}";
+	}
+
 	private static string ResolveBonusName(MainHolder holder, string id)
 	{
 		if (!string.IsNullOrEmpty(id))

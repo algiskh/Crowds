@@ -5,21 +5,21 @@ using UnityEngine;
 namespace ECS
 {
 	/// <summary>
-	/// Разрушаемое окружение. Урон приходит через обычный RequestDamageComponent (от пуль/взрывов/ближнего
-	/// боя — гейтится источником в местах нанесения), а этот системный проход:
-	///  1) наносит урон от контакта мобов (источник MobContact) — по кулдауну, чтобы не спамить;
-	///  2) на HP<=0 разыгрывает разрушение: ступенчатые эффекты по точкам меша, рассыпает лут с
-	///     разбросом, применяет исход (Vanish/Debris) и заставляет ближних мобов перестроить путь
-	///     (carving-препятствие исчезло/изменилось — без запекания navmesh).
-	/// Регистрируется сразу после DamageSystem (HP уже применён) и до LootSystem/EffectsSystem
-	/// (чтобы их запросы обработались тем же кадром). См. Docs/BreakableFeature.md.
+	/// Breakable environment. Damage arrives via the regular RequestDamageComponent (from bullets/explosions/melee —
+	/// gated by the source at the damage sites), and this system pass:
+	///  1) deals mob contact damage (MobContact source) — on a cooldown, to avoid spamming;
+	///  2) at HP<=0 plays out the destruction: staged effects at mesh points, scatters loot with
+	///     spread, applies the outcome (Vanish/Debris) and makes nearby mobs repath
+	///     (the carving obstacle disappeared/changed — no navmesh rebaking).
+	/// Runs right after DamageSystem (HP already applied) and before LootSystem/EffectsSystem
+	/// (so their requests are processed the same frame). See Docs/BreakableFeature.md.
 	/// </summary>
 	public sealed class BreakableSystem : IEcsRunSystem
 	{
 		private const int CONTACT_BUFFER = 16;
-		private const float CONTACT_COOLDOWN = 0.5f;   // сек между тиками контактного урона по объекту
-		private const float REPATH_RADIUS = 8f;        // радиус, в котором мобы получают форс-репас при разрушении
-		private const float GOLDEN_ANGLE = 2.399963f;  // радианы (~137.5°) — равномерный разброс лута
+		private const float CONTACT_COOLDOWN = 0.5f;   // seconds between contact-damage ticks per object
+		private const float REPATH_RADIUS = 8f;        // radius in which mobs get a force-repath on destruction
+		private const float GOLDEN_ANGLE = 2.399963f;  // radians (~137.5°) — even loot spread
 
 		private readonly Collider[] _contactBuffer = new Collider[CONTACT_BUFFER];
 		private readonly Dictionary<Collider, int> _mobColliderMap = new Dictionary<Collider, int>(64);
@@ -47,8 +47,8 @@ namespace ECS
 
 			HandleMobContact(world, filter, breakablePool, mobPool, colliderPool, mobMask);
 
-			// Разрушение: удаление сущности во время обхода фильтра допустимо в этой версии EcsLite
-			// (тот же паттерн, что в DamageSystem «Handling zombie health»).
+			// Destruction: deleting the entity during filter iteration is fine in this EcsLite version
+			// (same pattern as in DamageSystem "Handling zombie health").
 			foreach (var entity in filter)
 			{
 				ref var health = ref healthPool.Get(entity);
@@ -60,8 +60,8 @@ namespace ECS
 			}
 		}
 
-		// Источник MobContact: мобы, «пробивающие» объект контактом. Проверяем только объекты,
-		// у которых включён этот источник; карту мобов строим лениво, один раз за кадр.
+		// MobContact source: mobs "breaking through" the object by contact. We check only objects
+		// with this source enabled; the mob map is built lazily, once per frame.
 		private void HandleMobContact(EcsWorld world, EcsFilter filter, EcsPool<BreakableComponent> breakablePool,
 			EcsPool<MobComponent> mobPool, EcsPool<ColliderComponent> colliderPool, int mobMask)
 		{
@@ -134,7 +134,7 @@ namespace ECS
 			var view = breakable.Value;
 			Vector3 center = view != null ? view.transform.position : Vector3.zero;
 
-			// 1) Ступенчатые эффекты разрушения (каждый в своей точке меша, со своей задержкой).
+			// 1) Staged destruction effects (each at its own mesh point, with its own delay).
 			if (config != null && config.DestructionEffects != null)
 			{
 				foreach (var fx in config.DestructionEffects)
@@ -148,9 +148,9 @@ namespace ECS
 				}
 			}
 
-			// 1b) Опциональный радиальный урон при разрушении (бочки и т.п.): переиспользуем систему
-			//     взрывов — спад урона от центра к краю, бьёт мобов, игрока и цепочкой другие breakable.
-			//     Сама сущность удаляется этим кадром, поэтому себя же взрывом не заденет.
+			// 1b) Optional radial damage on destruction (barrels etc.): reuse the explosion
+			//     system — damage falls off from center to edge, hits mobs, the player and chains into
+			//     other breakables. The entity itself is deleted this frame, so the explosion won't touch it.
 			if (config != null && config.DamageOnDestruction && config.DamageRadius > 0f)
 			{
 				ref var explosion = ref world.CreateSimpleEntity<RequestExplosionComponent>();
@@ -164,8 +164,8 @@ namespace ECS
 				explosion.Delay = 0f;
 			}
 
-			// 2) Лут с разбросом: спираль Фогеля (r = spread*sqrt(i)) даёт минимальную дистанцию ~spread
-			//    между соседними предметами. Каждый запрос независимо прокидывает drop-таблицу в LootSystem.
+			// 2) Loot with spread: the Vogel spiral (r = spread*sqrt(i)) gives a minimum distance of ~spread
+			//    between neighboring items. Each request independently passes the drop table to LootSystem.
 			if (config != null && config.LootTable != null && config.LootTable.Length > 0 && config.LootCount > 0)
 			{
 				float spread = Mathf.Max(0f, config.LootSpread);
@@ -181,15 +181,15 @@ namespace ECS
 
 					ref var lootRequest = ref world.CreateSimpleEntity<RequestLootSpawn>();
 					lootRequest.Source = RequestSpawnSource.Breakable;
-					// Breakable-сущность удаляется этим же кадром — источник не привязываем (LootSystem
-					// не разыменовывает SourceEntity для не-AdditionalSpawn источников).
+					// The Breakable entity is deleted the same frame — don't attach a source (LootSystem
+					// doesn't dereference SourceEntity for non-AdditionalSpawn sources).
 					lootRequest.SourceEntity = -1;
 					lootRequest.PossibleLoots = config.LootTable;
 					lootRequest.Position = pos;
 				}
 			}
 
-			// 3) Исход: debris (опц. продолжает карвить navmesh) или полное исчезновение (navmesh освобождается).
+			// 3) Outcome: debris (optionally keeps carving the navmesh) or full disappearance (navmesh is freed).
 			if (view != null)
 			{
 				if (config != null && config.AfterDestruction == AfterDestruction.Debris)
@@ -199,16 +199,16 @@ namespace ECS
 				else
 				{
 					view.Vanish();
-					// Рантайм-объект (из пула) возвращаем в пул для переиспользования; сценовый просто гаснет.
+					// Runtime objects (from the pool) go back to the pool for reuse; scene ones just go dark.
 					if (breakable.Pooled && config != null && !string.IsNullOrEmpty(config.Id))
 						ReturnToPool(world, config.Id, view);
 				}
 			}
 
-			// 4) Форс-репас ближних мобов: carving-препятствие исчезло/изменилось — пусть перепроложат путь.
+			// 4) Force-repath nearby mobs: the carving obstacle disappeared/changed — let them recalculate.
 			RequestNearbyRepath(world, center);
 
-			// 5) Сущность больше не нужна: GameObject живёт как debris, деактивирован или лежит в пуле.
+			// 5) The entity is no longer needed: the GameObject lives on as debris, deactivated or in the pool.
 			world.DelEntity(entity);
 		}
 
@@ -226,8 +226,8 @@ namespace ECS
 			stack.Push(view);
 		}
 
-		// Заставляет мобов в радиусе REPATH_RADIUS перепроложить путь (появилось/исчезло carving-препятствие).
-		// Публичный статик — вызывается и при разрушении, и при рантайм-спауне (BreakableSpawnSystem).
+		// Makes mobs within REPATH_RADIUS repath (a carving obstacle appeared/disappeared).
+		// Public static — called both on destruction and on runtime spawn (BreakableSpawnSystem).
 		public static void RequestNearbyRepath(EcsWorld world, Vector3 center)
 		{
 			var mobPool = world.GetPool<MobComponent>();

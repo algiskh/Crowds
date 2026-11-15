@@ -1,83 +1,85 @@
-# Controls Settings (перепривязка управления)
+# Controls Settings (control rebinding)
 
-Пользовательская перепривязка клавиш поверх Unity Input System с сохранением в PlayerPrefs
-(JSON), с отдельной страницей в меню настроек. На первом этапе меняются только
-клавиатура/мышь; геймпад показывается «только для чтения».
+User key rebinding on top of the Unity Input System, persisted to PlayerPrefs (JSON), with a
+dedicated page in the settings menu. In the first phase only keyboard/mouse can be changed; the
+gamepad is shown read-only.
 
-## Хранилище настроек (`Assets/_Scripts/UI/Settings/ControlBindingsStore.cs`)
+## Settings store (`Assets/_Scripts/UI/Settings/ControlBindingsStore.cs`)
 
-Настройки сериализуются штатным механизмом Input System — **биндинг-оверрайдами**:
-`InputActionAsset.SaveBindingOverridesAsJson()` даёт компактный JSON только изменённых
-пользователем биндингов, а `LoadBindingOverridesFromJson(json)` их накладывает. Это и есть
-«сериализуемые кастомные настройки».
+Settings are serialized with the Input System's own mechanism — **binding overrides**:
+`InputActionAsset.SaveBindingOverridesAsJson()` produces a compact JSON of only the
+user-changed bindings, and `LoadBindingOverridesFromJson(json)` applies them back. That is the
+"serializable custom settings".
 
-- `IControlSettingsStore` — абстракция хранилища (`HasData`/`Load`/`Save`/`Clear`).
-  Позволяет позже перенести JSON куда угодно (файл, облако, бэкенд), подменив реализацию.
-- `PlayerPrefsControlSettingsStore` — реализация по умолчанию, ключ `controls.bindings.v1`.
-- `ControlSettings` — статический фасад:
-  - `Apply(asset)` — загрузить сохранённый JSON и наложить на ассет;
-  - `Save(asset)` — сериализовать текущие оверрайды и записать в хранилище;
-  - `ResetAll(asset)` — снять все оверрайды и очистить хранилище;
-  - `SetStore(store)` — подменить хранилище.
+- `IControlSettingsStore` — the store abstraction (`HasData`/`Load`/`Save`/`Clear`). Lets you
+  later move the JSON anywhere (file, cloud, backend) by swapping the implementation.
+- `PlayerPrefsControlSettingsStore` — the default implementation, key `controls.bindings.v1`.
+- `ControlSettings` — static facade:
+  - `Apply(asset)` — load the saved JSON and apply it to the asset;
+  - `Save(asset)` — serialize the current overrides and write them to the store;
+  - `ResetAll(asset)` — remove all overrides and clear the store;
+  - `SetStore(store)` — swap the store.
 
-`ControlSettings.Apply` вызывается в двух местах, чтобы кастомные биндинги действовали в
-обеих сценах:
-- `EntryPoint.cs` (геймплей) — сразу после регистрации `InputActionsComponent`, до чтения инпута;
-- `ControlsSettingsMenu.Awake` (сцена меню, где нет `EntryPoint`).
+`ControlSettings.Apply` is called in two places so custom bindings work in both scenes:
+- `EntryPoint.cs` (gameplay) — right after registering `InputActionsComponent`, before reading
+  input;
+- `ControlsSettingsMenu.Awake` (menu scene, which has no `EntryPoint`).
 
-`ControlSettings.Save` вызывается после каждой успешной перепривязки.
+`ControlSettings.Save` is called after every successful rebind.
 
 ## UI
 
-### `ControlBindingRow.cs` — строка одного контрола
-Вью для префаба строки: `UniText` имя контрола (напр. «Move Left»), `Button` +
-`UniText` с основной клавишей/мышью (клик запускает перепривязку), `UniText`
-`_keyboardAlternativeLabel` с альтернативной клавишей того же контрола (напр. `W` / `UpArrow`,
-только показ), `UniText` с контролом геймпада (показ). Стики геймпада подписываются
-вручную («Left Stick» / «Right Stick»), т.к. у них нет читаемого display-string.
+### `ControlBindingRow.cs` — a row for a single control
+View for the row prefab: `UniText` control name (e.g. "Move Left"), a `Button` + `UniText` with
+the primary key/mouse button (click starts rebinding), `UniText` `_keyboardAlternativeLabel`
+with the alternative key of the same control (e.g. `W` / `UpArrow`, display only), `UniText`
+with the gamepad control (display). Gamepad sticks are labeled manually ("Left Stick" / "Right
+Stick") because they have no readable display string.
 
-Флоу перепривязки (`PerformInteractiveRebinding`):
-1. клик по слоту → слот подсвечивается `_listeningColor`, надпись меняется на `_listeningText`
-   («Press a key...»); одновременно «слушает» только одна строка (статический `s_active`);
-2. игрок жмёт клавишу/кнопку мыши → биндинг применяется, `Refresh` обновляет надпись,
-   вызывается колбэк сохранения (`ControlSettings.Save`);
-3. `Esc` или повторный клик по слоту → отмена, слот возвращается к прежнему цвету/тексту.
+Rebinding flow (`PerformInteractiveRebinding`):
+1. click the slot → the slot highlights with `_listeningColor`, the label changes to
+   `_listeningText` ("Press a key..."); only one row "listens" at a time (static `s_active`);
+2. the player presses a key/mouse button → the binding is applied, `Refresh` updates the label,
+   the save callback (`ControlSettings.Save`) is invoked;
+3. `Esc` or another click on the slot → cancel, the slot returns to its previous color/text.
 
-Ввод ограничен клавиатурой/мышью через `WithControlsExcluding("<Gamepad>")` (+ исключение
-`position`/`delta`/`scroll` и **`leftButton`** мыши — ЛКМ используется для клика по слоту,
-иначе тот же клик сразу ловится перепривязкой); отмена — `WithCancelingThrough("<Keyboard>/escape")`.
-Перед `Start()` экшен обязательно `Disable()` (иначе `InvalidOperationException`), после —
-`Enable()` при необходимости.
-Поля подсветки (`_listeningTarget`, `_listeningColor`, `_listeningText`) опциональны:
-если `_listeningTarget` не задан, берётся `targetGraphic` кнопки.
+Input is restricted to keyboard/mouse via `WithControlsExcluding("<Gamepad>")` (+ excluding
+`position`/`delta`/`scroll` and the mouse **`leftButton`** — LMB is used to click the slot,
+otherwise the same click is immediately caught by the rebinding); cancel via
+`WithCancelingThrough("<Keyboard>/escape")`.
+Before `Start()` the action must be `Disable()`d (otherwise `InvalidOperationException`), after
+— `Enable()` if needed.
+The highlight fields (`_listeningTarget`, `_listeningColor`, `_listeningText`) are optional: if
+`_listeningTarget` isn't set, the button's `targetGraphic` is used.
 
-### `ControlsSettingsMenu.cs` — построение списка
-Строит строки из `InputActionAsset` (карта по умолчанию — `Player`) в `Content` у
-`ScrollRect` (Content должен нести `VerticalLayoutGroup`). Для каждого экшена **группирует**
-клавиатурные/мышиные биндинги одного контрола в одну строку: первый — основной
-(перепривязывается), второй — альтернативный (в колонке `_keyboardAlternativeLabel`),
-третий+ игнорируется. Так убираются строки-дубликаты (напр. `W` и `UpArrow` для «Move Up»).
-Ключ группировки: часть композита — по имени (up/down/left/right), одиночные биндинги — все в
-одну группу экшена. Композитный заголовок пропускается. В колонку геймпада подставляется
-соответствующий биндинг того же экшена: для части композита — часть с тем же именем, иначе
-одиночный геймпадный биндинг (напр. `Move` → `leftStick` → «Left Stick»). Кнопка Reset вызывает
-`ControlSettings.ResetAll` и перестраивает список.
+### `ControlsSettingsMenu.cs` — building the list
+Builds rows from the `InputActionAsset` (default map — `Player`) into the `Content` of a
+`ScrollRect` (Content must carry a `VerticalLayoutGroup`). For each action it **groups** the
+keyboard/mouse bindings of one control into a single row: the first is the primary one
+(rebindable), the second is the alternative (into the `_keyboardAlternativeLabel` column), the
+third+ are ignored. This removes duplicate rows (e.g. `W` and `UpArrow` for "Move Up"). The
+grouping key: composite parts — by name (up/down/left/right), single bindings — all into one
+group per action. The composite header is skipped. The gamepad column gets the matching binding
+of the same action: for a composite part — the part with the same name, otherwise the single
+gamepad binding (e.g. `Move` → `leftStick` → "Left Stick"). The Reset button calls
+`ControlSettings.ResetAll` and rebuilds the list.
 
-## Что нужно собрать в Unity (редактор)
+## What to assemble in Unity (editor)
 
-Скрипты не создают префабы/сцены — это делается в редакторе:
+The scripts don't create prefabs/scenes — that's done in the editor:
 
-1. **Префаб строки** (`Assets/_Prefabs/UI/Settings/ControlBindingRow.prefab`): корень с
-   `ControlBindingRow` + `LayoutElement`, внутри — `UniText` (имя), `Button` с дочерним
-   `UniText` (основная клавиша), `UniText` (альтернативная клавиша), `UniText` (геймпад).
-   Разложить горизонтально (напр. `HorizontalLayoutGroup`). Проставить ссылки в инспекторе строки
-   (`_nameLabel`, `_keyboardButton`, `_keyboardLabel`, `_keyboardAlternativeLabel`, `_gamepadLabel`).
-2. **Страница настроек управления**: `ScrollRect` → `Viewport` → `Content` с
-   `VerticalLayoutGroup` (+ `ContentSizeFitter`, Vertical = Preferred Size). На объект с
-   `ControlsSettingsMenu` назначить: `_actions` (тот же `InputSystem_Actions`, что в `EntryPoint`),
-   `_scroll`, `_content` (= Content), `_rowPrefab`, опционально `_resetButton`.
-3. Открыть страницу из `MainMenuController` (кнопка Settings уже ведёт на `_settingsPage`) —
-   разместить `ControlsSettingsMenu` внутри Settings Page либо как отдельную под-страницу.
+1. **Row prefab** (`Assets/_Prefabs/UI/Settings/ControlBindingRow.prefab`): root with
+   `ControlBindingRow` + `LayoutElement`, inside — `UniText` (name), `Button` with a child
+   `UniText` (primary key), `UniText` (alternative key), `UniText` (gamepad). Lay out
+   horizontally (e.g. `HorizontalLayoutGroup`). Wire the references in the row's inspector
+   (`_nameLabel`, `_keyboardButton`, `_keyboardLabel`, `_keyboardAlternativeLabel`,
+   `_gamepadLabel`).
+2. **Controls settings page**: `ScrollRect` → `Viewport` → `Content` with a
+   `VerticalLayoutGroup` (+ `ContentSizeFitter`, Vertical = Preferred Size). On the object with
+   `ControlsSettingsMenu` assign: `_actions` (the same `InputSystem_Actions` as in
+   `EntryPoint`), `_scroll`, `_content` (= Content), `_rowPrefab`, optionally `_resetButton`.
+3. Open the page from `MainMenuController` (the Settings button already leads to `_settingsPage`)
+   — place `ControlsSettingsMenu` inside the Settings Page or as a separate sub-page.
 
-> Важно: `ControlsSettingsMenu._actions` должен ссылаться на тот же ассет
-> `InputSystem_Actions`, что используется в геймплее, иначе оверрайды не совпадут.
+> Important: `ControlsSettingsMenu._actions` must reference the same `InputSystem_Actions` asset
+> used in gameplay, otherwise the overrides won't match.

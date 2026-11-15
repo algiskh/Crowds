@@ -7,29 +7,29 @@ using UnityEngine.AI;
 namespace ECS
 {
 	/// <summary>
-	/// Поведение моба-гренадёра. Во всём остальном это обычный моб (MobComponent), но вместо
-	/// того чтобы лезть в ближний бой, он держит дистанцию и кидает гранаты:
+	/// Grenadier mob behavior. In every other respect it's a regular mob (MobComponent), but instead of
+	/// going into melee it keeps its distance and throws grenades:
 	///
-	///  • Chase    — игрок дальше X: подходит ближе обычным патфайндингом (систему не трогаем).
-	///  • Throw    — игрок в полосе [Y, X]: останавливается, проигрывает "throw", по окончании
-	///               замаха (ThrowWindup) бросает гранату в текущую позицию игрока.
-	///  • Cooldown — после броска стоит ThrowCooldown секунд (анимация "throw_cooldown").
-	///  • Flee     — игрок ближе Y: отходит на свободную точку NavMesh подальше от игрока.
+	///  • Chase    — player beyond X: approaches via regular pathfinding (this system doesn't touch it).
+	///  • Throw    — player in the [Y, X] band: stops, plays "throw", and when the windup
+	///               (ThrowWindup) finishes throws a grenade at the player's current position.
+	///  • Cooldown — after the throw stands for ThrowCooldown seconds (animation "throw_cooldown").
+	///  • Flee     — player closer than Y: retreats to a free NavMesh spot away from the player.
 	///
-	/// Запускается после MobPathfindingSystem и до MoveSystem: в нестандартных состояниях
-	/// перетирает/чистит путь, проложенный патфайндингом к игроку, тем самым управляя движением.
-	/// Граната моба задевает взрывом игрока (а не мобов) — см. GrenadeLauncher/ExplosionSystem.
+	/// Runs after MobPathfindingSystem and before MoveSystem: in non-standard states it
+	/// overwrites/clears the path built by pathfinding toward the player, thereby controlling movement.
+	/// The mob's grenade hits the player with its explosion (not mobs) — see GrenadeLauncher/ExplosionSystem.
 	/// </summary>
 	public sealed class GrenadierSystem : IEcsRunSystem
 	{
-		// Углы (град) для поиска свободной точки отхода: сначала строго от игрока, затем в стороны.
-		// Не дальше ±90°: точка всегда остаётся «на стороне моба» и отход не ведёт через игрока.
+		// Angles (degrees) for finding a free retreat point: first straight away from the player, then sideways.
+		// Never beyond ±90°: the point always stays "on the mob's side" and the retreat doesn't lead through the player.
 		private static readonly float[] _fleeAngles = { 0f, 30f, -30f, 60f, -60f, 90f, -90f };
-		// Допуск: путь отхода может подойти к игроку не более чем на столько ближе текущей дистанции.
+		// Tolerance: the retreat path may approach the player no closer than the current distance minus this.
 		private const float FleeClearanceTolerance = 0.5f;
 		private const float FleeArriveDistance = 0.4f;
 
-		// Переиспользуемые буферы для расчёта пути отхода по NavMesh.
+		// Reusable buffers for computing the retreat path over the NavMesh.
 		private readonly NavMeshPath _fleePath = new NavMeshPath();
 		private Vector3[] _fleeCorners = new Vector3[16];
 		private int _fleeCornerCount;
@@ -80,7 +80,7 @@ namespace ECS
 							EnterFlee(entity, ref grenadier, animPool);
 						else if (distance <= config.ThrowMaxDistance)
 							EnterThrow(entity, ref grenadier, mob, mobPos, playerPos, animPool);
-						// иначе остаёмся в Chase — движение к игроку обеспечивает MobPathfindingSystem/MoveSystem.
+						// otherwise we stay in Chase — movement toward the player is handled by MobPathfindingSystem/MoveSystem.
 						break;
 
 					case GrenadierState.Throw:
@@ -104,7 +104,7 @@ namespace ECS
 					case GrenadierState.Flee:
 						if (distance >= config.ThrowMinDistance)
 						{
-							// Отошёл достаточно далеко — снова кидаем (если в полосе) либо догоняем.
+							// Retreated far enough — throw again (if in the band) or catch up.
 							if (distance <= config.ThrowMaxDistance)
 								EnterThrow(entity, ref grenadier, mob, mobPos, playerPos, animPool);
 							else
@@ -128,7 +128,7 @@ namespace ECS
 			grenadier.HasFleeTarget = false;
 			RequestAnimation(animPool, entity, AnimationType.Run);
 
-			// Заставляем патфайндинг проложить путь к игроку сразу же, а не ждать интервала.
+			// Make pathfinding build a path to the player right away, not wait for the interval.
 			if (!recalcRequestPool.Has(entity))
 				recalcRequestPool.Add(entity);
 		}
@@ -162,8 +162,8 @@ namespace ECS
 		#region Movement helpers
 
 		/// <summary>
-		/// Полная остановка: гасит направление и обнуляет путь к игроку, проложенный патфайндингом
-		/// (waypoints чистим, но компонент пути не удаляем — список переиспользуется патфайндингом).
+		/// Full stop: kills the direction and clears the path to the player built by pathfinding
+		/// (waypoints are cleared, but the path component isn't deleted — the list is reused by pathfinding).
 		/// </summary>
 		private void StopMovement(int entity, EcsPool<MoveComponent> movePool, EcsPool<MovePath> pathPool)
 		{
@@ -178,9 +178,9 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Шаг отхода: выбирает (при необходимости) свободную точку NavMesh подальше от игрока и ведёт
-		/// моба к ней по пути NavMesh (углы пути — waypoint'ы). Патфайндинг периодически перетирает
-		/// MovePath путём к игроку — тогда путь отхода прокладывается заново от текущей позиции.
+		/// Retreat step: picks (if needed) a free NavMesh spot away from the player and leads the
+		/// mob to it along a NavMesh path (path corners — waypoints). Pathfinding periodically overwrites
+		/// MovePath with a path to the player — then the retreat path is rebuilt from the current position.
 		/// </summary>
 		private void FleeStep(int entity, ref GrenadierComponent grenadier, Vector3 mobPos, Vector3 playerPos,
 			float minDistance, EcsPool<MoveComponent> movePool, EcsPool<MovePath> pathPool)
@@ -191,7 +191,7 @@ namespace ECS
 				Vector3 toTarget = grenadier.FleeTarget - mobPos;
 				toTarget.y = 0f;
 				if (toTarget.sqrMagnitude < FleeArriveDistance * FleeArriveDistance)
-					needNew = true; // дошёл до выбранной точки, а игрок всё ещё близко — ищем новую.
+					needNew = true; // reached the picked point but the player is still close — look for a new one.
 			}
 
 			bool hasFreshPath = false;
@@ -201,24 +201,24 @@ namespace ECS
 				if (grenadier.HasFleeTarget)
 				{
 					grenadier.FleeTarget = target;
-					hasFreshPath = true; // TryFindFleeTarget оставил проверенный путь в _fleeCorners.
+					hasFreshPath = true; // TryFindFleeTarget left a verified path in _fleeCorners.
 				}
 			}
 
 			if (!grenadier.HasFleeTarget)
 			{
-				// Свободного места не нашли — просто стоим, чтобы не лезть в игрока.
+				// No free spot found — just stand still instead of crowding the player.
 				StopMovement(entity, movePool, pathPool);
 				return;
 			}
 
-			// Путь уже ведёт к точке отхода и MoveSystem по нему идёт — не трогаем (иначе сбросили бы прогресс).
+			// The path already leads to the retreat point and MoveSystem is following it — don't touch (we'd reset progress).
 			if (!hasFreshPath && IsFollowingFleePath(entity, grenadier.FleeTarget, pathPool))
 				return;
 
 			if (!hasFreshPath && !TryCalculateFleePath(mobPos, grenadier.FleeTarget, playerPos))
 			{
-				// Прежний маршрут больше не годится (перекрыт или ведёт к игроку) — выберем точку заново в след. кадре.
+				// The old route is no good (blocked or leads to the player) — pick a point again next frame.
 				grenadier.HasFleeTarget = false;
 				StopMovement(entity, movePool, pathPool);
 				return;
@@ -246,9 +246,9 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Ищет валидную точку NavMesh на дистанции >= minDistance от игрока, отходя от него;
-		/// при заблокированном направлении перебирает углы в стороны (в пределах ±90° от «прочь от игрока»).
-		/// Точка принимается только если до неё есть полный путь NavMesh, не подводящий моба к игроку.
+		/// Finds a valid NavMesh point at a distance >= minDistance from the player, retreating away from it;
+		/// when a direction is blocked, tries angles sideways (within ±90° of "away from the player").
+		/// A point is accepted only if there's a complete NavMesh path to it that doesn't bring the mob closer to the player.
 		/// </summary>
 		private bool TryFindFleeTarget(Vector3 mobPos, Vector3 playerPos, float minDistance, out Vector3 result)
 		{
@@ -283,8 +283,8 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Считает путь NavMesh до точки отхода в _fleeCorners. Путь отвергается, если он неполный или
-		/// хоть один его отрезок проходит к игроку ближе, чем моб стоит сейчас (минус допуск).
+		/// Computes the NavMesh path to the retreat point into _fleeCorners. The path is rejected if it's
+		/// incomplete or any of its segments passes closer to the player than the mob currently stands (minus tolerance).
 		/// </summary>
 		private bool TryCalculateFleePath(Vector3 from, Vector3 to, Vector3 playerPos)
 		{

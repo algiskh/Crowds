@@ -25,8 +25,8 @@ namespace ECS
 
 				if (fx.LifeTime <= 0 && fx.HasModifierLink)
 				{
-					// Владелец умер/переиспользован → связь рвём, эффект уйдёт в пул (Pool() отцепит
-					// child-эффект от моба, иначе он «воскрес» бы вместе с переиспользованным мобом).
+					// The owner died/was recycled → break the link, the effect returns to the pool (Pool() detaches
+					// the child effect from the mob, otherwise it would "resurrect" with the recycled mob).
 					if (fx.ModifierOwner.Unpack(world, out var ownerEntity) && modifiersPool.Has(ownerEntity))
 					{
 						ref var modifierOwner = ref modifiersPool.Get(ownerEntity);
@@ -36,8 +36,8 @@ namespace ECS
 							fx.Effect.transform.position = modifierOwner.Transform.position;
 						}
 
-						// DoT: эффект живёт, пока на владельце есть модификатор этого типа урона.
-						// Прочие (DamageType.Unknown, напр. SpeedShotDebuff) — пока жив сам связанный модификатор.
+						// DoT: the effect lives while the owner has a modifier of this damage type.
+						// Others (DamageType.Unknown, e.g. SpeedShotDebuff) — while the linked modifier itself lives.
 						bool stillActive = fx.DamageType != DamageType.Unknown
 							? modifierOwner.HasModifierWithDamageType(fx.DamageType)
 							: modifierOwner.Modifiers != null && modifierOwner.Modifiers.Contains(fx.LinkedModifier);
@@ -123,7 +123,7 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Берёт эффект по id из стека пула или инстанцирует новый.
+		/// Takes an effect by id from the pool stack or instantiates a new one.
 		/// </summary>
 		private SceneEffect SpawnEffect(EffectPoolComponent pool, FxWrapper config, float rotation)
 		{

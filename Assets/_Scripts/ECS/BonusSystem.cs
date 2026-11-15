@@ -5,11 +5,11 @@ using UnityEngine;
 namespace ECS
 {
 	/// <summary>
-	/// Подбираемые бонусы (speed up, shield) поверх общей системы модификаторов.
-	/// Подбор Bonus-лута эмитит RequestApplyBonusComponent (см. CollisionSystem); здесь мы:
-	///  1) применяем сконфигурированный модификатор игроку (с семантикой "refresh" — один бонус на тип);
-	///  2) каждый кадр гоним прогресс в PlayerStats (бар = доля оставшегося времени, подпись = секунды),
-	///     убирая протухшие бонусы. Сам Lifetime тикает в ModifiersSystem — здесь только читаем.
+	/// Pickable bonuses (speed up, shield) on top of the shared modifier system.
+	/// Picking up Bonus loot emits RequestApplyBonusComponent (see CollisionSystem); here we:
+	///  1) apply the configured modifier to the player (with "refresh" semantics — one bonus per type);
+	///  2) every frame drive the progress in PlayerStats (bar = remaining-time fraction, caption = seconds),
+	///     removing expired bonuses. The Lifetime itself ticks in ModifiersSystem — we only read it.
 	/// </summary>
 	public class BonusSystem : IEcsRunSystem
 	{
@@ -51,7 +51,7 @@ namespace ECS
 				if (remaining <= 0f)
 				{
 					playerStats.Value.ClearBonus(bonus.Type);
-					// Сопровождающий VFX закончился вместе с бонусом — возвращаем в пул.
+					// The accompanying VFX ended together with the bonus — return it to the pool.
 					if (bonus.Effect != null)
 						effectPool.Pool(bonus.Effect);
 					list.RemoveAt(i);
@@ -92,10 +92,10 @@ namespace ECS
 			if (modifierOwner.Modifiers == null)
 				modifierOwner.Modifiers = new List<Modifier>();
 
-			// Refresh: убираем уже активный бонус того же типа (его модификатор + запись).
-			// Бар не сбрасываем — новый бонус того же типа тут же его перерисует в UI-проходе.
-			// Сопровождающий VFX не пересоздаём, а ПЕРЕИСПОЛЬЗУЕМ — чтобы не было дублей при
-			// повторном подборе того же типа. Пул трогаем только при истечении бонуса.
+			// Refresh: remove the already active bonus of the same type (its modifier + record).
+			// Don't reset the bar — a new bonus of the same type redraws it right away in the UI pass.
+			// Don't recreate the accompanying VFX, REUSE it — so there are no duplicates on
+			// picking up the same type again. Touch the pool only when the bonus expires.
 			SceneEffect reusedEffect = null;
 			var list = activeBonuses.Value;
 			for (int i = list.Count - 1; i >= 0; i--)
@@ -110,8 +110,8 @@ namespace ECS
 
 			modifierOwner.Modifiers.Add(modifier);
 
-			// Сопровождающий игрока VFX: переиспользуем от предыдущего бонуса того же типа,
-			// иначе берём из пула и парентим к игроку — эффект едет за ним всё время действия.
+			// Player-accompanying VFX: reuse from the previous bonus of the same type,
+			// otherwise take from the pool and parent to the player — the effect rides with them the whole duration.
 			SceneEffect effect = reusedEffect;
 			if (effect == null && modifier.HasEffect && !string.IsNullOrEmpty(modifier.EffectId))
 				effect = SpawnFollowEffect(ref effectPool, effectsHolder, modifier.EffectId, modifierOwner.Transform);
@@ -126,8 +126,8 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Достаёт VFX из пула эффектов и парентит его к игроку, чтобы он сопровождал персонажа
-		/// всё время действия бонуса. Возврат в пул делает BonusSystem при истечении бонуса.
+		/// Pops a VFX from the effect pool and parents it to the player, so it accompanies the character
+		/// for the whole bonus duration. BonusSystem returns it to the pool when the bonus expires.
 		/// </summary>
 		private SceneEffect SpawnFollowEffect(ref EffectPoolComponent effectPool,
 			EffectsHolder effectsHolder, string effectId, Transform player)

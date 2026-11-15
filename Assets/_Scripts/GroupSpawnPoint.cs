@@ -1,8 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Сценовая точка спауна отряда в строю. Держит GroupSpawnConfig; регистрируется в ECS
-/// (GroupSpawnPointComponent) в EntryPoint, обрабатывается GroupSpawnSystem.
+/// Scene spawn point of a formation squad. Holds the GroupSpawnConfig; registered in ECS
+/// (GroupSpawnPointComponent) by EntryPoint, processed by GroupSpawnSystem.
 /// </summary>
 public class GroupSpawnPoint : MonoBehaviour
 {
@@ -13,7 +13,7 @@ public class GroupSpawnPoint : MonoBehaviour
 #if UNITY_EDITOR
 	private void OnDrawGizmosSelected()
 	{
-		// Грубая визуализация направления строя (вперёд) и центра.
+		// Crude visualization of the formation direction (forward) and center.
 		Gizmos.color = Color.cyan;
 		Gizmos.DrawWireSphere(transform.position, 0.5f);
 		Gizmos.DrawLine(transform.position, transform.position + transform.forward * 2f);

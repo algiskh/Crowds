@@ -4,14 +4,14 @@ using UnityEngine;
 namespace ECS
 {
 	/// <summary>
-	/// Читает удержание действия "Throw": чем дольше зажато — тем дальше бросок.
-	/// Дальность интерполируется между Min/MaxThrowDistance из PlayerConfig (механика игрока),
-	/// а скорость/урон/радиус/эффекты берутся из текущего GrenadeConfig (тип гранаты).
-	/// Направление берётся от игрока к точке прицела (под курсором/стиком) — тем же
-	/// приёмом, что и прицеливание оружия (луч из курсора в плоскость на высоте игрока).
-	/// Во время зарядки показывает предполагаемую точку попадания (GrenadeAimVisualizer).
-	/// На отпускании тратит гранату и бросает снаряд по дуге (GrenadeProjectileComponent),
-	/// при этом, если у конфига есть трейл-эффект, он делается ребёнком гранаты и летит с ней.
+	/// Reads the hold of the "Throw" action: the longer it's held — the farther the throw.
+	/// Range interpolates between Min/MaxThrowDistance from PlayerConfig (player mechanic),
+	/// while speed/damage/radius/effects come from the current GrenadeConfig (grenade type).
+	/// Direction is taken from the player to the aim point (under the cursor/stick) — using the same
+	/// trick as weapon aiming (ray from the cursor into the plane at the player's height).
+	/// While charging, shows the expected landing point (GrenadeAimVisualizer).
+	/// On release spends a grenade and throws an arcing projectile (GrenadeProjectileComponent);
+	/// if the config has a trail effect, it's made a child of the grenade and flies with it.
 	/// </summary>
 	public sealed class GrenadeThrowSystem : IEcsRunSystem
 	{
@@ -46,7 +46,7 @@ namespace ECS
 				grenade.IsCharging = true;
 				grenade.ChargeTime += Time.deltaTime;
 
-				// Превью точки попадания — только когда есть что и чем бросать.
+				// Landing-point preview — only when there's something to throw and a way to throw it.
 				if (canThrow)
 				{
 					float ratio = ChargeRatio(config, grenade.ChargeTime);
@@ -61,7 +61,7 @@ namespace ECS
 				return;
 			}
 
-			// Кнопку не держат. Если в прошлом кадре заряжались — это отпускание = бросок.
+			// The button isn't held. If we were charging last frame — this release is a throw.
 			if (!grenade.IsCharging)
 				return;
 
@@ -90,8 +90,8 @@ namespace ECS
 				: 1f;
 
 		/// <summary>
-		/// Создаёт летящий снаряд от игрока к точке приземления через общий GrenadeLauncher.
-		/// Кого задевает взрыв и насколько — задаётся долями урона в GrenadeConfig.
+		/// Creates a flying projectile from the player to the landing point via the shared GrenadeLauncher.
+		/// Who the explosion hits and how hard is defined by the damage scales in GrenadeConfig.
 		/// </summary>
 		private void SpawnProjectile(EcsWorld world, MainHolder mainHolder, GrenadeConfig grenadeConfig, Vector3 landing)
 		{
@@ -102,9 +102,9 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Точка приземления = позиция игрока + направление прицела * дальность(заряд).
-		/// Направление считается через луч из курсора в плоскость на высоте игрока
-		/// (тот же приём, что в AimVisualizer / LookAtCursorSystem).
+		/// Landing point = player position + aim direction * range(charge).
+		/// The direction is computed via a ray from the cursor into the plane at the player's height
+		/// (same trick as in AimVisualizer / LookAtCursorSystem).
 		/// </summary>
 		private Vector3 ComputeLandingPosition(EcsWorld world, PlayerConfig config, float chargeRatio)
 		{

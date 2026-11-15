@@ -11,7 +11,7 @@ public class NavMeshManager : MonoBehaviour
 	[SerializeField] private FloorSector _leftSector;
 
 	[Header("Sliding mode (SectorMode.Sliding)")]
-	[Tooltip("Заранее расставленные секторы уровня по порядку (вдоль оси Z).")]
+	[Tooltip("Pre-placed level sectors in order (along the Z axis).")]
 	[SerializeField] private List<FloorSector> _sectors = new();
 
 	private float _distanceBetweenSectors;
@@ -20,24 +20,24 @@ public class NavMeshManager : MonoBehaviour
 	public FloorSector LeftSector => _leftSector;
 	public float DistanceBetweenSectors => _distanceBetweenSectors;
 
-	// Bake'ом и расстоянием между секторами теперь управляет EntryPoint.Configure(...) —
-	// чтобы секторы успели приехать из префаба уровня до запекания navmesh. См. план «уровни-префабы».
+	// Baking and the inter-sector distance are now managed by EntryPoint.Configure(...) —
+	// so the sectors arrive from the level prefab before the navmesh bake. See the "level-prefabs" plan.
 
-	// Принимает секторы уровня (из LevelRoot) и запекает navmesh.
-	// sectors == null/пусто → используем уже назначенные в инспекторе ссылки (прямой запуск сцены).
-	// bake == false → только расставляет секторы/шаг, а запекание оставляет вызывающему
-	// (EntryPoint печёт navmesh асинхронно на загрузке — RebuildNavMeshAsync).
+	// Takes the level sectors (from LevelRoot) and bakes the navmesh.
+	// sectors == null/empty → use the already assigned inspector references (direct scene launch).
+	// bake == false → only arranges sectors/step, leaving the bake to the caller
+	// (EntryPoint bakes navmesh asynchronously during loading — RebuildNavMeshAsync).
 	public void Configure(FloorSector[] sectors, bool bake = true)
 	{
 		if (sectors != null && sectors.Length > 0)
 		{
-			// Сортируем вдоль Z: для Sliding-режима порядок критичен, для Recycling — даёт тройку.
+			// Sort along Z: for Sliding mode the order is critical, for Recycling it yields the triple.
 			var ordered = (FloorSector[])sectors.Clone();
 			System.Array.Sort(ordered, (a, b) => a.transform.position.z.CompareTo(b.transform.position.z));
 
 			_sectors = new List<FloorSector>(ordered);
 
-			// Recycling-режим использует тройку current/left/right (префаб содержит ровно 3 сектора).
+			// Recycling mode uses the current/left/right triple (the prefab contains exactly 3 sectors).
 			if (ordered.Length == 3)
 			{
 				_leftSector = ordered[0];
@@ -50,18 +50,18 @@ public class NavMeshManager : MonoBehaviour
 			}
 		}
 
-		// Шаг между секторами = расстояние между соседями. Берём из списка (соседние [0],[1]),
-		// иначе из назначенной в инспекторе тройки (прямой запуск сцены без префаба).
+		// Step between sectors = distance between neighbors. Take it from the list (neighbors [0],[1]),
+		// otherwise from the inspector-assigned triple (direct scene launch without a prefab).
 		if (_sectors != null && _sectors.Count >= 2 && _sectors[0] != null && _sectors[1] != null)
 			_distanceBetweenSectors = _sectors[0].DistanceTo(_sectors[1]);
 		else if (_currentSector != null && _leftSector != null && _currentSector != _leftSector)
 			_distanceBetweenSectors = _currentSector.DistanceTo(_leftSector);
 
-		// Fallback для конечных/односекторных уровней (Sliding): без соседнего сектора шаг измерить
-		// нечем, и производный от него диапазон дистанции спауна схлопывается в 0 — тогда системы
-		// спауна (SpawnPointSystem/GroupSpawnSystem) отбраковывают ВСЕ точки. Берём собственный
-		// размер сектора (больший из габаритов по X/Z) — это совпадает с семантикой Recycling, где
-		// шаг равен длине одного сектора.
+		// Fallback for finite/one-sector levels (Sliding): without a neighboring sector there's nothing
+		// to measure the step from, and the spawn-distance range derived from it collapses to 0 — then the
+		// spawn systems (SpawnPointSystem/GroupSpawnSystem) reject ALL points. We take the sector's own
+		// size (the larger of the X/Z extents) — this matches the Recycling semantics where
+		// the step equals the length of one sector.
 		if (_distanceBetweenSectors <= 0f && _currentSector != null)
 			_distanceBetweenSectors = GetSectorFootprint(_currentSector);
 
@@ -69,8 +69,8 @@ public class NavMeshManager : MonoBehaviour
 			RebuildNavMesh();
 	}
 
-	// Больший из мировых габаритов сектора по X/Z. Считаем по Renderer.bounds (мировые, не зависят
-	// от FloorSector.Awake) — пол доминирует над мелким декором/лутом, объединение даёт его футпринт.
+	// The larger of the sector's world X/Z extents. Computed from Renderer.bounds (world-space, independent of
+	// FloorSector.Awake) — the floor dominates small decor/loot, the union gives its footprint.
 	private static float GetSectorFootprint(FloorSector sector)
 	{
 		var renderers = sector.GetComponentsInChildren<Renderer>();
@@ -84,9 +84,9 @@ public class NavMeshManager : MonoBehaviour
 		return Mathf.Max(bounds.size.x, bounds.size.z);
 	}
 
-	// Асинхронное первичное запекание navmesh: не блокирует кадр, поэтому занавес загрузки
-	// продолжает анимироваться. Пустой NavMeshData создаётся и добавляется на surface, а затем
-	// целиком «обновляется» (UpdateNavMesh перестраивает все изменившиеся регионы — здесь весь меш).
+	// Async initial navmesh bake: doesn't block the frame, so the loading curtain
+	// keeps animating. An empty NavMeshData is created and added to the surface, then
+	// "updated" in full (UpdateNavMesh rebuilds all changed regions — here the whole mesh).
 	public AsyncOperation RebuildNavMeshAsync()
 	{
 		if (_navMeshSurface.navMeshData == null)
@@ -98,7 +98,7 @@ public class NavMeshManager : MonoBehaviour
 		return _navMeshSurface.UpdateNavMesh(_navMeshSurface.navMeshData);
 	}
 
-	// Находит сектор, в границах которого находится точка, иначе ближайший по Z.
+	// Finds the sector whose bounds contain the point, otherwise the nearest by Z.
 	public FloorSector GetNearestSector(Vector3 position)
 	{
 		FloorSector nearest = null;
@@ -119,8 +119,8 @@ public class NavMeshManager : MonoBehaviour
 		return nearest;
 	}
 
-	// Sliding-режим: включает окно секторов вокруг игрока, остальные выключает.
-	// Возвращает центральный (текущий) сектор; перестраивает navmesh только при смене активного набора.
+	// Sliding mode: enables the window of sectors around the player, disables the rest.
+	// Returns the central (current) sector; rebuilds navmesh only when the active set changes.
 	public FloorSector UpdateActiveSectors(Vector3 playerPosition, int activeRadius)
 	{
 		var center = GetNearestSector(playerPosition);

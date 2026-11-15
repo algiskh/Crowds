@@ -18,7 +18,7 @@ namespace ECS
 			var cameraUp = cameraTransform.up;
 			var cameraPos = cameraTransform.position;
 
-			// Вычисляем «flat billboard»-кватернион один раз за кадр.
+			// Compute the "flat billboard" quaternion once per frame.
 			var flatRotation = Quaternion.LookRotation(cameraForward, cameraUp);
 
 			foreach (var entity in world.Filter<LookerAtCamera>().End())

@@ -22,10 +22,10 @@ public class FailWindow : MonoBehaviour
 
 	private void OnPressRestart()
 	{
-		// Пауза у нас реализована флагом, а не timeScale, но сбрасываем на всякий случай,
-		// чтобы перезагруженная сцена точно стартовала «живой».
+		// Pause is implemented via a flag, not timeScale, but we reset it just in case,
+		// so the reloaded scene definitely starts "alive".
 		Time.timeScale = 1f;
-		// Занавес загрузки на время перезапуска уровня (EntryPoint снимет его, когда сцена готова).
+		// Loading curtain for the level restart (EntryPoint lifts it once the scene is ready).
 		LoadingScreen.Show();
 		SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
 	}
@@ -34,7 +34,7 @@ public class FailWindow : MonoBehaviour
 	{
 		gameObject.SetActive(true);
 		_canvas.enabled = true;
-		// Рисуем окно поверх красной пелены концовки (её Canvas имеет sortingOrder 1000).
+		// Draw the window above the fail sequence's red veil (its Canvas has sortingOrder 1000).
 		_canvas.overrideSorting = true;
 		_canvas.sortingOrder = 1001;
 		_scoreText.gameObject.SetActive(score > 0);

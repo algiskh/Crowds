@@ -1,8 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Вид брошенной гранаты-снаряда. Двигается по дуге системой GrenadeProjectileSystem
-/// и пулится через GrenadePoolComponent. Префаб назначается в MainHolder._grenadePrefab.
+/// View of a thrown grenade projectile. Moves along an arc driven by GrenadeProjectileSystem
+/// and is pooled via GrenadePoolComponent. The prefab is assigned in MainHolder._grenadePrefab.
 /// </summary>
 public class Grenade : MonoBehaviour
 {

@@ -78,7 +78,7 @@ namespace ECS
 
 					effectComponent.Value = decal;
 					lifetimeComponent.Value = config.LifeTime;
-					disposableComponent.IsDisposed = false; // EcsLite не сбрасывает переиспользованный компонент
+					disposableComponent.IsDisposed = false; // EcsLite doesn't reset a reused component
 				}
 				world.DelEntity(entity);
 			}
@@ -86,7 +86,7 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Берёт декаль по id из стека пула или инстанцирует новую.
+		/// Takes a decal by id from the pool stack or instantiates a new one.
 		/// </summary>
 		private Decal SpawnDecal(DecalPoolComponent pool, DecalConfig config, Decal prefab)
 		{

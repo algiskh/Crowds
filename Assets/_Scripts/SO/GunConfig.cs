@@ -40,6 +40,11 @@ public class GunConfig : ScriptableObject
 	[LabelText("Magazine capacity"), MinValue(1)]
 	[SerializeField] private int _magazineCapacity = 12;
 
+	[LabelText("Spin-up time"), MinValue(0f), SuffixLabel("sec", true),
+	 Tooltip("The trigger must be held this long before the first shot (e.g. machine-gun barrel spin-up). " +
+	         "Releasing the trigger resets it. 0 = fires immediately.")]
+	[SerializeField] private float _spinUpTime;
+
 	[LabelText("Fire sound ID")]
 	[SerializeField] private string _fireSoundId;
 
@@ -70,6 +75,16 @@ public class GunConfig : ScriptableObject
 	[LabelText("Bullet radius"), MinValue(0f)]
 	[SerializeField] private float _radius = 0.1f;
 
+	[LabelText("Pierce count"), MinValue(0), MaxValue(MaxPierceCount),
+	 Tooltip("How many mobs one bullet can hit. 0 = use the projectile prefab's Bullet.MaxPierceCount. " +
+	         "Capped by BulletComponent.PiercedTargets capacity.")]
+	[SerializeField] private int _pierceCount;
+
+	[LabelText("Bullet color"),
+	 Tooltip("Tint of the projectile mesh and trail (e.g. red enemy bullets). " +
+	         "Alpha 0 = keep the prefab's own look.")]
+	[SerializeField] private Color _bulletColor = new Color(1f, 1f, 1f, 0f);
+
 	[LabelText("Reload time"), MinValue(0f)]
 	[SerializeField] private float _reloadTime = 1f;
 
@@ -94,6 +109,9 @@ public class GunConfig : ScriptableObject
 	[LabelText("On-reload debuffs")]
 	[SerializeReference, OdinSerialize] private Modifier[] _reloadDebuffs;
 
+	// FixedList32Bytes<int> holds 7 ids; the last hit isn't stored, so up to 8 targets.
+	public const int MaxPierceCount = 8;
+
 	public string Id => _id;
 	public Caliber Caliber => _caliber;
 	public WeaponAnimationSet AnimationSet => _animationSet;
@@ -104,6 +122,9 @@ public class GunConfig : ScriptableObject
 	public float BulletLifeTime => _bulletLifeTime;
 	public float FireCoolDown => _fireRate;
 	public int MagazineCapacity => _magazineCapacity;
+	public float SpinUpTime => _spinUpTime;
+	public int PierceCount => _pierceCount;
+	public Color BulletColor => _bulletColor;
 	public string FireSoundId => _fireSoundId;
 	public string ReloadSoundId => _reloadSoundId;
 	public string ReloadEndSoundId => _reloadEndSoundId;

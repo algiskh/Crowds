@@ -1,7 +1,7 @@
-// Верхнеуровневый режим игры, выбираемый в главном меню.
-// Campaign — последовательные сюжетные уровни, Survival — выживание/счёт на очки.
-// Прокидывается в геймплейную сцену через GameSession; уровни для каждого режима
-// берутся из своей LevelLibrary в MainMenuController.
+// Top-level game mode, chosen in the main menu.
+// Campaign — sequential story levels, Survival — survival/score attack.
+// Passed to the gameplay scene via GameSession; levels for each mode
+// are taken from their own LevelLibrary in MainMenuController.
 public enum GameMode
 {
     Campaign = 0,

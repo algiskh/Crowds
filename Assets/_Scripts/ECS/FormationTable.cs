@@ -4,21 +4,21 @@ namespace ECS
 {
 	public enum FormationType : byte
 	{
-		Column, // колонна — друг за другом
-		Wedge,  // клин «▼» — ведущий впереди, ведомые веером назад
-		Line    // шеренга — все в одну линию
+		Column, // column — one behind another
+		Wedge,  // wedge "▼" — leader in front, followers fanning back
+		Line    // line — all in one row
 	}
 
 	/// <summary>
-	/// Один слот строя: индекс родительского слота, локальный офсет в «единицах строя»
-	/// (x — вправо, z — вперёд), и угол доводки лицом (в v1 не используется — мобы
-	/// смотрят по движению/на ведущего). Слот 0 — всегда ведущий в начале координат.
+	/// One formation slot: parent slot index, local offset in "formation units"
+	/// (x — right, z — forward), and a facing trim angle (unused in v1 — mobs
+	/// face their movement/the leader). Slot 0 is always the leader at the origin.
 	/// </summary>
 	public readonly struct FormationSlot
 	{
-		public readonly int Base;     // индекс родительского слота, -1 = корень/ведущий
-		public readonly float X, Z;   // единицы строя (умножаются на spacing)
-		public readonly float Angle;  // радианы, офсет доводки лицом
+		public readonly int Base;     // parent slot index, -1 = root/leader
+		public readonly float X, Z;   // formation units (multiplied by spacing)
+		public readonly float Angle;  // radians, facing trim offset
 
 		public FormationSlot(int b, float x, float z, float a)
 		{
@@ -27,7 +27,7 @@ namespace ECS
 	}
 
 	/// <summary>
-	/// Таблицы строёв (минимальный набор §2 инструкции) + сборка локальных офсетов слотов (§4).
+	/// Formation tables (the minimal set from §2 of the instructions) + building the slot local offsets (§4).
 	/// </summary>
 	public static class FormationTable
 	{
@@ -75,8 +75,8 @@ namespace ECS
 		};
 
 		/// <summary>
-		/// Считает локальные офсеты слотов (§4). spacingX/Z — метров на единицу строя.
-		/// Возвращает массив длиной min(count, размер таблицы); слот 0 (ведущий) = (0,0,0).
+		/// Computes the slot local offsets (§4). spacingX/Z — meters per formation unit.
+		/// Returns an array of length min(count, table size); slot 0 (the leader) = (0,0,0).
 		/// </summary>
 		public static Vector3[] ComputeOffsets(FormationType type, int count, float spacingX, float spacingZ)
 		{

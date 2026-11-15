@@ -24,10 +24,10 @@ namespace ECS
 				{
 					continue;
 				}
-				// Всегда переоцениваем: «живые» условия (NoAmmoAround) должны уметь
-				// снова стать false, иначе IsFulfilled залипает в true навсегда и
-				// observer бесконечно доспаунивает лут. Условия-аккумуляторы
-				// (FragsCondition) сами защищены внутренним guard'ом и остаются true.
+				// Always re-evaluate: "live" conditions (NoAmmoAround) must be able
+				// to become false again, otherwise IsFulfilled sticks to true forever and
+				// the observer spawns loot endlessly. Accumulator conditions
+				// (FragsCondition) are protected by an internal guard and stay true.
 				smartCondition.Value.Iterate();
 			}
 		}

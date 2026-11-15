@@ -3,9 +3,9 @@ using Leopotam.EcsLite;
 namespace ECS
 {
 	/// <summary>
-	/// Реакция на конец игры (EndGameComponent). Победа — останавливаемся и сразу показываем окно победы.
-	/// Поражение — запускаем кинематографичную концовку (FailSequenceSystem): блок управления → красная
-	/// пелена → меню+пауза, по 0.5с на фазу.
+	/// Reaction to game end (EndGameComponent). Victory — stop and show the win window right away.
+	/// Defeat — start the cinematic fail sequence (FailSequenceSystem): control lock → red
+	/// veil → menu+pause, 0.5s per phase.
 	/// </summary>
 	public class CheckEndSystem : IEcsRunSystem
 	{
@@ -18,8 +18,8 @@ namespace ECS
 			var endGameFilter = world.Filter<EndGameComponent>()
 				.End();
 
-			// Поражение приоритетнее победы: если в этом кадре пришли оба исхода или концовка поражения уже
-			// идёт (она длится ~1с до окна), победу игнорируем — иначе открылись бы оба окна.
+			// Defeat takes priority over victory: if both outcomes arrive this frame or the defeat sequence
+			// is already running (it lasts ~1s until the window), we ignore the victory — otherwise both windows would open.
 			ref var failSequence = ref world.GetAsSingleton<FailSequenceComponent>();
 			bool isFailing = failSequence.Phase != FailSequencePhase.Inactive;
 			foreach (var entity in endGameFilter)
@@ -53,7 +53,7 @@ namespace ECS
 				}
 				else
 				{
-					// Поражение — запускаем кинематографичную концовку (если ещё не идёт).
+					// Defeat — start the cinematic fail sequence (if not already running).
 					ref var seq = ref world.GetAsSingleton<FailSequenceComponent>();
 					if (seq.Phase == FailSequencePhase.Inactive)
 					{

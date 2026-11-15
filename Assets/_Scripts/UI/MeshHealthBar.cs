@@ -3,15 +3,15 @@ using UnityEngine;
 namespace Scene.UI
 {
 	/// <summary>
-	/// Полоска здоровья без Canvas: один квад-MeshRenderer, управляемый общим
-	/// материалом + MaterialPropertyBlock. Нет перестроений Canvas на каждое
-	/// изменение HP (как у UGUI <see cref="ValueBar"/>), и при включённом на
-	/// материале GPU Instancing все бары мобов сходятся в инстансированные
-	/// draw call'ы. По инстансу меняются только _Fill и _FillColor.
+	/// Health bar without a Canvas: a single quad MeshRenderer driven by a shared
+	/// material + MaterialPropertyBlock. No Canvas rebuilds on every HP change
+	/// (like the UGUI <see cref="ValueBar"/>), and with GPU Instancing enabled on the
+	/// material all mob bars merge into instanced draw calls. Only _Fill and _FillColor
+	/// vary per instance.
 	///
-	/// Реализует тот же <see cref="IValueBar"/>, что и экранный ValueBar, поэтому
-	/// для DamageSystem/MobSpawnSystem замена прозрачна. Билборд бара по-прежнему
-	/// делает LookAtCameraSystem через <see cref="Transform"/>.
+	/// Implements the same <see cref="IValueBar"/> as the on-screen ValueBar, so the swap
+	/// is transparent for DamageSystem/MobSpawnSystem. The bar billboard is still done by
+	/// LookAtCameraSystem via <see cref="Transform"/>.
 	/// </summary>
 	[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 	public class MeshHealthBar : MonoBehaviour, IValueBar
@@ -37,24 +37,24 @@ namespace Scene.UI
 			}
 		};
 
-		[Tooltip("Прятать бар при полном здоровье — меньше прозрачных квадов в кадре. " +
-			"Бар появляется после первого урона.")]
+		[Tooltip("Hide the bar at full health — fewer transparent quads in the frame. " +
+			"The bar appears after the first damage.")]
 		[SerializeField] private bool _hideWhenFull = true;
 
-		[Tooltip("Здоровье, при котором ширина бара равна базовой (scale.x из префаба).")]
+		[Tooltip("Health at which the bar width equals the base width (scale.x from the prefab).")]
 		[SerializeField] private float _referenceHealth = 100f;
 
-		[Tooltip("Насколько здоровье влияет на ширину бара. 1 = линейно (150 HP → ×1.5), " +
-			"0 = ширина постоянна, 0.5 = половина прироста (150 HP → ×1.25). " +
-			"Сильным мобам ширину обычно гасят (<1).")]
+		[Tooltip("How much health affects the bar width. 1 = linear (150 HP → ×1.5), " +
+			"0 = constant width, 0.5 = half the growth (150 HP → ×1.25). " +
+			"Strong mobs usually get their width damped (<1).")]
 		[SerializeField, Range(0f, 1f)] private float _widthGrowth = 0.4f;
 
-		[Tooltip("Жёсткие границы итогового множителя ширины, чтобы очень сильные/слабые " +
-			"мобы не получали огромных/исчезающих баров.")]
+		[Tooltip("Hard limits of the final width multiplier, so very strong/weak " +
+			"mobs don't get huge/vanishing bars.")]
 		[SerializeField] private float _minWidthFactor = 0.75f;
 		[SerializeField] private float _maxWidthFactor = 2f;
 
-		// Один квад на все бары — общая память, не плодим Mesh per-mob.
+		// One quad for all bars — shared memory, no per-mob Mesh allocation.
 		private static Mesh _sharedQuad;
 
 		private MaterialPropertyBlock _mpb;
@@ -62,9 +62,9 @@ namespace Scene.UI
 		private float _fill = 1f;
 		private bool _visibleRequested = true;
 
-		// Авторская ширина бара (scale из префаба) — точка отсчёта для масштабирования
-		// по здоровью. Снимается один раз; пул переиспользует мобов и зовёт SetMaxValue
-		// повторно, поэтому считаем от исходного scale, а не от уже растянутого.
+		// The bar's authored width (scale from the prefab) — the reference point for scaling
+		// by health. Captured once; the pool reuses mobs and calls SetMaxValue again,
+		// so we compute from the original scale, not the already stretched one.
 		private Vector3 _baseScale;
 		private bool _baseScaleCaptured;
 
@@ -84,9 +84,9 @@ namespace Scene.UI
 		{
 			_max = value <= 0f ? 1f : value;
 
-			// Ширина бара растёт с максимальным здоровьем, но прирост гасится
-			// коэффициентом _widthGrowth и зажимается в [min,max], иначе сильные
-			// мобы получают слишком длинные бары.
+			// The bar width grows with max health, but the growth is damped
+			// by the _widthGrowth coefficient and clamped to [min,max], otherwise strong
+			// mobs get overly long bars.
 			EnsureBaseScale();
 			float ratio = _referenceHealth > 0f ? _max / _referenceHealth : 1f;
 			float widthFactor = 1f + (ratio - 1f) * _widthGrowth;
@@ -118,14 +118,14 @@ namespace Scene.UI
 			return this;
 		}
 
-		// Мобам подпись не нужна; метод есть только ради общего интерфейса.
+		// Mobs don't need a label; the method exists only for the common interface.
 		public IValueBar SetText(string text) => this;
 
 		/// <summary>
-		/// Единая точка решения «показывать/скрывать» и записи свойств. Видимость
-		/// = запрошена И есть что показывать (fill>0) И не прячем полный бар.
-		/// Скрытие — через renderer.enabled (GameObject остаётся активным, чтобы
-		/// билборд продолжал работать; стоимость отключённого рендера нулевая).
+		/// Single decision point for "show/hide" and writing properties. Visibility
+		/// = requested AND has something to show (fill>0) AND not hiding the full bar.
+		/// Hiding — via renderer.enabled (the GameObject stays active so the
+		/// billboard keeps working; a disabled renderer costs nothing).
 		/// </summary>
 		private void Refresh()
 		{
@@ -146,8 +146,8 @@ namespace Scene.UI
 			_renderer.SetPropertyBlock(_mpb);
 		}
 
-		// Единичный квад в плоскости XY, центр в нуле, заполнение растёт вдоль uv.x.
-		// Размер/пропорции бара задаются localScale трансформа в префабе.
+		// Unit quad in the XY plane, center at zero, fill grows along uv.x.
+		// The bar's size/proportions are set by the transform's localScale in the prefab.
 		private static Mesh GetSharedQuad()
 		{
 			if (_sharedQuad != null) return _sharedQuad;

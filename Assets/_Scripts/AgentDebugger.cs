@@ -8,7 +8,7 @@ public class AgentDebugger : MonoBehaviour
 	private void Start()
 	{
 		_agent = GetComponent<NavMeshAgent>();
-		if (_agent == null) Debug.LogError("Нет NavMeshAgent на объекте!");
+		if (_agent == null) Debug.LogError("No NavMeshAgent on the object!");
 	}
 
 	private void Update()
@@ -31,14 +31,14 @@ public class AgentDebugger : MonoBehaviour
 				var data = _agent.currentOffMeshLinkData;
 				Debug.DrawLine(data.startPos, data.endPos, Color.red, 1f);
 
-				// Для теста — перейти сразу
+				// For testing — jump right away
 				_agent.Warp(data.endPos);
 				_agent.CompleteOffMeshLink();
 			}
 		}
 		else
 		{
-			Debug.Log("Агент не имеет пути.");
+			Debug.Log("The agent has no path.");
 		}
 	}
 }

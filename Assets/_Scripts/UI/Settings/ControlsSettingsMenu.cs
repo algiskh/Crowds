@@ -7,10 +7,10 @@ using UnityEngine.UI;
 
 namespace Game.Settings
 {
-	// Меню настроек управления. Строит список строк (ControlBindingRow) из InputActionAsset
-	// и раскладывает их в Content у ScrollRect (Content должен нести VerticalLayoutGroup).
-	// На первом этапе показываются и перепривязываются только биндинги клавиатуры/мыши;
-	// колонка геймпада заполняется соответствующим биндингом «только для показа».
+	// Control settings menu. Builds a list of rows (ControlBindingRow) from the InputActionAsset
+	// and lays them out into the ScrollRect's Content (Content must carry a VerticalLayoutGroup).
+	// In the first phase only keyboard/mouse bindings are shown and rebound;
+	// the gamepad column is filled with the matching binding "for display only".
 	public class ControlsSettingsMenu : MonoBehaviour
 	{
 		[Title("Input")]
@@ -19,7 +19,7 @@ namespace Game.Settings
 
 		[Title("List")]
 		[SerializeField] private ScrollRect _scroll;
-		[SerializeField, Required, Tooltip("Content у ScrollRect с VerticalLayoutGroup.")]
+		[SerializeField, Required, Tooltip("The ScrollRect's Content with a VerticalLayoutGroup.")]
 		private Transform _content;
 		[SerializeField, Required] private ControlBindingRow _rowPrefab;
 
@@ -30,8 +30,8 @@ namespace Game.Settings
 
 		private void Awake()
 		{
-			// Меню открывается в сцене главного меню, где нет EntryPoint — применяем сохранённые
-			// оверрайды сами, чтобы список сразу показал актуальные (кастомные) биндинги.
+			// The menu opens in the main menu scene, which has no EntryPoint — we apply the saved
+			// overrides ourselves so the list immediately shows the actual (custom) bindings.
 			ControlSettings.Apply(_actions);
 		}
 
@@ -53,23 +53,23 @@ namespace Game.Settings
 
 			if (_actions == null || _content == null || _rowPrefab == null)
 			{
-				Debug.LogWarning("[ControlsSettings] Не заданы InputActionAsset / Content / Row Prefab — " +
-					"список управления не построен.");
+				Debug.LogWarning("[ControlsSettings] InputActionAsset / Content / Row Prefab not assigned — " +
+					"control list not built.");
 				return;
 			}
 
 			var map = _actions.FindActionMap(_actionMapName, throwIfNotFound: false);
 			if (map == null)
 			{
-				Debug.LogWarning($"[ControlsSettings] Action map '{_actionMapName}' не найдена.");
+				Debug.LogWarning($"[ControlsSettings] Action map '{_actionMapName}' not found.");
 				return;
 			}
 
 			foreach (var action in map.actions)
 			{
-				// Группируем клавиатурные/мышиные биндинги одного «контрола» в одну строку:
-				// первый — основной (перепривязывается), второй — альтернативный (напр. W / UpArrow),
-				// показывается в отдельной колонке. Так убираются строки-дубликаты.
+				// Group the keyboard/mouse bindings of one "control" into a single row:
+				// the first is primary (rebindable), the second is alternative (e.g. W / UpArrow),
+				// shown in a separate column. This removes duplicate rows.
 				var groups = new List<Group>();
 				var byKey = new Dictionary<string, Group>();
 
@@ -78,21 +78,21 @@ namespace Game.Settings
 				{
 					var binding = bindings[i];
 
-					// Композитный «заголовок» (напр. WASD) сам по себе не привязывается — пропускаем.
+					// The composite "header" (e.g. WASD) isn't bound by itself — skip it.
 					if (binding.isComposite)
 						continue;
 
-					// На первом этапе — только строки клавиатуры/мыши.
+					// First phase — keyboard/mouse rows only.
 					if (!IsKeyboardMouse(binding.effectivePath))
 						continue;
 
-					// Оси-«движения» (Look -> Mouse delta, position, scroll) не перепривязываются
-					// как клавиши — их из списка исключаем.
+					// Pointer "motion" axes (Look -> Mouse delta, position, scroll) aren't rebound
+					// as keys — exclude them from the list.
 					if (IsPointerMotion(binding.effectivePath))
 						continue;
 
-					// Ключ группировки: часть композита — по её имени (up/down/left/right),
-					// одиночный биндинг — все в одну группу экшена.
+					// Grouping key: composite part — by its name (up/down/left/right),
+					// single binding — all into one group per action.
 					string key = binding.isPartOfComposite ? "part:" + binding.name : "single";
 
 					if (!byKey.TryGetValue(key, out var group))
@@ -111,7 +111,7 @@ namespace Game.Settings
 					{
 						group.AlternativeIndex = i;
 					}
-					// Третий+ биндинг того же контрола игнорируем (места под альтернативу — одно).
+					// Third+ binding of the same control is ignored (there's room for one alternative).
 				}
 
 				foreach (var group in groups)
@@ -136,7 +136,7 @@ namespace Game.Settings
 			}
 			_rows.Clear();
 
-			// На случай, если в Content остались чужие/старые дети.
+			// In case foreign/stale children remain in the Content.
 			if (_content != null)
 			{
 				for (int i = _content.childCount - 1; i >= 0; i--)
@@ -148,7 +148,7 @@ namespace Game.Settings
 		#region CALLBACKS
 		private void OnBindingChanged()
 		{
-			// Пользователь перепривязал клавишу — сохраняем весь набор оверрайдов в JSON.
+			// The user rebound a key — save the whole override set to JSON.
 			ControlSettings.Save(_actions);
 		}
 
@@ -164,7 +164,7 @@ namespace Game.Settings
 			path.StartsWith("<Keyboard>") || path.StartsWith("<Mouse>") ||
 			path.StartsWith("<Pointer>") || path.StartsWith("<Pen>");
 
-		// Непривязываемые оси указателя: движение мыши (Look), скролл, позиция.
+		// Non-rebindable pointer axes: mouse movement (Look), scroll, position.
 		private static bool IsPointerMotion(string path) =>
 			path.EndsWith("/delta") || path.EndsWith("/position") || path.EndsWith("/scroll");
 
@@ -172,16 +172,16 @@ namespace Game.Settings
 			path.StartsWith("<Gamepad>") || path.StartsWith("<XInputController>") ||
 			path.StartsWith("<DualShock") || path.StartsWith("<DualSense");
 
-		// Ищем «геймпадный аналог» биндинга для колонки показа.
-		// Для части композита — сперва часть с тем же именем (up/down/left/right),
-		// иначе одиночный геймпадный биндинг экшена (напр. Move -> leftStick "Left Stick").
-		// Для одиночного биндинга — первый одиночный геймпадный биндинг того же экшена.
+		// Find the "gamepad counterpart" of a binding for the display column.
+		// For a composite part — first the part with the same name (up/down/left/right),
+		// otherwise the action's single gamepad binding (e.g. Move -> leftStick "Left Stick").
+		// For a single binding — the first single gamepad binding of the same action.
 		private static int FindGamepadCounterpart(InputAction action, int keyboardIndex)
 		{
 			var bindings = action.bindings;
 			var keyboardBinding = bindings[keyboardIndex];
 
-			// Точное совпадение части композита.
+			// Exact composite-part match.
 			if (keyboardBinding.isPartOfComposite)
 			{
 				for (int j = 0; j < bindings.Count; j++)
@@ -195,7 +195,7 @@ namespace Game.Settings
 				}
 			}
 
-			// Фолбэк / одиночный биндинг — первый одиночный геймпадный биндинг экшена.
+			// Fallback / single binding — the first single gamepad binding of the action.
 			for (int j = 0; j < bindings.Count; j++)
 			{
 				var b = bindings[j];
@@ -216,7 +216,7 @@ namespace Game.Settings
 			public int GamepadIndex;
 		}
 
-		// "Move" + часть "left" -> "Move Left"; "Reload" -> "Reload".
+		// "Move" + part "left" -> "Move Left"; "Reload" -> "Reload".
 		private static string BuildDisplayName(string actionName, InputBinding binding)
 		{
 			var sb = new StringBuilder();
@@ -231,7 +231,7 @@ namespace Game.Settings
 			return sb.ToString();
 		}
 
-		// Первая буква — заглавная, вставляем пробелы перед внутренними заглавными (camelCase).
+		// First letter uppercase, insert spaces before internal capitals (camelCase).
 		private static void AppendPretty(StringBuilder sb, string raw)
 		{
 			if (string.IsNullOrEmpty(raw))

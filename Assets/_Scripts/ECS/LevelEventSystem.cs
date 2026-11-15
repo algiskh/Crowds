@@ -5,16 +5,16 @@ using UnityEngine;
 namespace ECS
 {
 	/// <summary>
-	/// Драйвер сценовых LevelEventTrigger'ов. Отслеживает старт стейджа сложности (по
-	/// DifficultyComponent.Stage.DifficultyLevel), вооружает подходящие записи — инстансирует и
-	/// регистрирует их опциональные smart-условия ИМЕННО в этот момент, чтобы условия-аккумуляторы
-	/// (FragsCondition) считались от границы стейджа — и выполняет спаун breakable'ов, когда условия
-	/// выполнены (или сразу, если условий нет).
+	/// Driver of scene LevelEventTriggers. Watches for the difficulty stage start (via
+	/// DifficultyComponent.Stage.DifficultyLevel), arms the matching entries — instantiating and
+	/// registering their optional smart-conditions EXACTLY at that moment, so accumulator conditions
+	/// (FragsCondition) count from the stage boundary — and spawns breakables once the conditions
+	/// are met (or immediately, if there are none).
 	///
-	/// Регистрируется рано (сразу после AdditionalLootSpawnSystem), чтобы RequestSpawnBreakable
-	/// обработался тем же кадром в BreakableSpawnSystem. Чтение IsFulfilled идёт с той же
-	/// однокадровой задержкой, что и в DifficultySystem (SmartConditionSystem тикает в конце кадра).
-	/// См. Docs/LevelEventsFeature.md.
+	/// Registered early (right after AdditionalLootSpawnSystem), so RequestSpawnBreakable
+	/// is processed the same frame in BreakableSpawnSystem. IsFulfilled is read with the same
+	/// one-frame delay as in DifficultySystem (SmartConditionSystem ticks at the end of the frame).
+	/// See Docs/LevelEventsFeature.md.
 	/// </summary>
 	public sealed class LevelEventSystem : IEcsInitSystem, IEcsRunSystem
 	{
@@ -73,7 +73,7 @@ namespace ECS
 			var currentLevel = difficulty.Stage.DifficultyLevel;
 			bool stageChanged = !_hasLastLevel || currentLevel != _lastLevel;
 
-			// 1) Граница стейджа: вооружаем записи текущего уровня, разоружаем «зависшие» с других.
+			// 1) Stage boundary: arm the entries of the current level, disarm "stale" ones from others.
 			if (stageChanged)
 			{
 				_hasLastLevel = true;
@@ -85,21 +85,21 @@ namespace ECS
 
 					if (observer.Level == currentLevel)
 					{
-						// Одноразовая запись, которая уже отработала — не переармливаем.
+						// A one-shot entry that already fired — don't re-arm it.
 						if (observer.Fired && observer.Entry.Once)
 							continue;
 						ArmObserver(world, ref observer);
 					}
 					else if (observer.Armed)
 					{
-						// Ушли со «своего» стейджа не выстрелив — гасим живые условия.
+						// Left its own stage without firing — kill the live conditions.
 						DisarmObserver(world, ref observer);
 						observer.Armed = false;
 					}
 				}
 			}
 
-			// 2) Выстрел вооружённых записей, чьи условия выполнены (или отсутствуют).
+			// 2) Fire the armed entries whose conditions are met (or absent).
 			foreach (var entity in filter)
 			{
 				ref var observer = ref observerPool.Get(entity);
@@ -117,10 +117,10 @@ namespace ECS
 			}
 		}
 
-		// Вооружение: чистая переармировка + инстанс копий условий и их регистрация как SmartConditionComponent.
+		// Arming: clean re-arm + copies of the conditions instantiated and registered as SmartConditionComponent.
 		private static void ArmObserver(EcsWorld world, ref LevelEventObserverComponent observer)
 		{
-			DisarmObserver(world, ref observer); // на случай остатков от прошлого визита
+			DisarmObserver(world, ref observer); // in case of leftovers from the previous visit
 
 			var wrappers = observer.Entry.Conditions;
 			if (wrappers != null && wrappers.Length > 0)
@@ -153,8 +153,8 @@ namespace ECS
 			observer.Armed = true;
 		}
 
-		// Разоружение: диспоузим копии условий и удаляем их SmartConditionComponent-сущности
-		// (тот же приём сопоставления по ссылке, что в DifficultySystem.FinishStage).
+		// Disarming: dispose the condition copies and delete their SmartConditionComponent entities
+		// (same reference-matching trick as in DifficultySystem.FinishStage).
 		private static void DisarmObserver(EcsWorld world, ref LevelEventObserverComponent observer)
 		{
 			var conditions = observer.Conditions;

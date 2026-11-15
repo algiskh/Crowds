@@ -13,7 +13,7 @@ public class PlayerStats : MonoBehaviour
 	private void Awake()
 	{
 		_healthbar.SetMaxValue(100f).SetVisible(true);
-		// Бары бонусов нормированы в 0..1 (доля оставшегося времени) и стартуют пустыми/скрытыми.
+		// Bonus bars are normalized to 0..1 (remaining-time fraction) and start empty/hidden.
 		_shieldbar.SetMaxValue(1f).ApplyValue(0f).SetText(string.Empty);
 		_speedbar.SetMaxValue(1f).ApplyValue(0f).SetText(string.Empty);
 	}
@@ -44,8 +44,8 @@ public class PlayerStats : MonoBehaviour
 	}
 
 	/// <summary>
-	/// Обновляет бар бонуса: fraction (0..1) — доля оставшегося времени (заполнение бара),
-	/// secondsLeft — оставшиеся секунды в подписи бара (если у бара назначен UniText).
+	/// Updates the bonus bar: fraction (0..1) — remaining-time fraction (bar fill),
+	/// secondsLeft — remaining seconds in the bar's caption (if the bar has a UniText assigned).
 	/// </summary>
 	public void SetBonus(BonusType type, float fraction, float secondsLeft)
 	{
@@ -57,7 +57,7 @@ public class PlayerStats : MonoBehaviour
 		   .SetText(secondsLeft > 0f ? Mathf.CeilToInt(secondsLeft).ToString() : string.Empty);
 	}
 
-	/// <summary>Бонус закончился — прячем бар и подпись.</summary>
+	/// <summary>The bonus ended — hide the bar and the caption.</summary>
 	public void ClearBonus(BonusType type)
 	{
 		var bar = GetBonusBar(type);

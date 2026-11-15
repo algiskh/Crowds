@@ -1,7 +1,7 @@
-// Полоска здоровья для мобов: один квад, рисуется без Canvas.
-// _Fill и _FillColor меняются по инстансу (через MaterialPropertyBlock),
-// поэтому все бары мобов сходятся в инстансированные draw call'ы при
-// включённом на материале "Enable GPU Instancing". _BackColor — общий фон.
+// Health bar for mobs: a single quad, drawn without a Canvas.
+// _Fill and _FillColor vary per instance (via MaterialPropertyBlock),
+// so all mob bars merge into instanced draw calls when
+// "Enable GPU Instancing" is on for the material. _BackColor is the shared background.
 Shader "Crowds/HealthBar"
 {
     Properties
@@ -51,10 +51,10 @@ Shader "Crowds/HealthBar"
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
-            // Общий для всех баров фон (не инстансируется).
+            // Background shared by all bars (not instanced).
             half4 _BackColor;
 
-            // Меняется по инстансу через MaterialPropertyBlock.
+            // Varies per instance via MaterialPropertyBlock.
             UNITY_INSTANCING_BUFFER_START(Props)
                 UNITY_DEFINE_INSTANCED_PROP(float, _Fill)
                 UNITY_DEFINE_INSTANCED_PROP(half4, _FillColor)

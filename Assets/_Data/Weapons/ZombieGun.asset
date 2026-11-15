@@ -25,6 +25,7 @@ MonoBehaviour:
   _bulletSpeed: 20
   _bulletDamage: 12
   _bulletLifeTime: 2
+  _bulletColor: {r: 1, g: 0.1, b: 0.1, a: 1}
   _radius: 0.25
   _reloadTime: 1
   _shutterTime: 0.1

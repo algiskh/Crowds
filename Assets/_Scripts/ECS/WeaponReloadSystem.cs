@@ -39,7 +39,7 @@ namespace ECS
 
 			if (reloading.ShutteringTime > 0)
 			{
-				// Clamp: отрицательный остаток портил бы прогресс в UI и следующий цикл перезарядки.
+				// Clamp: a negative remainder would break the UI progress and the next reload cycle.
 				reloading.ShutteringTime = Mathf.Max(0f, reloading.ShutteringTime - Time.deltaTime);
 			}
 
@@ -68,9 +68,9 @@ namespace ECS
 			else
 			if (hasReloadRequest)
 			{
-				// Перезарядка только если есть смысл: магазин не полон и в запасе есть патроны этого калибра.
-				// Запрос удаляем в любом случае — иначе «лишнее» нажатие R висело бы до следующего выстрела
-				// и запускало перезарядку, о которой игрок уже не просил.
+				// Reload only when it makes sense: the magazine isn't full and the reserve has rounds of this caliber.
+				// Delete the request either way — otherwise a "spurious" R press would hang until the next shot
+				// and start a reload the player no longer asked for.
 				var reserveAmmo = world.GetAsSingleton<AmmoInventoryComponent>().Get(weapon.GunConfig.Caliber);
 				if (weapon.CurrentMagazineCount >= capacity || reserveAmmo <= 0)
 				{

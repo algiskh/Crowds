@@ -7,7 +7,7 @@ public class WeaponUIView : MonoBehaviour
 	[SerializeField] private Image _weaponView;
 	[SerializeField] private UniText _ammoText;
 	[SerializeField] private UniText _weaponTitle;
-	[SerializeField] private UniText _caliberText; // опционально: тип патрона текущего оружия
+	[SerializeField] private UniText _caliberText; // optional: the current weapon's ammo type
 
 	public void SetWeaponView(GunConfig config, int ammo)
 	{

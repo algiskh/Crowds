@@ -186,12 +186,12 @@ MonoBehaviour:
     Mirror: 0
     Loop: 0
     From: 0
-    To: 0.21000002
+    To: 0.031500004
   - Slot: 28
     Fbx: {fileID: 919132149155446097, guid: fdfc525f2e4ce544483732ed97964339, type: 3}
     Mirror: 0
     Loop: 0
-    From: 0.21000002
+    From: 0.031500004
     To: 0
   - Slot: 29
     Fbx: {fileID: 919132149155446097, guid: e3436f8b0b09b4541a28b18c544d4757, type: 3}
@@ -199,7 +199,7 @@ MonoBehaviour:
     Loop: 0
     From: 0
     To: 0
-  TargetHeight: 1.85
+  TargetHeight: 2
   BodyName: Body
   HideRenderers:
   - Capsule

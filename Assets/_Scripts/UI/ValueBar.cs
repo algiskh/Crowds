@@ -16,7 +16,7 @@ namespace Scene.UI
 	public class ValueBar : MonoBehaviour, IValueBar
 	{
 		[SerializeField] private Image _bar;
-		[Tooltip("Опционально: подпись на баре (например, оставшиеся секунды бонуса).")]
+		[Tooltip("Optional: the bar's caption (e.g. the bonus seconds remaining).")]
 		[SerializeField] private UniText _valueText;
 		[SerializeField]
 		private Gradient _gradient = new Gradient
@@ -55,7 +55,7 @@ namespace Scene.UI
 			return this;
 		}
 
-		/// <summary>Подпись на баре. Пустая строка прячет текст. No-op, если поле не назначено.</summary>
+		/// <summary>The bar's caption. An empty string hides the text. No-op if the field isn't assigned.</summary>
 		public IValueBar SetText(string text)
 		{
 			if (_valueText == null)

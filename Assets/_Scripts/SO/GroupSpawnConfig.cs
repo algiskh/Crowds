@@ -3,29 +3,29 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 
 /// <summary>
-/// Конфиг отряда (группы мобов в строю): тип строя, ведущий, список ведомых, межслотовые
-/// отступы и пресеты спауна по уровням сложности. Как и обычная точка (MobSpawnConfig),
-/// отряд спаунится только на тех DifficultyLevel, для которых задан пресет — так группы
-/// «привязаны к уровню/стадии». Ведомые в v1 — обычные мобы (без melee/grenadier-поведения),
-/// чтобы строй и боевые состояния не конфликтовали.
+/// Squad config (a group of mobs in formation): formation type, leader, follower list, inter-slot
+/// spacing and spawn presets per difficulty level. Like a regular point (MobSpawnConfig),
+/// the squad spawns only on DifficultyLevels that have a preset — this is how groups are
+/// "bound to a level/stage". In v1 followers are regular mobs (no melee/grenadier behavior),
+/// so formation and combat states don't conflict.
 /// </summary>
 [CreateAssetMenu(fileName = "GroupSpawnConfig", menuName = "Scriptable Objects/GroupSpawnConfig")]
 public class GroupSpawnConfig : ScriptableObject
 {
-	[Title("Строй")]
+	[Title("Formation")]
 	[SerializeField] private ECS.FormationType _formation = ECS.FormationType.Wedge;
 	[SerializeField, Required] private string _leaderMobId;
 	[SerializeField] private FollowerEntry[] _followers;
 
-	[Title("Геометрия")]
+	[Title("Geometry")]
 	[SerializeField, MinValue(0.1f)] private float _spacingX = 1.6f;
 	[SerializeField, MinValue(0.1f)] private float _spacingZ = 1.6f;
 
-	[Title("Спаун по уровням сложности")]
-	[Tooltip("На каких стадиях сложности появляется отряд и с каким базовым кулдауном. " +
-		"Нет пресета для текущей стадии — отряд не спаунится.")]
+	[Title("Spawn by difficulty level")]
+	[Tooltip("On which difficulty stages the squad appears and with what base cooldown. " +
+		"No preset for the current stage — the squad doesn't spawn.")]
 	[SerializeField] private SpawnPreset[] _spawnPresets;
-	[SerializeField, MinValue(0f), Tooltip("Задержка перед первой проверкой спауна точки.")]
+	[SerializeField, MinValue(0f), Tooltip("Delay before the point's first spawn check.")]
 	private float _initialDelay = 0f;
 
 	public ECS.FormationType Formation => _formation;
@@ -36,7 +36,7 @@ public class GroupSpawnConfig : ScriptableObject
 	public float InitialDelay => _initialDelay;
 
 	/// <summary>
-	/// Базовый кулдаун для стадии сложности. false — пресета нет, отряд на этой стадии не спаунится.
+	/// Base cooldown for the difficulty stage. false — no preset, the squad doesn't spawn on this stage.
 	/// </summary>
 	public bool TryGetCooldown(DifficultyLevel level, out float cooldown)
 	{

@@ -4,20 +4,20 @@ using UnityEngine;
 namespace ECS
 {
 	/// <summary>
-	/// Ведёт ведомых мобов в строю (§6/§7c инструкции, минимальная версия без navmesh).
-	/// Каждый кадр: мировой слот = leader.position + leader.rotation * SlotOffset
-	/// (поворот ведущего уже сглажен MoveSystem, поэтому отдельный formationDir не считаем).
-	/// Ведомый рулит к слоту через MoveComponent.Direction; MoveDirect двигает на
-	/// Speed * |Direction|, поэтому скорость регулируем длиной Direction (ближе к слоту — медленнее,
-	/// далеко — догоняет). При гибели ведущего (Unpack == false) ведомый возвращается к обычной
-	/// погоне за игроком (Promote). Должна стоять после MobPathfindingSystem и до MoveSystem.
+	/// Drives follower mobs in formation (§6/§7c of the instructions, minimal version without navmesh).
+	/// Every frame: world slot = leader.position + leader.rotation * SlotOffset
+	/// (the leader's rotation is already smoothed by MoveSystem, so we don't compute a separate formationDir).
+	/// The follower steers to the slot via MoveComponent.Direction; MoveDirect moves by
+	/// Speed * |Direction|, so we regulate speed by the Direction length (closer to the slot — slower,
+	/// far — catching up). When the leader dies (Unpack == false) the follower returns to the regular
+	/// chase after the player (Promote). Must run after MobPathfindingSystem and before MoveSystem.
 	/// </summary>
 	public sealed class FormationSystem : IEcsRunSystem
 	{
-		private const float FormationTime = 0.5f; // §7c: целевая скорость = dist / FormationTime
-		private const float Precision = 1.0f;     // §7c базовый допуск попадания в слот (м)
-		private const float MinSpeedFrac = 0.15f; // не ползти медленнее этой доли базовой скорости
-		private const float MaxSpeedFrac = 1.6f;  // дать догонять быстрее базовой скорости
+		private const float FormationTime = 0.5f; // §7c: target speed = dist / FormationTime
+		private const float Precision = 1.0f;     // §7c base slot-reach tolerance (m)
+		private const float MinSpeedFrac = 0.15f; // don't crawl slower than this fraction of base speed
+		private const float MaxSpeedFrac = 1.6f;  // allow catching up faster than base speed
 
 		public void Run(IEcsSystems systems)
 		{
@@ -46,7 +46,7 @@ namespace ECS
 				if (mob.Value == null || !mob.Value.gameObject.activeSelf)
 					continue;
 
-				// Ведущий жив? EcsPackedEntity отлавливает и гибель, и переиспользование из пула.
+				// Is the leader alive? EcsPackedEntity catches both death and reuse from the pool.
 				if (!follower.Leader.Unpack(world, out int leaderEntity) || !mobPool.Has(leaderEntity))
 				{
 					Promote(world, entity, followerPool);
@@ -63,7 +63,7 @@ namespace ECS
 				Transform leaderTransform = leaderMob.Value.transform;
 				Transform selfTransform = mob.Value.transform;
 
-				// §6: мировой слот относительно позы ведущего.
+				// §6: world slot relative to the leader's pose.
 				Vector3 worldSlot = leaderTransform.position + leaderTransform.rotation * follower.SlotOffset;
 				Vector3 self = selfTransform.position;
 				worldSlot.y = self.y;
@@ -72,14 +72,14 @@ namespace ECS
 				toSlot.y = 0f;
 				float dist = toSlot.magnitude;
 
-				// §7c гистерезис: в строю держаться легче, до строя — попасть труднее.
+				// §7c hysteresis: easier to stay in formation than to get into it.
 				float tol = follower.InFormation ? Precision * 2f : Precision * 0.5f;
 
 				if (dist <= tol)
 				{
 					follower.InFormation = true;
-					move.Direction = Vector3.zero; // в слоте — стоим
-					// Доводим лицо под ведущего, чтобы отряд смотрел согласованно.
+					move.Direction = Vector3.zero; // in the slot — stand still
+					// Face toward the leader so the squad looks aligned.
 					selfTransform.rotation = Quaternion.Slerp(
 						selfTransform.rotation, leaderTransform.rotation, move.Speed * dt);
 				}
@@ -88,8 +88,8 @@ namespace ECS
 					follower.InFormation = false;
 					Vector3 dir = toSlot / dist;
 
-					// §7c пропорциональный регулятор: целевая скорость = dist / FormationTime,
-					// в долях базовой Speed (MoveDirect домножит Speed на |Direction|).
+					// §7c proportional controller: target speed = dist / FormationTime,
+					// in fractions of base Speed (MoveDirect multiplies Speed by |Direction|).
 					float wanted = dist / FormationTime;
 					float frac = Mathf.Clamp(wanted / Mathf.Max(move.Speed, 0.01f), MinSpeedFrac, MaxSpeedFrac);
 					move.Direction = dir * frac;
@@ -101,8 +101,8 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Ведущий потерян: снимаем со строя и возвращаем моба к обычной погоне за игроком —
-		/// добавляем PathRecalculation + внеочередной запрос пересчёта пути.
+		/// Leader lost: remove from formation and return the mob to the regular chase after the player —
+		/// add PathRecalculation + an out-of-turn path recalculation request.
 		/// </summary>
 		private static void Promote(EcsWorld world, int entity, EcsPool<FormationFollowerComponent> followerPool)
 		{

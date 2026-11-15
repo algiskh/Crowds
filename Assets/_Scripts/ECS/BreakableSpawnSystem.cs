@@ -5,11 +5,11 @@ using UnityEngine;
 namespace ECS
 {
 	/// <summary>
-	/// Спаунит разрушаемое окружение по запросу (RequestSpawnBreakableComponent) в заданной точке —
-	/// конфиг задаётся напрямую или по id (через MainHolder.BreakableConfigHolder). Инстансы берутся из
-	/// пула по id (как мобы/эффекты) и возвращаются туда при Vanish-разрушении. Регистрацию ECS-состояния
-	/// разделяет со сценовыми объектами (RegisterBreakable), которые EntryPoint находит на старте.
-	/// См. Docs/BreakableFeature.md.
+	/// Spawns breakable environment on request (RequestSpawnBreakableComponent) at a given point —
+	/// the config is given directly or by id (via MainHolder.BreakableConfigHolder). Instances are taken
+	/// from a pool by id (like mobs/effects) and returned there on Vanish destruction. ECS-state registration
+	/// is shared with scene objects (RegisterBreakable), which EntryPoint finds at startup.
+	/// See Docs/BreakableFeature.md.
 	/// </summary>
 	public class BreakableSpawnSystem : IEcsRunSystem
 	{
@@ -36,15 +36,15 @@ namespace ECS
 				if (config != null && config.Prefab != null)
 					CreateBreakable(world, config, request.Position, request.Rotation);
 				else
-					Debug.LogWarning($"[BreakableSpawnSystem] Не могу заспаунить breakable (Id='{request.Id}') — нет конфига/префаба.");
+					Debug.LogWarning($"[BreakableSpawnSystem] Can't spawn breakable (Id='{request.Id}') — no config/prefab.");
 
 				world.DelEntity(entity);
 			}
 		}
 
 		/// <summary>
-		/// Создаёт разрушаемый объект в точке: берёт инстанс из пула (или инстанцирует префаб конфига),
-		/// сбрасывает его в целое состояние и регистрирует ECS-сущность. Возвращает id сущности.
+		/// Creates a breakable object at a point: takes an instance from the pool (or instantiates the config prefab),
+		/// resets it to the intact state and registers an ECS entity. Returns the entity id.
 		/// </summary>
 		public static int CreateBreakable(EcsWorld world, BreakableConfig config, Vector3 position, float rotation = 0f)
 		{
@@ -56,14 +56,14 @@ namespace ECS
 
 			int entity = RegisterBreakable(world, view, config, pooled: true);
 
-			// Появилось новое carving-препятствие — заставляем ближних мобов перепроложить путь.
+			// A new carving obstacle appeared — make nearby mobs recalculate their paths.
 			BreakableSystem.RequestNearbyRepath(world, position);
 			return entity;
 		}
 
 		/// <summary>
-		/// Навешивает ECS-состояние (BreakableComponent + HealthComponent + ColliderComponent) на уже
-		/// существующий Breakable — общая логика для сценовых (pooled=false) и рантайм-объектов (pooled=true).
+		/// Attaches the ECS state (BreakableComponent + HealthComponent + ColliderComponent) to an
+		/// existing Breakable — shared logic for scene objects (pooled=false) and runtime objects (pooled=true).
 		/// </summary>
 		public static int RegisterBreakable(EcsWorld world, Breakable view, BreakableConfig config, bool pooled)
 		{

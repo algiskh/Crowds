@@ -26,6 +26,10 @@ namespace ECS
 			var fireFilter = world.Filter<RequestFireComponent>().End();
 			var hasRequest = fireFilter.GetEntitiesCount() > 0;
 
+			// Spin-up (e.g. machine gun): the trigger must be held SpinUpTime before shots go out.
+			weapon.SpinUp = hasRequest ? Mathf.Min(weapon.SpinUp + Time.deltaTime, 60f) : 0f;
+			var isSpunUp = weapon.SpinUp >= weapon.GunConfig.SpinUpTime;
+
 			if (reloading.ReloadTime > 0 || reloading.ShutteringTime > 0)
 			{
 				if (weapon.GunConfig.SingleLoad && weapon.CurrentMagazineCount > 0)
@@ -44,7 +48,7 @@ namespace ECS
 				}
 				weapon.IsFiring = false;
 			}
-			else if (hasRequest && isCoolDownPassed)
+			else if (hasRequest && isCoolDownPassed && isSpunUp)
 			{
 				ref var requestSpawnBullet = ref world.CreateSimpleEntity<RequestSpawnBulletComponent>();
 				requestSpawnBullet.Direction = weapon.Weapon.Muzzle.forward;

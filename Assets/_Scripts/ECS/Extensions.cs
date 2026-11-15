@@ -142,9 +142,9 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Запрашивает декаль для попадания по мобу. Id выбирается из пула в <see cref="MobConfig"/>
-		/// по источнику урона; если для моба/источника пул не настроен — используется <paramref name="fallbackId"/>.
-		/// Ничего не делает, если итоговый id пуст.
+		/// Requests a decal for a mob hit. The id is picked from the pool in <see cref="MobConfig"/>
+		/// by damage source; if no pool is configured for the mob/source — <paramref name="fallbackId"/> is used.
+		/// Does nothing if the resulting id is empty.
 		/// </summary>
 		public static void RequestDamageDecal(this EcsWorld world, MobConfig config, DamageSourceType source,
 			Vector3 position, Vector3 direction, string fallbackId = "Blood", bool alignToDirection = false)
@@ -155,7 +155,7 @@ namespace ECS
 			if (string.IsNullOrEmpty(id))
 				return;
 
-			// LookRotation падает на нулевом векторе — подстраховка.
+			// LookRotation throws on a zero vector — a safeguard.
 			if (direction == Vector3.zero)
 				direction = Vector3.forward;
 
@@ -167,8 +167,8 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Запрашивает спаун разрушаемого объекта окружения по id (резолвится через
-		/// MainHolder.BreakableConfigHolder). Обрабатывается BreakableSpawnSystem.
+		/// Requests spawning a breakable environment object by id (resolved via
+		/// MainHolder.BreakableConfigHolder). Handled by BreakableSpawnSystem.
 		/// </summary>
 		public static void RequestSpawnBreakable(this EcsWorld world, string id, Vector3 position, float rotation = 0f)
 		{
@@ -178,7 +178,7 @@ namespace ECS
 			request.Rotation = rotation;
 		}
 
-		/// <summary>Запрашивает спаун разрушаемого объекта по готовому конфигу (в обход holder-lookup).</summary>
+		/// <summary>Requests spawning a breakable object from a ready config (bypassing the holder lookup).</summary>
 		public static void RequestSpawnBreakable(this EcsWorld world, BreakableConfig config, Vector3 position, float rotation = 0f)
 		{
 			ref var request = ref world.CreateSimpleEntity<RequestSpawnBreakableComponent>();

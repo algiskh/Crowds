@@ -16,8 +16,10 @@ namespace ECS
 			inputActions.FireAction = inputActions.ActionMap.FindAction("Attack", throwIfNotFound: true);
 			inputActions.MeleeAction = inputActions.ActionMap.FindAction("Melee", throwIfNotFound: true);
 			inputActions.ReloadAction = inputActions.ActionMap.FindAction("Reload", throwIfNotFound: true);
-			// Throw может отсутствовать, если .inputactions ещё не переимпортирован — не валим игру.
+			// Throw may be missing if the .inputactions hasn't been reimported — don't crash the game.
 			inputActions.ThrowAction = inputActions.ActionMap.FindAction("Throw", throwIfNotFound: false);
+			// Interact (Hold interaction in the asset) — weapon pickup. Optional, same as Throw.
+			inputActions.InteractAction = inputActions.ActionMap.FindAction("Interact", throwIfNotFound: false);
 			inputActions.PauseAction = inputActions.ActionMap.FindAction("Pause", throwIfNotFound: false);
 		}
 
@@ -34,6 +36,7 @@ namespace ECS
 				input.Move = Vector3.zero;
 				input.IsFiring = false;
 				input.IsMeleeing = false;
+				input.InteractPressed = false;
 				return;
 			}
 			#endregion
@@ -103,6 +106,7 @@ namespace ECS
 			input.Move = moveDir;
 			input.IsFiring = isFiring;
 			input.IsMeleeing = isMeleeing;
+			input.InteractPressed = inputActions.InteractAction != null && inputActions.InteractAction.triggered;
 		}
 	}
 }

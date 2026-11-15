@@ -1,155 +1,175 @@
-# Known Issues — бэклог багов и оптимизаций
+# Known Issues — bug & optimization backlog
 
-Итог аудита кода (`Assets/_Scripts`, 2026-10). Здесь — то, что **сознательно не исправлено** и
-оставлено для будущих решений. Строки указаны на момент аудита — перед правкой сверяться с кодом.
+Result of a code audit (`Assets/_Scripts`, 2026-10). This lists what was **deliberately left
+unfixed** and deferred to future decisions. Line numbers are as of the audit — verify against
+the code before acting.
 
-Уже исправлено в рамках аудита (для контекста): удалён лидерборд (`Remote/Leaderboard` + объект
-в сцене с токеном), `MoveSystem` пишет `Direction` по `ref`, DoT-тики создают отдельный
-`RequestDamageComponent`, цели запросов урона/модификаторов/эффектов — `EcsPackedEntity`,
-`GunConfig.ShotDebuffs/ReloadDebuffs` — `[SerializeReference]`, убран `using NUnit` из рантайма,
-перезарядка только при неполном магазине и наличии запаса, отход гренадёра по NavMesh-пути,
-`InitializeAsync` в try/finally, поражение приоритетнее победы, прогресс перезарядки в UI.
+Already fixed during the audit (for context): leaderboard removed (`Remote/Leaderboard` + the
+scene object with the token), `MoveSystem` writes `Direction` by `ref`, DoT ticks create a
+separate `RequestDamageComponent`, damage/modifier/effect request targets are `EcsPackedEntity`,
+`GunConfig.ShotDebuffs/ReloadDebuffs` are `[SerializeReference]`, `using NUnit` removed from
+runtime, reload only with a non-full magazine and available reserve, grenadier retreat along a
+NavMesh path, `InitializeAsync` in try/finally, defeat takes priority over victory, reload
+progress in UI.
 
-## Общие заметки по EcsLite
+## General EcsLite notes
 
-- Установленная версия EcsLite **сбрасывает компонент в `default` при `Del`** (`components.cs`).
-  Комментарии в коде вида «EcsLite не обнуляет переиспользуемые struct'ы» неверны; ручное
-  обнуление managed-полей перед `Del` не нужно.
-- Реальный риск — **сырые `int`** сущностей, живущие дольше кадра. В DEBUG → «Cant touch destroyed
-  entity», без DEBUG → тихое попадание в переиспользованный id. Для всего, что переживает кадр,
-  использовать `EcsPackedEntity` (`world.PackEntity` / `Unpack`).
-- Запрос, который не удалось обработать, всё равно удалять — иначе он висит вечно.
+- The installed EcsLite version **resets the component to `default` on `Del`** (`components.cs`).
+  Comments in the code like "EcsLite doesn't zero reusable structs" are wrong; manually clearing
+  managed fields before `Del` is unnecessary.
+- The real risk is **raw `int` entity ids** living longer than a frame. In DEBUG → "Cant touch
+  destroyed entity"; without DEBUG → silently hitting a recycled id. Use `EcsPackedEntity`
+  (`world.PackEntity` / `Unpack`) for anything that outlives a frame.
+- A request that couldn't be processed should still be deleted — otherwise it hangs around
+  forever.
 
-## Баги
+## Bugs
 
-### Бой / оружие
-- **`BulletSystem.cs:83-96`** — один `Stack<Bullet>` на все калибры и на вражеские пули, а префаб
-  выбирается по калибру (`ResolveProjectile`). Из пула может прийти пуля с чужим мешем/трейлом/
-  `MaxPierceCount`. Решение: `Dictionary<префаб|Caliber, Stack<Bullet>>`, как у мобов/эффектов.
-- **`BulletSystem.cs:95` + `BulletOverlapSystem.cs:84-89`** — пуле не выставляется поворот;
-  Raycast-проверка идёт по устаревшему `transform.forward`, OverlapBox — с устаревшим поворотом.
-  Решение: `rotation = LookRotation(direction)`, луч по `move.Direction`.
-- **`CollisionSystem.cs:69-80`** — в ветке последнего пробития нет `ContainsFixed`: пуля повторно
-  бьёт того же моба и гасится, не долетая до второго. `FixedList32Bytes<int>` вмещает 7 int —
-  `MaxPierceCount > 8` бросит на `Add`. Решение: проверка до обеих веток + clamp по ёмкости.
-- **`WeaponFireSystem.cs:29-35`** — ранний `return` во время single-load перезарядки пропускает
-  удаление `RequestFireComponent`, запросы копятся. На этой утечке держится `hasFiringRequest`
-  в `WeaponReloadSystem` (прерывание перезарядки выстрелом). Решение: явный флаг «прервать».
-- **`EffectsSystem.cs:75-79`, `DecalSystem.cs:60-64`** — при неизвестном id запрос не удаляется
-  и логирует каждый кадр. `DecalSystem.cs:68-70` использует `decal` до null-проверки.
-- **`DamageSystem`** — `EndGameComponent` создаётся на каждый удар, пока HP игрока ≤ 0.
-- **`GrenadeLauncher.cs:27-30`** — `Instantiate(null)` до проверки на null; `Count` гранат уже
-  уменьшен в `GrenadeThrowSystem:80`.
-- **`GrenadeThrowSystem.cs:24`** — на паузе/блоке ввода `IsCharging` не сбрасывается: отпускание
-  кнопки во время паузы → бросок сразу после снятия паузы; превью прицела остаётся видимым.
-- **`ModifiersSystem`** — каждый применённый клон DoT спаунит свой VFX: N дробин = N эффектов на
-  одном мобе. Решение: один эффект на (owner, DamageType).
+### Combat / weapons
+- **`BulletSystem.cs:83-96`** — one `Stack<Bullet>` for all calibers and for enemy bullets, while
+  the prefab is picked by caliber (`ResolveProjectile`). A pooled bullet may come with someone
+  else's mesh/trail/`MaxPierceCount`. Fix: `Dictionary<prefab|Caliber, Stack<Bullet>>`, like
+  mobs/effects.
+- **`BulletSystem.cs:95` + `BulletOverlapSystem.cs:84-89`** — the bullet's rotation is never set;
+  the raycast check uses the stale `transform.forward`, OverlapBox uses the stale rotation.
+  Fix: `rotation = LookRotation(direction)`, ray along `move.Direction`.
+- **`CollisionSystem.cs:69-80`** — the last-pierce branch lacks `ContainsFixed`: the bullet hits
+  the same mob again and dies before reaching the second one. `FixedList32Bytes<int>` holds 7
+  ints — `MaxPierceCount > 8` will throw on `Add`. Fix: check before both branches + clamp to
+  capacity.
+- **`WeaponFireSystem.cs:29-35`** — an early `return` during single-load reload skips deleting
+  `RequestFireComponent`, so requests pile up. `hasFiringRequest` in `WeaponReloadSystem`
+  (reload interrupted by firing) relies on this leak. Fix: an explicit "interrupt" flag.
+- **`EffectsSystem.cs:75-79`, `DecalSystem.cs:60-64`** — on an unknown id the request isn't
+  deleted and logs every frame. `DecalSystem.cs:68-70` uses `decal` before the null check.
+- **`DamageSystem`** — an `EndGameComponent` is created on every hit while player HP ≤ 0.
+- **`GrenadeLauncher.cs:27-30`** — `Instantiate(null)` before the null check; the grenade
+  `Count` was already decremented in `GrenadeThrowSystem:80`.
+- **`GrenadeThrowSystem.cs:24`** — on pause/input lock `IsCharging` isn't reset: releasing the
+  button during a pause → a throw immediately after unpause; the aim preview stays visible.
+- **`ModifiersSystem`** — every applied DoT clone spawns its own VFX: N pellets = N effects on
+  one mob. Fix: one effect per (owner, DamageType).
 
-### Мобы / движение / ИИ
-- **`MoveSystem.cs:53-66`** — порог достижения waypoint'а 0.05 при шаге > 0.1 (низкий FPS, бафф
-  скорости) → дрожание на углу до следующего репаса. Решение: `if (dist <= step)` — снап и переход.
-  Новый waypoint после перехода не выравнивается по `y`.
-- **`MobPathfindingSystem.cs:110-120`** — при неполном/неудачном пути `MovePath` удаляется и моб
-  едет `MoveDirect` по последнему направлению; если он ушёл с navmesh, путь больше не строится.
-  Решение: обнулять `Direction` либо рулить прямо к игроку.
-- **Спаун: `GroupSpawnSystem.cs:245,269`, `SpawnPointSystem.cs:45,64`** — `mobCount` читается раз
-  за кадр и не растёт: групповой спаун и несколько точек в одном кадре превышают `ActiveMobLimit`.
-- **`SpawnPointSystem.cs:47-51`** — во время межспаунового кулдауна таймеры всех точек замирают.
-- **Null-проверки**: `SpawnPointSystem.cs:84` (неверный `MobId`), `MobSpawnSystem.cs:201`
-  (`ValueBar`), `PlayerSystem.cs:69,72` (`MeleeConfig` до проверки), `AgentDebugger.cs:192`
-  (+ `Debug.Log` каждый кадр на :217).
-- **`PathRecalculationRequest`** у последователей формации никогда не потребляется (фильтр
-  патфайндинга требует `PathRecalculation`) — безвредно, мёртвое состояние.
-- **Порядок систем (`EntryPoint.RegisterSystems`)** — `InputSystem`/`PlayerSystem` после
-  систем оружия (+1 кадр задержки ввода), `FollowSystem` до `PlayerMovementSystem` (камера
-  догоняет позицию прошлого кадра — дрожание при плавающем dt).
+### Mobs / movement / AI
+- **`MoveSystem.cs:53-66`** — waypoint reach threshold 0.05 with step > 0.1 (low FPS, speed
+  buff) → jittering at a corner until the next repath. Fix: `if (dist <= step)` — snap and
+  advance. The new waypoint after advancing isn't aligned to `y`.
+- **`MobPathfindingSystem.cs:110-120`** — with a partial/failed path `MovePath` is deleted and
+  the mob moves `MoveDirect` along the last direction; if it has left the navmesh, no path is
+  ever built again. Fix: zero `Direction` or steer straight at the player.
+- **Spawn: `GroupSpawnSystem.cs:245,269`, `SpawnPointSystem.cs:45,64`** — `mobCount` is read
+  once per frame and doesn't grow: group spawn and several points in the same frame exceed
+  `ActiveMobLimit`.
+- **`SpawnPointSystem.cs:47-51`** — during the inter-spawn cooldown all point timers freeze.
+- **Null checks**: `SpawnPointSystem.cs:84` (invalid `MobId`), `MobSpawnSystem.cs:201`
+  (`ValueBar`), `PlayerSystem.cs:69,72` (`MeleeConfig` used before the check),
+  `AgentDebugger.cs:192` (+ `Debug.Log` every frame at :217).
+- **`PathRecalculationRequest` of formation followers is never consumed** (the pathfinding
+  filter requires `PathRecalculation`) — harmless, a dead state.
+- **System order (`EntryPoint.RegisterSystems`)** — `InputSystem`/`PlayerSystem` run after the
+  weapon systems (+1 frame of input delay), `FollowSystem` before `PlayerMovementSystem`
+  (camera chases last frame's position — jitter with a variable dt).
 
-### Мир / лут / уровни
-- **`AdditionalLootSpawnSystem.cs:167-171` + `FragsConditionWrapper.cs:38-45`** —
-  `CooldownMax` нигде не присваивается (всегда 0), `FragsCondition` залипает в `IsFulfilled`
-  навсегда (`Reset()` не вызывается) → после N фрагов лут респаунится сразу после каждого подбора.
-- **`FragsConditionWrapper.cs:53-55`** — `Dispose()` не вызывает `base.Dispose()`.
-- **`AdditionalLootSpawnSystem.cs:18-19`** — `GetCopyUntyped()` может вернуть null → NRE в `Init`
-  ломает весь `RegisterSystems().Init()`. **`LootSystem.cs:207`** — NRE на неизвестный id оружия.
-- **`BreakableSystem.cs:195-205`** — пуловые breakable'ы с исходом `Debris` никогда не
-  возвращаются в пул; повторные (не `Once`) LevelEvent'ы плодят новые инстансы.
-- **`BreakableSystem.cs:94-96`** — breakable в неактивном секторе (Sliding) имеет нулевые bounds →
-  проба в (0,0,0) может наносить контактный урон от мобов у начала координат.
-  Решение: пропускать `!view.isActiveAndEnabled`.
-- **`BreakablesClearedConditionWrapper.cs:40-44`** — пустой `_configId` считает все breakable'ы
-  уровня, включая далёкие секторы → стейдж не закончится, пока не разбит весь уровень.
-- **`Utils/Extensions.cs:287-303`** — bounds сектора строятся по трансформированным min/max;
-  для сектора, повёрнутого на 90°/180°, min > max и проверка всегда false.
+### World / loot / levels
+- **`AdditionalLootSpawnSystem.cs:167-171` + `FragsConditionWrapper.cs:38-45`** — `CooldownMax`
+  is never assigned (always 0), `FragsCondition` gets stuck in `IsFulfilled` forever (`Reset()`
+  is never called) → after N frags loot respawns immediately after each pickup.
+- **`FragsConditionWrapper.cs:53-55`** — `Dispose()` doesn't call `base.Dispose()`.
+- **`AdditionalLootSpawnSystem.cs:18-19`** — `GetCopyUntyped()` may return null → an NRE in
+  `Init` breaks all of `RegisterSystems().Init()`. **`LootSystem.cs:207`** — NRE on an unknown
+  weapon id.
+- **`BreakableSystem.cs:195-205`** — pooled breakables with the `Debris` outcome are never
+  returned to the pool; repeated (non-`Once`) LevelEvents spawn new instances.
+- **`BreakableSystem.cs:94-96`** — a breakable in an inactive sector (Sliding) has zero bounds →
+  a probe at (0,0,0) can deal contact damage from mobs at the origin. Fix: skip
+  `!view.isActiveAndEnabled`.
+- **`BreakablesClearedConditionWrapper.cs:40-44`** — an empty `_configId` counts all level
+  breakables, including far sectors → the stage won't end until the whole level is smashed.
+- **`Utils/Extensions.cs:287-303`** — sector bounds are built from transformed min/max; for a
+  sector rotated 90°/180°, min > max and the check is always false.
 
-### UI / ввод / конфиги
-- **`ControlBindingRow.cs:144`** — `WithControlsExcluding("<Mouse>/leftButton")`: атаку нельзя
-  вернуть на ЛКМ иначе как «Reset All». Нет проверки конфликтов биндингов.
-- **`AimVisualizerSystem.cs:76`** — без мыши (`Mouse.current == null`: геймпад, Steam Deck) NRE
-  каждый кадр.
-- **`PlayerStats.cs:15`** — максимум HP-бара захардкожен `100f` вместо `PlayerConfig.MaxHealth`.
-  **`PlayerStats.cs:76`** — `SetFragCount` без null-проверки `_killsText` (дубликат `SetKillsText`).
-- **`ControlsSettingsMenu.cs:86,163-169`** — `effectivePath.StartsWith` без проверки на пустую строку.
-- **`MainMenuController.cs:148-162`** — `Play` без защиты от повторного входа (двойной клик → два
+### UI / input / configs
+- **`ControlBindingRow.cs:144`** — `WithControlsExcluding("<Mouse>/leftButton")`: attack can't
+  be rebound to LMB except via "Reset All". No binding conflict checks.
+- **`AimVisualizerSystem.cs:76`** — without a mouse (`Mouse.current == null`: gamepad, Steam
+  Deck) NRE every frame.
+- **`PlayerStats.cs:15`** — the HP bar maximum is hardcoded `100f` instead of
+  `PlayerConfig.MaxHealth`. **`PlayerStats.cs:76`** — `SetFragCount` lacks a null check for
+  `_killsText` (a duplicate of `SetKillsText`).
+- **`ControlsSettingsMenu.cs:86,163-169`** — `effectivePath.StartsWith` without an empty-string
+  check.
+- **`MainMenuController.cs:148-162`** — `Play` has no re-entry guard (double click → two
   `LoadSceneAsync`).
-- **`UILogSlot.cs:52,58`** — `Time.deltaTime`: при паузе лог «замерзает».
-- **`LocalizationHolder.cs:83`** — `GetKey` бросает при `_entries == null`, нет фолбэка на `Text`.
-- **`using Unity.VisualScripting`** в `LocalizationManager.cs`, `Utils.cs:3`, `Utils/Extensions.cs:5`,
-  `Components.cs` — лишняя зависимость от пакета; `LocalizationManager` — мёртвый код.
-- **`VatBakerWindow.cs`** — `CeilToInt((float)totalTexels / width)` теряет точность > ~16.7M
-  текселей (:113); два `Color[]` до 16384² (:120-121) → OOM; `Shader.Find` без null-проверки (:297).
+- **`UILogSlot.cs:52,58`** — `Time.deltaTime`: the log "freezes" on pause.
+- **`LocalizationHolder.cs:83`** — `GetKey` throws when `_entries == null`, no fallback to
+  `Text`.
+- **`using Unity.VisualScripting`** in `LocalizationManager.cs`, `Utils.cs:3`,
+  `Utils/Extensions.cs:5`, `Components.cs` — an unnecessary dependency on the package;
+  `LocalizationManager` is dead code.
+- **`VatBakerWindow.cs`** — `CeilToInt((float)totalTexels / width)` loses precision beyond
+  ~16.7M texels (:113); two `Color[]` arrays up to 16384² (:120-121) → OOM; `Shader.Find`
+  without a null check (:297).
 
-### Концовка / загрузка / секторы
-- **`CheckSectorSystem.cs:29-34` + `NavMeshManager.cs:124-150`** — в Sliding-режиме синхронный
-  `BuildNavMesh()` при каждой смене окна; асинхронный бейк на загрузке тут же перезаписывается
-  синхронным (секторы ещё все активны); нет гистерезиса на шве секторов.
+### Ending / loading / sectors
+- **`CheckSectorSystem.cs:29-34` + `NavMeshManager.cs:124-150`** — in Sliding mode a synchronous
+  `BuildNavMesh()` on every window change; the async bake on load is immediately overwritten by
+  the synchronous one (all sectors still active); no hysteresis at the sector seam.
 
-## Производительность (по ожидаемому выигрышу)
+## Performance (by expected gain)
 
-1. **Лишний `NavMeshAgent` на каждом мобе** (`_Prefabs/Mobs/*.prefab`, `m_Enabled: 1`,
-   avoidance high quality). `Mob._agent` не используется, движение — через `transform`. Агент
-   впустую считает crowd/avoidance и спорит с ручным движением. Удалить или выключить.
-2. **`Debug.Log` в горячих путях** — `UISystem.cs:106,111` (каждый кадр),
-   `FragsConditionWrapper.cs:22,32,48` (каждый кадр), `Modifier.cs:130` (каждый тик DoT),
+> **Done on 15.11.2026** (beyond this list): loading-time pool + shader warm-up (`PoolPrewarmer`, see
+> `Docs/LoadingScreenFeature.md`), Preload Audio Data on all `_Sounds` SFX (first play no longer loads
+> synchronously), Gunner's Animator culling → Cull Update Transforms (the other skinned mobs already had
+> Cull Completely; Slow/Fast are VAT). Optimize Game Objects on mob FBX was deliberately **not** enabled:
+> `WeaponHandIK` writes arm bones, prefabs parent weapons/helmets to bones, and VAT baking samples the rig.
+
+1. **A redundant `NavMeshAgent` on every mob** (`_Prefabs/Mobs/*.prefab`, `m_Enabled: 1`,
+   avoidance high quality). `Mob._agent` is unused, movement goes through `transform`. The agent
+   computes crowd/avoidance for nothing and fights the manual movement. Remove or disable it.
+2. **`Debug.Log` in hot paths** — `UISystem.cs:106,111` (every frame),
+   `FragsConditionWrapper.cs:22,32,48` (every frame), `Modifier.cs:130` (every DoT tick),
    `AgentDebugger`, `DifficultyTimerView.cs:22,32`, `WeaponReloadSystem.StartShuttering`.
-   Аллокация + stack trace, в билде тоже.
-3. **`Utils/Extensions.cs:287,299` — `.mesh` вместо `.sharedMesh`** — клонирует меши пола
-   (утечка, ломает батчинг) и пересчитывает bounds при каждом вызове (каждый кадр + на каждый
-   декаль/лут/моб при сдвиге секторов). Решение: `sharedMesh` + кэш bounds в `FloorSector`.
-   `FloorSector.MeshFilters` = null, если сектор был неактивен на `Awake`.
-4. **Синхронный `BuildNavMesh()`** (`NavMeshManager:149,172`) — фриз кадра. Перейти на
-   асинхронный `UpdateNavMesh` (как `RebuildNavMeshAsync`).
-5. **`MobPathfindingSystem` без бюджета** — форс-репасы (`EnterChase`, breakable'ы) падают в один
-   кадр; считается и для мобов в фазах атаки, и на паузе. Решение: round-robin очередь N путей за
-   кадр; так как все идут к игроку — рассмотреть общий flow field.
-6. **Карты collider→entity пересобираются каждый кадр** — `BulletOverlapSystem.cs:48-65`,
-   `ExplosionSystem.cs:44-61` (даже когда все гранаты на фитиле), `BreakableSystem.cs:86-129`.
-   Одна общая карта, обновляемая на спаун/деспаун. Буферы 32/64 при `layerMask = ~0` в толпе
-   переполняются → часть мобов не получает урон: выделить damageable-слой.
-7. **`AudioSource.PlayClipAtPoint`** на каждый удар/выстрел моба (`MeleeSpawnSystem:148`,
-   `RangedAttackerSystem:160`) — создаёт/уничтожает GameObject. Пул AudioSource с лимитом.
-8. **GC каждый кадр / на событие:**
-   - `DamageSystem.cs:20` — `new List<int>()` + `Contains` → поле `HashSet<int>`; плюс полный
-     обход мобов для поиска мёртвых — собирать в цикле запросов.
-   - `DifficultyTimerView.cs:14-17,44-45` — `TimeSpan.ToString` каждый кадр → форматировать при
-     смене секунды.
-   - `PlayerStats.cs:56-57` — `ToString` таймера бонуса каждый кадр; `ValueBar.ApplyValue` —
-     Gradient + `SetActive` каждый кадр.
-   - `LoadingScreen.cs:214-219` — `"LOADING" + new string('.')` каждый кадр.
-   - `SpawnPoint.cs:39` / `SpawnPointSystem.cs:74` — LINQ с замыканиями; для точки без конфига
-     уровня таймер не сбрасывается → каждый кадр.
-   - `CollisionSystem.cs:84,154,207` — `List` + `Clone()` на каждое попадание с дебаффами.
-   - `MeleeSpawnSystem.cs:153-188,218-220` — обход всех `HealthComponent` на каждый удар,
+   Allocation + stack trace, in builds too.
+3. **`Utils/Extensions.cs:287,299` — `.mesh` instead of `.sharedMesh`** — clones floor meshes
+   (leak, breaks batching) and recomputes bounds on every call (every frame + per decal/loot/mob
+   when sectors shift). Fix: `sharedMesh` + cache bounds in `FloorSector`.
+   `FloorSector.MeshFilters` = null if the sector was inactive at `Awake`.
+4. **Synchronous `BuildNavMesh()`** (`NavMeshManager:149,172`) — frame freeze. Switch to async
+   `UpdateNavMesh` (like `RebuildNavMeshAsync`).
+5. **`MobPathfindingSystem` has no budget** — force-repaths (`EnterChase`, breakables) all land
+   in one frame; computed for mobs in attack phases too, and on pause. Fix: round-robin queue of
+   N paths per frame; since everyone heads to the player, consider a shared flow field.
+6. **Collider→entity maps rebuilt every frame** — `BulletOverlapSystem.cs:48-65`,
+   `ExplosionSystem.cs:44-61` (even when all grenades are still on the fuse),
+   `BreakableSystem.cs:86-129`. One shared map updated on spawn/despawn. The 32/64 buffers
+   overflow with `layerMask = ~0` in a crowd → some mobs take no damage: allocate a damageable
+   layer.
+7. **`AudioSource.PlayClipAtPoint`** per mob hit/shot (`MeleeSpawnSystem:148`,
+   `RangedAttackerSystem:160`) — creates/destroys a GameObject. An AudioSource pool with a limit.
+8. **GC every frame / per event:**
+   - `DamageSystem.cs:20` — `new List<int>()` + `Contains` → a `HashSet<int>` field; plus a full
+     mob scan to find the dead — collect in the request loop.
+   - `DifficultyTimerView.cs:14-17,44-45` — `TimeSpan.ToString` every frame → format only when
+     the second changes.
+   - `PlayerStats.cs:56-57` — bonus timer `ToString` every frame; `ValueBar.ApplyValue` —
+     Gradient + `SetActive` every frame.
+   - `LoadingScreen.cs:214-219` — `"LOADING" + new string('.')` every frame.
+   - `SpawnPoint.cs:39` / `SpawnPointSystem.cs:74` — LINQ with closures; for a point without a
+     level config the timer never resets → every frame.
+   - `CollisionSystem.cs:84,154,207` — `List` + `Clone()` per debuff hit.
+   - `MeleeSpawnSystem.cs:153-188,218-220` — scan of all `HealthComponent` per hit,
      `GetAllModifiersAsCopies` + LINQ `Count()`.
-   - `MoveSystem.cs:62` — `pathPool.Del` выбрасывает список waypoint'ов вместо возврата в пул.
-   - `MobSpawnSystem.cs:151,174,178` — `GetComponentsInChildren` на каждый спаун (кэшировать на
-     `Mob`); `GroupSpawnSystem.cs:293` / `FormationTable.ComputeOffsets` — `new` на групповой спаун.
-   - `LocalizationHolder.GetKey` — LINQ `FirstOrDefault` с замыканием.
-9. **Мелкое:**
-   - `world.Filter<>().End()` и `GetAsSingleton` в `Run` — кэшировать в `Init` (аллокаций нет,
-     но сортировка+хэш маски). Неиспользуемые выборки синглтонов: `LootSystem:44`,
-     `BulletSystem:18`, `WeaponFireSystem:15`, `WeaponReloadSystem:22`, `DecalSystem:13,16`.
-     `UISystem` — ~9 `GetAsSingleton` + ~15 фильтров + 8 `DeleteAllWith` каждый кадр.
-   - `LookAtCameraSystem` — поворачивает хелсбары, скрытые через `renderer.enabled`.
-   - `CrowdRenderSystem` — нет frustum culling; мобы группы анимируются синхронно
-     (рандомизировать стартовый `ClipTime`).
-   - `EffectsHolder.GetEffect` / `SoundHolder.GetClip` — линейный поиск по строке → `Dictionary`.
+   - `MoveSystem.cs:62` — `pathPool.Del` discards the waypoint list instead of returning it to
+     the pool.
+   - `MobSpawnSystem.cs:151,174,178` — `GetComponentsInChildren` per spawn (cache on `Mob`);
+     `GroupSpawnSystem.cs:293` / `FormationTable.ComputeOffsets` — `new` per group spawn.
+   - `LocalizationHolder.GetKey` — LINQ `FirstOrDefault` with a closure.
+9. **Minor:**
+   - `world.Filter<>().End()` and `GetAsSingleton` in `Run` — cache in `Init` (no allocations,
+     but mask sort+hash). Unused singleton lookups: `LootSystem:44`, `BulletSystem:18`,
+     `WeaponFireSystem:15`, `WeaponReloadSystem:22`, `DecalSystem:13,16`. `UISystem` — ~9
+     `GetAsSingleton` + ~15 filters + 8 `DeleteAllWith` per frame.
+   - `LookAtCameraSystem` — rotates healthbars hidden via `renderer.enabled`.
+   - `CrowdRenderSystem` — no frustum culling; mobs of a group animate in sync (randomize the
+     starting `ClipTime`).
+   - `EffectsHolder.GetEffect` / `SoundHolder.GetClip` — linear string search → `Dictionary`.

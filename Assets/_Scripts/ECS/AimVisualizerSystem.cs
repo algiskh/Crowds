@@ -45,11 +45,20 @@ namespace ECS
 		{
 			var world = systems.GetWorld();
 
+			ref var aimVisualizer = ref world.GetAsSingleton<AimVisualizerComponent>();
+
 			ref var pauseState = ref world.GetAsSingleton<PauseStateComponent>();
 			if (pauseState.IsPaused)
+			{
+				// Don't draw the crosshair over the pause/fail menus; SetAim shows it again on resume.
+				aimVisualizer.Value.SetCrosshairVisible(false);
+				Cursor.visible = true;
 				return;
+			}
 
-			ref var aimVisualizer = ref world.GetAsSingleton<AimVisualizerComponent>();
+			// In gameplay the crosshair replaces the system cursor.
+			Cursor.visible = false;
+
 			ref var aimInput = ref world.GetAsSingleton<AimInputComponent>();
 			ref var cursor = ref world.GetAsSingleton<VirtualAimCursorComponent>();
 

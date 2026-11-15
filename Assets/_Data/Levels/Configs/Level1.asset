@@ -129,6 +129,7 @@ MonoBehaviour:
     DifficultyTimer: 25
     SpeedMultiplier: 1.2
     InterSpawnCooldown: 1.5
+    RestTime: 0
     EndConditions:
     - {fileID: 11400000, guid: 8f4a20064d66c084d954fa1a351ef77f, type: 2}
     ShowTimer: 0
@@ -136,36 +137,42 @@ MonoBehaviour:
     DifficultyTimer: 60
     SpeedMultiplier: 2
     InterSpawnCooldown: 0.7
+    RestTime: 0
     EndConditions: []
     ShowTimer: 1
   - DifficultyLevel: 3
     DifficultyTimer: 60
     SpeedMultiplier: 1
     InterSpawnCooldown: 0.25
+    RestTime: 4
     EndConditions: []
     ShowTimer: 1
   - DifficultyLevel: 4
     DifficultyTimer: 30
     SpeedMultiplier: 1
     InterSpawnCooldown: 0.3
+    RestTime: 8
     EndConditions: []
     ShowTimer: 1
   - DifficultyLevel: 5
     DifficultyTimer: 60
     SpeedMultiplier: 1
     InterSpawnCooldown: 0.24
+    RestTime: 6
     EndConditions: []
     ShowTimer: 1
   - DifficultyLevel: 6
     DifficultyTimer: 60
     SpeedMultiplier: 1
     InterSpawnCooldown: 0.24
+    RestTime: 8
     EndConditions: []
     ShowTimer: 1
   - DifficultyLevel: 7
     DifficultyTimer: 45
     SpeedMultiplier: 1
-    InterSpawnCooldown: 0.5
+    InterSpawnCooldown: 0.2
+    RestTime: 8
     EndConditions: []
     ShowTimer: 1
   - DifficultyLevel: 13

@@ -8,8 +8,8 @@
 }
 
 /// <summary>
-/// Источник урона — определяет, какой пул декалей применить к мобу при попадании.
-/// Настраивается на каждом мобе в <see cref="MobConfig"/>.
+/// Damage source — determines which decal pool to apply to a mob on hit.
+/// Configured per mob in <see cref="MobConfig"/>.
 /// </summary>
 public enum DamageSourceType
 {

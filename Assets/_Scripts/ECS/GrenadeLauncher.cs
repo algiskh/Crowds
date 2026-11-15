@@ -4,12 +4,13 @@ using UnityEngine;
 namespace ECS
 {
 	/// <summary>
-	/// Общий код запуска летящей гранаты (GrenadeProjectileComponent) из пула.
-	/// Используется и игроком (GrenadeThrowSystem), и мобом-гренадёром (GrenadierSystem):
-	/// единственное различие — точка старта/цель. Кого и насколько задевает взрыв задаётся
-	/// долями урона из самого GrenadeConfig (MobDamageScale / PlayerDamageScale) — по умолчанию
-	/// граната опасна всем. Если у конфига задан трейл-эффект, он достаётся из пула, делается
-	/// ребёнком гранаты и летит с ней; снаряд вернёт его в пул при взрыве (см. GrenadeProjectileSystem).
+	/// Shared code for launching a flying grenade (GrenadeProjectileComponent) from the pool.
+	/// Used by both the player (GrenadeThrowSystem) and the grenadier mob (GrenadierSystem):
+	/// the only difference is the start point/target. Who the explosion hits and how hard is defined
+	/// by the damage scales from the GrenadeConfig itself (MobDamageScale / PlayerDamageScale) — by default
+	/// the grenade is dangerous to everyone. If the config has a trail effect, it's popped from the pool,
+	/// made a child of the grenade and flies with it; the projectile returns it to the pool on explosion
+	/// (see GrenadeProjectileSystem).
 	/// </summary>
 	public static class GrenadeLauncher
 	{
@@ -27,12 +28,12 @@ namespace ECS
 				grenade = Object.Instantiate(mainHolder.GrenadePrefab, pool.Parent);
 
 			if (grenade == null)
-				return; // префаб гранаты не назначен в MainHolder — бросать нечем
+				return; // grenade prefab not assigned in MainHolder — nothing to throw
 
 			grenade.transform.position = start;
 			grenade.gameObject.SetActive(true);
 
-			// --- Трейл-эффект, сопровождающий гранату ---
+			// --- Trail effect accompanying the grenade ---
 			SceneEffect trail = null;
 			if (!string.IsNullOrEmpty(grenadeConfig.TrailEffectId))
 			{

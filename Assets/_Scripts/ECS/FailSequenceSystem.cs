@@ -5,15 +5,15 @@ using UnityEngine;
 namespace ECS
 {
 	/// <summary>
-	/// Кинематографичная концовка при гибели игрока. Запускается из CheckEndSystem (ветка !isWin) и
-	/// проводит три фазы по <see cref="PhaseDuration"/> (0.5с) каждая:
-	///  1) BlockControls — блокирует только управление игроком (InputLockComponent); мир продолжает жить;
-	///  2) RedScreen — плавно проявляет красную пелену поверх экрана;
-	///  3) Menu — ставит игру на паузу (RequestPause), останавливает движение/аниматоры (GameOverActions)
-	///     и показывает окно поражения (RequestOpenWindow → UISystem).
+	/// Cinematic fail sequence on player death. Started from CheckEndSystem (the !isWin branch) and
+	/// runs three phases of <see cref="PhaseDuration"/> (0.5s) each:
+	///  1) BlockControls — locks only the player controls (InputLockComponent); the world keeps running;
+	///  2) RedScreen — gradually fades a red veil in over the screen;
+	///  3) Menu — pauses the game (RequestPause), stops movement/animators (GameOverActions)
+	///     and shows the defeat window (RequestOpenWindow → UISystem).
 	///
-	/// Работает на обычном Time.deltaTime: timeScale мы не трогаем, пауза реализована флагом
-	/// PauseStateComponent, поэтому система продолжает тикать и доводит последовательность до конца.
+	/// Runs on the regular Time.deltaTime: we don't touch timeScale, pause is implemented via the
+	/// PauseStateComponent flag, so the system keeps ticking and completes the sequence.
 	/// </summary>
 	public sealed class FailSequenceSystem : IEcsInitSystem, IEcsRunSystem
 	{
@@ -47,7 +47,7 @@ namespace ECS
 
 			ref var overlay = ref world.GetAsSingleton<FailScreenOverlayComponent>();
 
-			// Плавное проявление красной пелены в течение всей фазы RedScreen.
+			// Smooth fade-in of the red veil throughout the RedScreen phase.
 			if (seq.Phase == FailSequencePhase.RedScreen)
 			{
 				float progress = Mathf.Clamp01(1f - seq.Timer / PhaseDuration);
@@ -61,7 +61,7 @@ namespace ECS
 			switch (seq.Phase)
 			{
 				case FailSequencePhase.BlockControls:
-					// -> Красная пелена: создаём оверлей прозрачным и начинаем проявление.
+					// -> Red veil: create the overlay transparent and start the fade-in.
 					overlay.Value.EnsureCreated(RedColor);
 					overlay.Value.SetAlpha(0f);
 					seq.Phase = FailSequencePhase.RedScreen;
@@ -69,7 +69,7 @@ namespace ECS
 					break;
 
 				case FailSequencePhase.RedScreen:
-					// -> Меню + полная остановка игры.
+					// -> Menu + full game stop.
 					overlay.Value.SetAlpha(RedAlpha);
 					StopGameAndShowMenu(world);
 					seq.Phase = FailSequencePhase.Done;
@@ -79,7 +79,7 @@ namespace ECS
 
 		private void StopGameAndShowMenu(EcsWorld world)
 		{
-			// Блок управления больше не нужен — дальше всё держит общая пауза.
+			// The control lock is no longer needed — the global pause takes over from here.
 			ref var inputLock = ref world.GetAsSingleton<InputLockComponent>();
 			inputLock.Locked = false;
 
@@ -95,9 +95,9 @@ namespace ECS
 	}
 
 	/// <summary>
-	/// Общие действия «полной остановки» при завершении игры — используются и победой (CheckEndSystem),
-	/// и поражением (FailSequenceSystem): гасит движение всех сущностей, ставит аниматоры на паузу и
-	/// блокирует спавн.
+	/// Common "full stop" actions at game end — used by both victory (CheckEndSystem)
+	/// and defeat (FailSequenceSystem): kills the movement of all entities, pauses the animators and
+	/// blocks spawning.
 	/// </summary>
 	public static class GameOverActions
 	{
@@ -125,8 +125,8 @@ namespace ECS
 				move.Direction = Vector2.zero;
 			}
 
-			// Мобы остаются живыми и переходят в Idle: AnimationSystem/CrowdRenderSystem не завязаны
-			// на паузу и доиграют смену состояния (аниматоры не паузим).
+			// Mobs stay alive and switch to Idle: AnimationSystem/CrowdRenderSystem aren't tied
+			// to the pause and will finish the state change (we don't pause the animators).
 			foreach (var entity in world.Filter<MobComponent>().End())
 			{
 				ref var anim = ref animPool.Has(entity) ? ref animPool.Get(entity) : ref animPool.Add(entity);

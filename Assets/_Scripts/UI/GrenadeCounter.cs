@@ -2,13 +2,13 @@ using LightSide;
 using UnityEngine;
 
 /// <summary>
-/// UI-вью счётчика гранат у игрока.
-/// Виджет целиком показывается, когда есть хотя бы одна граната;
-/// числовой счётчик ("x3") показывается только когда гранат больше одной.
+/// UI view of the player's grenade counter.
+/// The whole widget is shown when there's at least one grenade;
+/// the numeric counter ("x3") is shown only when there's more than one grenade.
 /// </summary>
 public class GrenadeCounter : MonoBehaviour
 {
-	[SerializeField] private GameObject _root;     // весь виджет (иконка + счётчик)
+	[SerializeField] private GameObject _root;     // the whole widget (icon + counter)
 	[SerializeField] private UniText _countText;   // "x{count}"
 
 	public void SetCount(int count)

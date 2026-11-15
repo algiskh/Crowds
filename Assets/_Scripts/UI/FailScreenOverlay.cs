@@ -2,14 +2,14 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Полноэкранная красная пелена для кинематографичной концовки. Создаётся в рантайме
-/// (свой Canvas поверх игры, но под окном поражения) и управляется альфой CanvasGroup.
-/// raycastTarget/blocksRaycasts выключены — пелена никогда не перехватывает клики по меню.
-/// Живёт в активной сцене, поэтому уничтожается при её перезагрузке (рестарт).
+/// Full-screen red veil for the cinematic fail sequence. Created at runtime
+/// (its own Canvas above the game, but below the defeat window) and driven by the CanvasGroup alpha.
+/// raycastTarget/blocksRaycasts are off — the veil never intercepts menu clicks.
+/// Lives in the active scene, so it's destroyed on scene reload (restart).
 /// </summary>
 public sealed class FailScreenOverlay
 {
-	// Ниже, чем sortingOrder окна поражения (FailWindow.Show поднимает его выше), чтобы меню было сверху.
+	// Below the defeat window's sortingOrder (FailWindow.Show raises it higher), so the menu stays on top.
 	private const int SortingOrder = 1000;
 
 	private CanvasGroup _group;

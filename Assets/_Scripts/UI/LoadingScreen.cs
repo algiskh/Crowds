@@ -4,24 +4,24 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Полноэкранный «занавес» загрузки между сменой сцен. Показывается из меню (Play) и окон
-/// рестарта ПЕРЕД загрузкой геймплейной сцены, а снимается из <see cref="ECS.EntryPoint"/>,
-/// когда уровень полностью проинициализирован и отрисован камерой.
+/// Full-screen loading "curtain" between scene changes. Shown from the menu (Play) and restart
+/// windows BEFORE the gameplay scene starts loading, and lifted from <see cref="ECS.EntryPoint"/>
+/// once the level is fully initialized and rendered by the camera.
 ///
-/// Живёт между сценами (DontDestroyOnLoad), строится целиком в рантайме (без префаба — как
-/// <see cref="FailScreenOverlay"/>) и анимируется на unscaledDeltaTime, поэтому работает даже
-/// при Time.timeScale == 0. blocksRaycasts включён — под занавесом ничего не кликается.
-/// Индикатор: вращающийся спиннер + надпись <see cref="UniText"/> с бегущим многоточием.
+/// Lives across scenes (DontDestroyOnLoad), built entirely at runtime (no prefab — like
+/// <see cref="FailScreenOverlay"/>) and animated on unscaledDeltaTime, so it works even
+/// at Time.timeScale == 0. blocksRaycasts is on — nothing clickable under the curtain.
+/// Indicator: a spinning spinner + a <see cref="UniText"/> label with animated dots.
 /// </summary>
 public sealed class LoadingScreen : MonoBehaviour
 {
-    // Выше любого игрового/меню-канваса (окно поражения поднимается лишь до ~1001).
+    // Above any gameplay/menu canvas (the defeat window rises only to ~1001).
     private const int SortingOrder = 30000;
     private const float FadeOutDuration = 0.25f;
     private const float SpinnerDegreesPerSecond = 220f;
-    // Путь к своему спрайту спиннера внутри любой папки Resources (без расширения).
-    // Напр. файл Assets/_Art/Resources/UI/LoadingSpinner.png → путь "UI/LoadingSpinner".
-    // Если спрайт не найден — рисуем встроенный круг с вращающейся «прорехой».
+    // Path to your own spinner sprite inside any Resources folder (no extension).
+    // E.g. file Assets/_Art/Resources/UI/LoadingSpinner.png → path "UI/LoadingSpinner".
+    // If the sprite isn't found — draw the built-in circle with a rotating "gap".
     private const string SpinnerResourcePath = "UI/LoadingSpinner";
 
     public static LoadingScreen Instance { get; private set; }
@@ -34,8 +34,8 @@ public sealed class LoadingScreen : MonoBehaviour
     private float _dotsTimer;
     private bool _hiding;
 
-    // Создаёт занавес, если его ещё нет. Идемпотентно — повторный вызов (напр. из EntryPoint
-    // после того, как занавес уже показан из меню) ничего не делает.
+    // Creates the curtain if it doesn't exist yet. Idempotent — a repeated call (e.g. from EntryPoint
+    // after the curtain was already shown from the menu) does nothing.
     public static void Show()
     {
         if (Instance != null)
@@ -47,14 +47,14 @@ public sealed class LoadingScreen : MonoBehaviour
         Instance.Build();
     }
 
-    // Задаёт прогресс полосы [0..1]. Безопасно вызывать без активного занавеса (no-op).
+    // Sets the bar progress [0..1]. Safe to call with no active curtain (no-op).
     public static void SetProgress(float value)
     {
         if (Instance != null)
             Instance.ApplyProgress(value);
     }
 
-    // Плавно гасит занавес и уничтожает его. Безопасно вызывать без активного занавеса.
+    // Smoothly fades the curtain out and destroys it. Safe to call with no active curtain.
     public static void HideAndDestroy()
     {
         if (Instance != null)
@@ -70,19 +70,19 @@ public sealed class LoadingScreen : MonoBehaviour
 
         _group = gameObject.AddComponent<CanvasGroup>();
         _group.alpha = 1f;
-        _group.blocksRaycasts = true; // не пускаем клики в меню/игру под занавесом
+        _group.blocksRaycasts = true; // don't let clicks through to the menu/game under the curtain
 
-        // Фон.
+        // Background.
         var bg = CreateImage("Background", transform, new Color(0.04f, 0.04f, 0.05f, 1f));
         Stretch(bg.rectTransform);
         bg.raycastTarget = true;
 
-        // Спиннер: свой спрайт из Resources, иначе — встроенный круг с вращающейся «прорехой».
+        // Spinner: own sprite from Resources, otherwise the built-in circle with a rotating "gap".
         var spinner = CreateImage("Spinner", transform, Color.white);
         var customSpinner = Resources.Load<Sprite>(SpinnerResourcePath);
         if (customSpinner != null)
         {
-            // Свою картинку крутим целиком (у типичного спиннера есть «голова»/градиент/разрыв).
+            // Spin our own image whole (a typical spinner has a "head"/gradient/gap).
             spinner.sprite = customSpinner;
             spinner.type = Image.Type.Simple;
             spinner.preserveAspect = true;
@@ -101,15 +101,15 @@ public sealed class LoadingScreen : MonoBehaviour
         _spinnerRect.sizeDelta = new Vector2(96f, 96f);
         _spinnerRect.anchoredPosition = new Vector2(0f, 70f);
 
-        // Надпись через UniText (шрифт/оформление берём из настроек проекта).
+        // Label via UniText (font/style borrowed from the project's settings).
         var labelGo = new GameObject("Label");
         labelGo.transform.SetParent(transform, false);
         _label = labelGo.AddComponent<UniText>();
-        // Шрифт/оформление у компонента, созданного в рантайме, не назначаются автоматически:
-        // авто-подстановка дефолтов (UniTextSettings.DefaultFontStack/DefaultAppearance) живёт
-        // под #if UNITY_EDITOR и в плеер-билде отсутствует (иначе CS0117 при сборке). Поэтому
-        // «одалживаем» шрифт и оформление у уже существующего в загруженной сцене UniText —
-        // и меню, и геймплейная сцена всегда содержат текстовые метки на дефолтном шрифте.
+        // A component created at runtime doesn't get a font/style assigned automatically:
+        // the default auto-substitution (UniTextSettings.DefaultFontStack/DefaultAppearance) lives
+        // under #if UNITY_EDITOR and is absent in player builds (otherwise CS0117 when compiling). So we
+        // "borrow" the font and style from a UniText already present in the loaded scene —
+        // both the menu and the gameplay scene always contain text labels with the default font.
         AssignFontFromSceneTemplate();
         _label.FontSize = 48f;
         _label.HorizontalAlignment = HorizontalAlignment.Center;
@@ -121,7 +121,7 @@ public sealed class LoadingScreen : MonoBehaviour
         labelRect.sizeDelta = new Vector2(600f, 80f);
         labelRect.anchoredPosition = new Vector2(0f, -20f);
 
-        // Полоса прогресса: фон + заливка (растёт слева направо через sizeDelta.x).
+        // Progress bar: background + fill (grows left to right via sizeDelta.x).
         _barWidth = 400f;
         var barBack = CreateImage("BarBackground", transform, new Color(1f, 1f, 1f, 0.15f));
         var barBackRect = barBack.rectTransform;
@@ -138,10 +138,10 @@ public sealed class LoadingScreen : MonoBehaviour
         ApplyProgress(0f);
     }
 
-    // Копирует шрифт и оформление в наш рантайм-лейбл с любого другого UniText, уже
-    // присутствующего в загруженной сцене. Работает и в редакторе, и в билде (в отличие от
-    // UniTextSettings.Default*, доступных только под #if UNITY_EDITOR). Если подходящего
-    // «донора» не нашлось — в редакторе падаем на дефолты из настроек проекта.
+    // Copies the font and style into our runtime label from any other UniText already
+    // present in the loaded scene. Works both in the editor and in builds (unlike
+    // UniTextSettings.Default*, available only under #if UNITY_EDITOR). If no suitable
+    // "donor" is found — in the editor we fall back to the project settings defaults.
     private void AssignFontFromSceneTemplate()
     {
         var candidates = FindObjectsByType<UniText>(FindObjectsInactive.Include, FindObjectsSortMode.None);
@@ -151,26 +151,26 @@ public sealed class LoadingScreen : MonoBehaviour
                 continue;
 
             _label.FontStack = candidate.FontStack;
-            // Appearance-сеттер обращается к внутреннему fontProvider, который у только что
-            // добавленного компонента ещё null (создаётся при первом ребилде). Значение всё
-            // равно записывается в поле ДО обращения к провайдеру и подхватывается при
-            // инициализации — поэтому ожидаемый NRE здесь безопасно проглатываем.
+            // The Appearance setter touches the internal fontProvider, which is still null on a just-
+            // added component (created on the first rebuild). The value is still written to the field
+            // BEFORE touching the provider and is picked up on initialization — so the expected NRE is safely
+            // swallowed here.
             if (candidate.Appearance != null)
             {
                 try { _label.Appearance = candidate.Appearance; }
-                catch (System.NullReferenceException) { /* провайдер ещё не создан — это ок */ }
+                catch (System.NullReferenceException) { /* provider not created yet — that's ok */ }
             }
             return;
         }
 
 #if UNITY_EDITOR
-        // Фолбэк для редактора (напр. если занавес показан на пустой сцене без других UniText).
+        // Editor fallback (e.g. if the curtain is shown on an empty scene without other UniText).
         if (UniTextSettings.DefaultFontStack != null)
             _label.FontStack = UniTextSettings.DefaultFontStack;
         if (UniTextSettings.DefaultAppearance != null)
         {
             try { _label.Appearance = UniTextSettings.DefaultAppearance; }
-            catch (System.NullReferenceException) { /* провайдер ещё не создан — это ок */ }
+            catch (System.NullReferenceException) { /* provider not created yet — that's ok */ }
         }
 #endif
     }
@@ -206,11 +206,11 @@ public sealed class LoadingScreen : MonoBehaviour
 
         float dt = Time.unscaledDeltaTime;
 
-        // Вращаем спиннер (по часовой — отрицательный поворот вокруг Z).
+        // Spin the spinner (clockwise — negative rotation around Z).
         if (_spinnerRect != null)
             _spinnerRect.Rotate(0f, 0f, -SpinnerDegreesPerSecond * dt);
 
-        // Анимированное многоточие — движение есть даже пока прогресс стоит.
+        // Animated dots — there's motion even while progress is stalled.
         if (_label != null)
         {
             _dotsTimer += dt;

@@ -5,7 +5,7 @@ namespace ECS
 {
 	public class CheckSectorSystem : IEcsRunSystem
 	{
-		// Защита от зацикливания, если игрок «перепрыгнул» сразу несколько секторов за кадр.
+		// Loop guard in case the player "jumped" several sectors in one frame.
 		private const int MaxShiftsPerFrame = 8;
 
 		public void Run(IEcsSystems systems)
@@ -25,7 +25,7 @@ namespace ECS
 			RunRecycling(world, ref player, manager);
 		}
 
-		// Конечный уровень: секторы заранее расставлены и просто включаются/выключаются по игроку.
+		// Finite level: sectors are pre-placed and simply toggled on/off based on the player.
 		private void RunSliding(Player player, NavMeshManager manager, int activeRadius)
 		{
 			var center = manager.UpdateActiveSectors(player.transform.position, activeRadius);
@@ -33,7 +33,7 @@ namespace ECS
 				player.SetSector(center);
 		}
 
-		// Бесконечный скролл: 3 сектора переиспользуются, объекты на «заднем» секторе переносятся вперёд.
+		// Infinite scroll: 3 sectors are reused, objects on the "rear" sector are carried forward.
 		private void RunRecycling(EcsWorld world, ref PlayerComponent player, NavMeshManager manager)
 		{
 			ref var mainHolder = ref world.GetAsSingleton<MainHolderComponent>();
@@ -48,22 +48,22 @@ namespace ECS
 
 			float playerZ = player.Value.transform.position.z;
 
-			// Проверка с гистерезисом. Цикл, чтобы за один кадр догнать быстрый перенос игрока
-			// (бонус скорости / низкий FPS), иначе игрок может выйти за пределы активного navmesh.
+			// Hysteresis check. Loop to catch up with a fast player carry-over in one frame
+			// (speed buff / low FPS), otherwise the player may leave the active navmesh bounds.
 			for (int i = 0; i < MaxShiftsPerFrame; i++)
 			{
 				float currentSectorZ = manager.CurrentSector.transform.position.z;
 
 				if (playerZ > currentSectorZ + distanceBetweenSectorsHalf + offset)
 				{
-					// Движение вправо
+					// Move right
 					player.Value.SetSector(manager.RightSector);
 					MoveStaticObjects(true, world, manager);
 					manager.UpdateSectorsPosition(true);
 				}
 				else if (playerZ < currentSectorZ - distanceBetweenSectorsHalf - offset)
 				{
-					// Движение влево
+					// Move left
 					player.Value.SetSector(manager.LeftSector);
 					MoveStaticObjects(false, world, manager);
 					manager.UpdateSectorsPosition(false);
