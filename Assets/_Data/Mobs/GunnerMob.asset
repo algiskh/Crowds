@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GunnerMob
   m_EditorClassIdentifier: Assembly-CSharp::RangedMobConfig
   _id: GunnerMob
-  _health: 50
+  _health: 75
   _speed: 2
   _damage: 0
   _collisionRadius: 0

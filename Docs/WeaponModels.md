@@ -50,8 +50,9 @@ Because every gun shares it, one hand pose fits all (`Mob.ReplaceWeapon` keeps t
 
 On the player's `PlayerAnimator`: `_weaponBone` = `mixamorig:RightHand`, tune `_weaponLocalPosition/_weaponLocalEuler`
 once in the Aim pose (all guns share it), optionally add `WeaponHandIK` on the body (no `Mob` → it uses the weapon
-passed by `PlayerAnimator`) and reference it in `_leftHandIK`. Bullets still come from the root `Weapon.Muzzle`
-(see `Docs/PlayerAnimation.md`), the model is visual only.
+passed by `PlayerAnimator`) and reference it in `_leftHandIK`. Bullets come from the root `Weapon.Muzzle` in XZ
+and direction (aim line stays exact, see `Docs/PlayerAnimation.md`), but at the **height of the held model's `Muzzle`**
+(`WeaponFireSystem.GetBulletOrigin`, clamped to root muzzle … +1 m), so they leave the visible barrel.
 
 Muzzle flash: `WeaponFireSystem` requests `MuzzleEffectId` (default `muzzle_flash`, `Resources/FxHolder.asset`) at
 `PlayerAnimator.CurrentGunModel.Muzzle`, parented to it; without a body/gun model — at the gameplay `Weapon.Muzzle`.

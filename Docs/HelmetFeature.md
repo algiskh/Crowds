@@ -5,7 +5,7 @@ Mobs can wear a helmet. The helmets are primitive-style models without textures,
 | Prefab | Look | Who wears it |
 |---|---|---|
 | `_Prefabs/Headwear/HardHat_Construction.prefab` | orange construction hard hat: dome, centre ridge + 2 side ribs, brim with a front peak | `ToxicHelmet`: the slow Toxic zombie (same `ToxicMob.prefab`) with **x2 HP** (400), **scale 1.25** (`MobConfig._scale`) and hit radius 1.25. The helmet is fitted to the head bones, so it scales with the mob. Spawns from `ToxicPoint` at stages level4–level6. |
-| `_Prefabs/Headwear/Helmet_PASGT.prefab` | sand PASGT ("Fritz"): deep shell, cut higher over the brow and lower over the ears/nape, flared rim, darker cover band, chin-strap ends | `GunnerMob` |
+| `_Prefabs/Headwear/Helmet_PASGT.prefab` | **black** PASGT ("Fritz", shape after `Assets/REFs/pasgt.jpg`, material `Helmet_PASGT_Black`, metal `Helmet_Bolt` bolts): shell sized close to the skull, lifted by `Lift` = 2.4 cm and the brow cut at 68° so the eyes stay open, rim nearly straight over the brow, dropping at the temples over the ears and nape (`BuildShell` `sideMaxDeg` profile), flared skirt/visor lip, side bolts, black V chin-strap harness with buckles. No cover band (the old `PASGT_Band` mesh is deleted by the builder) | `GunnerMob` |
 
 ## Building
 
@@ -44,6 +44,9 @@ Other details:
 - `WeaponOverride` = `_Prefabs/Weapons/AR.prefab` (an M4 instead of the Mini-14). The left-hand IK follows `Mob.Weapon`, so it survives the swap.
 - `BurstCount` = 3, `BurstInterval` = 0.1 s.
 - `Cooldown` 0.8 → 1.0 s.
+- `Health` 50 → **75** (+25 for the helmet, 16.11.2026).
+
+`GunnerBare` (no helmet, see `Docs/HockeyLevelFeature.md`) keeps the original rifleman: the Gunner prefab's own Mini-14 (no `WeaponOverride`), single shots, cooldown 0.8 s, 50 HP. `HockeyLevelBuilder.EnsureGunnerBare` enforces this on every run.
 
 The shot still uses `ZombieGun` (12 dmg, accuracy 0.9).
 

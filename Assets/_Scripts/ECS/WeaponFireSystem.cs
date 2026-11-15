@@ -51,8 +51,9 @@ namespace ECS
 			else if (hasRequest && isCoolDownPassed && isSpunUp)
 			{
 				ref var requestSpawnBullet = ref world.CreateSimpleEntity<RequestSpawnBulletComponent>();
+				var heldModel = GetHeldGunModel(world);
 				requestSpawnBullet.Direction = weapon.Weapon.Muzzle.forward;
-				requestSpawnBullet.Position = weapon.Weapon.Muzzle.transform.position;
+				requestSpawnBullet.Position = GetBulletOrigin(weapon.Weapon.Muzzle, heldModel);
 				requestSpawnBullet.GunConfig = weapon.GunConfig;
 				requestSpawnBullet.Team = BulletTeam.Player;
 
@@ -60,7 +61,7 @@ namespace ECS
 				weapon.CoolDown = weapon.GunConfig.FireCoolDown;
 				weapon.CurrentMagazineCount--;
 				weapon.ShotCounter++;
-				SpawnMuzzleFlash(world, weapon.Weapon.Muzzle);
+				SpawnMuzzleFlash(world, weapon.Weapon.Muzzle, heldModel);
 
 				var sound = soundHolder.Value.GetClip(weapon.GunConfig.FireSoundId);
 				weapon.Weapon.AudioSource.PlayOneShot(sound);
@@ -76,16 +77,36 @@ namespace ECS
 			world.DeleteAllWith<RequestFireComponent>();
 		}
 
-		/// <summary>
-		/// Muzzle flash on the gun the player visibly holds (PlayerAnimator's GunConfig.Model, its Muzzle and
-		/// MuzzleEffectId); no body model → at the gameplay muzzle. Bullets still come from the gameplay muzzle.
-		/// </summary>
-		private static void SpawnMuzzleFlash(EcsWorld world, Transform gameplayMuzzle)
-		{
-			WeaponModel model = null;
-			if (world.TryGetAsSingleton<PlayerComponent>(out var player) && player.Value != null && player.Value.BodyAnimator != null)
-				model = player.Value.BodyAnimator.CurrentGunModel;
+		// Max rise of the bullet above the gameplay muzzle: guards against odd poses (barrel pointing up mid-clip).
+		private const float MaxMuzzleRise = 1f;
 
+		/// <summary>The gun model the player visibly holds (PlayerAnimator's GunConfig.Model), or null.</summary>
+		private static WeaponModel GetHeldGunModel(EcsWorld world)
+		{
+			if (world.TryGetAsSingleton<PlayerComponent>(out var player) && player.Value != null && player.Value.BodyAnimator != null)
+				return player.Value.BodyAnimator.CurrentGunModel;
+			return null;
+		}
+
+		/// <summary>
+		/// Bullet spawn point: the gameplay muzzle on the player root (XZ, so the aim line/crosshair stay exact) lifted
+		/// to the height of the visible gun's muzzle — the animated body holds the gun higher than the root muzzle,
+		/// so without this the bullets come out under the barrel. No body model → the gameplay muzzle as is.
+		/// </summary>
+		private static Vector3 GetBulletOrigin(Transform gameplayMuzzle, WeaponModel model)
+		{
+			var origin = gameplayMuzzle.position;
+			if (model != null && model.Muzzle != null)
+				origin.y = Mathf.Clamp(model.Muzzle.position.y, origin.y, origin.y + MaxMuzzleRise);
+			return origin;
+		}
+
+		/// <summary>
+		/// Muzzle flash on the gun the player visibly holds (its Muzzle and MuzzleEffectId); no body model → at the
+		/// gameplay muzzle.
+		/// </summary>
+		private static void SpawnMuzzleFlash(EcsWorld world, Transform gameplayMuzzle, WeaponModel model)
+		{
 			var muzzle = model != null && model.Muzzle != null ? model.Muzzle : gameplayMuzzle;
 			string effectId = model != null ? model.MuzzleEffectId : DefaultMuzzleEffectId;
 			if (muzzle == null || string.IsNullOrEmpty(effectId))

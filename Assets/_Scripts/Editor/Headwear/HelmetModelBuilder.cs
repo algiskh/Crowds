@@ -13,8 +13,9 @@ namespace Crowds.EditorTools
 	///
 	///  • HardHat_Construction — orange construction hard hat: dome with a centre ridge and a brim with a front peak.
 	///    → new MobConfig "ToxicHelmet" (copy of Toxic, x2 HP), created if missing and added to MobConfigHolder.
-	///  • Helmet_PASGT — sand PASGT ("Fritz"): deep dome cut higher over the brow, lower over the ears/nape, flared rim.
-	///    → MobConfig "GunnerMob".
+	///  • Helmet_PASGT — bare taupe PASGT ("Fritz", after Assets/REFs/pasgt.jpg): rounded dome cut high over the
+	///    brow, dropping at the temples to cover the ears and nape, flared skirt with a small front visor lip,
+	///    side bolts, black V chin-strap harness. → MobConfig "GunnerMob".
 	///
 	/// Convention (Headwear): root = Head bone pivot, +Y toward the head top, +Z = face forward, metres for a 0.2 m
 	/// Head→HeadTop distance (Mixamo adult). See Docs/HelmetFeature.md.
@@ -29,6 +30,8 @@ namespace Crowds.EditorTools
 
 		private const string ToxicSource = "Toxic";
 		private const string ToxicHelmetId = "ToxicHelmet";
+		// PASGT sits this much higher than first modelled (it covered the eyes); the brow cut was raised too (74° → 68°).
+		private const float Lift = 0.024f;
 
 		[MenuItem("Tools/Crowds/Build Helmet Models")]
 		public static void BuildAll()
@@ -39,14 +42,19 @@ namespace Crowds.EditorTools
 
 			var orange = GetOrCreateMaterial("Helmet_SafetyOrange", new Color(1f, 0.42f, 0.05f), 0f, 0.62f);
 			var orangeDark = GetOrCreateMaterial("Helmet_SafetyOrangeDark", new Color(0.82f, 0.30f, 0.03f), 0f, 0.5f);
-			var sand = GetOrCreateMaterial("Helmet_Sand", new Color(0.76f, 0.66f, 0.47f), 0f, 0.12f);
-			var strap = GetOrCreateMaterial("Helmet_Strap", new Color(0.33f, 0.29f, 0.20f), 0f, 0.1f);
+			// Black shell (reference shape: Assets/REFs/pasgt.jpg), dark metal bolts, black webbing for the harness.
+			var pasgtShell = GetOrCreateMaterial("Helmet_PASGT_Black", new Color(0.07f, 0.07f, 0.075f), 0f, 0.3f);
+			var bolt = GetOrCreateMaterial("Helmet_Bolt", new Color(0.32f, 0.32f, 0.34f), 0.6f, 0.45f);
+			var webbing = GetOrCreateMaterial("Helmet_Webbing", new Color(0.06f, 0.06f, 0.07f), 0f, 0.08f);
 
 			// Unit shells (radius 1); parts scale them into ellipsoids.
 			var hardHatDome = SaveMesh("HardHat_Dome", BuildShell(frontMaxDeg: 90f, backMaxDeg: 90f, flare: 0f, thickness: 0.07f));
-			var pasgtDome = SaveMesh("PASGT_Dome", BuildShell(frontMaxDeg: 78f, backMaxDeg: 114f, flare: 0.10f, thickness: 0.07f));
-			// Cover band: a strip of constant width just above the PASGT rim line (same flare so it hugs the shell).
-			var pasgtBand = SaveMesh("PASGT_Band", BuildShell(frontMaxDeg: 72f, backMaxDeg: 108f, flare: 0.10f, thickness: 0.03f, bandWidthDeg: 9f));
+			// PASGT: brow cut high and nearly straight across the forehead, drops at the temples over the ears, nape a
+			// bit lower still; the skirt flares out in the last third (visor lip at the front, bulge over the ears).
+			var pasgtDome = SaveMesh("PASGT_Dome", BuildShell(frontMaxDeg: 68f, backMaxDeg: 112f, flare: 0.15f, thickness: 0.06f,
+				sideMaxDeg: 108f, flareStart: 0.62f));
+			// The old cover band is gone (the reference is a bare shell): drop its mesh asset if an earlier run made it.
+			DeleteAssetIfExists($"{MeshFolder}/PASGT_Band.asset");
 
 			// --- Construction hard hat ---
 			var hardHat = BuildPrefab("HardHat_Construction", root =>
@@ -65,12 +73,27 @@ namespace Crowds.EditorTools
 			// --- PASGT ---
 			var pasgt = BuildPrefab("Helmet_PASGT", root =>
 			{
-				MeshPart("Shell", root, pasgtDome, sand, V(0, 0.108f, 0.0f), Quaternion.identity, V(0.124f, 0.112f, 0.138f));
-				// Slightly darker cover band just above the brow line (helmet-cover elastic band).
-				MeshPart("CoverBand", root, pasgtBand, strap, V(0, 0.108f, 0.0f), Quaternion.identity, V(0.127f, 0.115f, 0.141f));
-				// Chin-strap ends on both sides (the strap itself would clip through the jaw in animations).
-				Primitive("StrapL", root, PrimitiveType.Cube, strap, V(-0.118f, 0.07f, 0.01f), Quaternion.Euler(0, 0, 8f), V(0.008f, 0.05f, 0.018f));
-				Primitive("StrapR", root, PrimitiveType.Cube, strap, V(0.118f, 0.07f, 0.01f), Quaternion.Euler(0, 0, -8f), V(0.008f, 0.05f, 0.018f));
+				// Shell sized close to the skull (the old one was ~25% wider/deeper and read as a bucket): top just
+				// above HeadTop, a couple of cm of clearance over a ~0.155 × 0.195 m head.
+				MeshPart("Shell", root, pasgtDome, pasgtShell, V(0, Lift + 0.104f, 0.006f), Quaternion.identity, V(0.099f, 0.1f, 0.112f));
+
+				for (int side = -1; side <= 1; side += 2)
+				{
+					string s = side < 0 ? "L" : "R";
+					// Harness bolt on the flank above the ear, like the reference.
+					Primitive("Bolt" + s, root, PrimitiveType.Cylinder, bolt, V(side * 0.103f, Lift + 0.112f, 0.012f),
+						Quaternion.Euler(0, 0, 90f), V(0.014f, 0.006f, 0.014f));
+
+					// Black V chin-strap harness: front and rear straps leave the rim in front of/behind the ear and
+					// meet below it. Kept short and outside the cheek so they don't clip through the jaw in animations.
+					Primitive("StrapFront" + s, root, PrimitiveType.Cube, webbing, V(side * 0.088f, Lift + 0.058f, 0.03f),
+						Quaternion.Euler(-22f, 0, side * -6f), V(0.005f, 0.06f, 0.012f));
+					Primitive("StrapRear" + s, root, PrimitiveType.Cube, webbing, V(side * 0.088f, Lift + 0.058f, -0.022f),
+						Quaternion.Euler(24f, 0, side * -6f), V(0.005f, 0.06f, 0.012f));
+					// Buckle where the two straps join.
+					Primitive("Buckle" + s, root, PrimitiveType.Cube, webbing, V(side * 0.087f, Lift + 0.031f, 0.004f),
+						Quaternion.Euler(0, 0, side * -6f), V(0.007f, 0.012f, 0.016f));
+				}
 			});
 
 			// --- Configs ---
@@ -234,8 +257,11 @@ namespace Crowds.EditorTools
 		/// (thickness in unit radius) + a rim strip, so it's solid from any angle. <paramref name="bandWidthDeg"/> &gt; 0 makes an open band
 		/// only that many degrees tall above the rim (top cut away) — used for the PASGT cover band.
 		/// </summary>
+		/// <remarks><paramref name="sideMaxDeg"/> ≥ 0 switches to a PASGT profile: the rim stays at the brow angle across
+		/// the forehead, drops to <paramref name="sideMaxDeg"/> over the temples/ears and blends to the nape behind.
+		/// <paramref name="flareStart"/> = fraction of the rim polar angle where the flare begins.</remarks>
 		private static Mesh BuildShell(float frontMaxDeg, float backMaxDeg, float flare, float thickness,
-			float bandWidthDeg = 0f)
+			float bandWidthDeg = 0f, float sideMaxDeg = -1f, float flareStart = 0.55f)
 		{
 			const int rings = 18;
 			const int segments = 40;
@@ -246,14 +272,22 @@ namespace Crowds.EditorTools
 
 			float MaxPolar(float azimuth) // azimuth 0 = +Z front
 			{
-				float back = (1f - Mathf.Cos(azimuth)) * 0.5f; // 0 front … 1 back
-				return Mathf.Lerp(frontMaxDeg, backMaxDeg, back);
+				if (sideMaxDeg < 0f)
+				{
+					float back = (1f - Mathf.Cos(azimuth)) * 0.5f; // 0 front … 1 back
+					return Mathf.Lerp(frontMaxDeg, backMaxDeg, back);
+				}
+				// Angle from the front, 0…180° (symmetric left/right).
+				float a = Mathf.Abs(Mathf.DeltaAngle(0f, azimuth * Mathf.Rad2Deg));
+				float temple = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(28f, 78f, a));
+				float nape = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(100f, 180f, a));
+				return Mathf.Lerp(Mathf.Lerp(frontMaxDeg, sideMaxDeg, temple), backMaxDeg, nape);
 			}
 
 			Vector3 Point(float polarDeg, float azimuth, float radius, float maxPolarDeg)
 			{
 				float p = polarDeg * Mathf.Deg2Rad;
-				float t = Mathf.InverseLerp(maxPolarDeg * 0.55f, maxPolarDeg, polarDeg);
+				float t = Mathf.InverseLerp(maxPolarDeg * flareStart, maxPolarDeg, polarDeg);
 				float r = radius * (1f + flare * t * t);
 				return new Vector3(Mathf.Sin(p) * Mathf.Sin(azimuth) * r, Mathf.Cos(p) * radius, Mathf.Sin(p) * Mathf.Cos(azimuth) * r);
 			}
@@ -380,6 +414,12 @@ namespace Crowds.EditorTools
 			material.enableInstancing = true;
 			AssetDatabase.CreateAsset(material, path);
 			return material;
+		}
+
+		private static void DeleteAssetIfExists(string path)
+		{
+			if (AssetDatabase.LoadAssetAtPath<Object>(path) != null)
+				AssetDatabase.DeleteAsset(path);
 		}
 
 		private static void EnsureFolder(string path)
