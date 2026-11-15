@@ -39,8 +39,8 @@ namespace ECS
 				effectRequest.Position = spawnRequest.Position;
 				effectRequest.Rotation = spawnRequest.Rotation;
 
-				// Звук удара (настраивается в MeleeConfig, как звуки оружия). Позиционный, т.к.
-				// у атакующего (моб/игрок) нет общего AudioSource; ближний бой редкий — без оверхеда.
+				// Strike sound (configured in MeleeConfig, like weapon sounds). Positional, because
+				// the attacker (mob/player) has no shared AudioSource; melee is rare — no overhead.
 				var soundId = spawnRequest.Config.AttackSoundId;
 				if (!string.IsNullOrEmpty(soundId))
 				{
@@ -66,10 +66,12 @@ namespace ECS
 						damageRequestPool.Add(world.NewEntity()) = new RequestDamageComponent
 						{
 							Target = world.PackEntity(targetEntity),
-							Damage = spawnRequest.Config.Damage
+							Damage = spawnRequest.Config.Damage,
+							HasSource = true,
+							SourcePosition = spawnRequest.Position
 						};
 
-						// Декаль только для мобов (источник урона — ближний бой).
+						// Decal only for mobs (damage source — melee).
 						if (mobPool.Has(targetEntity))
 						{
 							ref var mob = ref mobPool.Get(targetEntity);
@@ -88,8 +90,8 @@ namespace ECS
 					}
 				}
 
-				// Разрушаемое окружение: у breakable нет MoveComponent (не участвует в общем цикле выше),
-				// поэтому проверяем радиус по его трансформу и разрешённый источник урона на самом объекте.
+				// Breakable environment: a breakable has no MoveComponent (doesn't participate in the loop above),
+				// so check the radius against its transform and the allowed damage source on the object itself.
 				var breakableFilter = world.Filter<BreakableComponent>().Inc<HealthComponent>().End();
 				foreach (var breakableEntity in breakableFilter)
 				{

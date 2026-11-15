@@ -56,6 +56,11 @@ public class MobConfig: ScriptableObject
 	[SerializeField, MinValue(0.05f), Tooltip("Uniform size multiplier. 1 = prefab default.")]
 	private float _scale = 1f;
 
+	// Optional hat/helmet (Headwear prefab, Tools ▸ Crowds ▸ Build Helmet Models). Put on the Head bone once per
+	// pooled instance and fitted to the head size. Skinned mobs only — ignored when CrowdLibrary (VAT) is set.
+	[SerializeField, Tooltip("Optional helmet/hat on the Head bone (skinned mobs only). Null = bare head.")]
+	private Headwear _headwear;
+
 	[Title("Death")]
 	// Seconds the corpse stays to play the Animator "die" state before it returns to the pool. The entity is
 	// removed at the moment of death (no more hits/attacks/collisions); only the view lingers (DyingMobSystem).
@@ -77,6 +82,7 @@ public class MobConfig: ScriptableObject
 	public Scene.Animation.CrowdAnimationLibrary CrowdLibrary => _crowdLibrary;
 	public Color Tint => _tint;
 	public float Scale => _scale;
+	public Headwear Headwear => _headwear;
 	public float DeathAnimationTime => _deathAnimationTime;
 
 	/// <summary>

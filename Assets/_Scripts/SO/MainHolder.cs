@@ -49,10 +49,24 @@ public class MainHolder : ScriptableObject
 	[SerializeField, BoxGroup("DifficultyParameters")] private int _activeMobLimit = 60;
 
 	[SerializeField, BoxGroup("DifficultyParameters"), MinValue(0),
-	 Tooltip("Сколько неактивных клонов каждого типа мобов уровня заранее создать в пуле при старте, " +
-		"чтобы убрать хитчи от Instantiate во время волн. 0 = выключено (ленивое создание). " +
-		"На тип не превышает ActiveMobLimit.")]
+	 Tooltip("How many inactive clones of each level mob type to pre-create in the pool at startup, " +
+		"to remove Instantiate hitches during waves. 0 = disabled (lazy creation). " +
+		"Per type doesn't exceed ActiveMobLimit.")]
 	private int _mobPrewarmPerType = 10;
+
+	// Loading-time warm-up (PoolPrewarmer, under the loading curtain): pre-creates pooled instances AND shows them
+	// for a couple of rendered frames, so first-use Instantiate + shader/PSO compilation don't hitch the first fight.
+	[SerializeField, BoxGroup("Warm-up"), MinValue(0), Tooltip("Pooled instances per effect id (EffectsHolder). 0 = no effect warm-up.")]
+	private int _effectPrewarmPerId = 2;
+	[SerializeField, BoxGroup("Warm-up"), MinValue(0), Tooltip("Pooled instances per decal id (DecalsConfigHolder).")]
+	private int _decalPrewarmPerId = 3;
+	[SerializeField, BoxGroup("Warm-up"), MinValue(0), Tooltip("Pooled bullets per projectile prefab (AmmoConfigHolder + BulletPrefab).")]
+	private int _bulletPrewarmPerPrefab = 30;
+	[SerializeField, BoxGroup("Warm-up"), MinValue(0), Tooltip("Pooled loot pickups.")]
+	private int _lootPrewarm = 20;
+	[SerializeField, BoxGroup("Warm-up"), Tooltip("Optional: shader variants recorded in the editor (Project Settings ▸ Graphics ▸ " +
+		"Shader Loading ▸ Save to asset after a play session). Warmed up during loading if set.")]
+	private ShaderVariantCollection _shaderVariants;
 
 	[Header("Camera presets")]
 	[SerializeField] private FollowTarget FollowTarget;
@@ -101,6 +115,11 @@ public class MainHolder : ScriptableObject
 	public float DifficultyIncreaseTime => _difficultyIncreaseTime;
 	public int ActiveMobLimit => _activeMobLimit;
 	public int MobPrewarmPerType => _mobPrewarmPerType;
+	public int EffectPrewarmPerId => _effectPrewarmPerId;
+	public int DecalPrewarmPerId => _decalPrewarmPerId;
+	public int BulletPrewarmPerPrefab => _bulletPrewarmPerPrefab;
+	public int LootPrewarm => _lootPrewarm;
+	public ShaderVariantCollection ShaderVariants => _shaderVariants;
 	public MobConfigHolder MobConfigHolder => _mobConfigHolder;
 	public GrenadeConfigHolder GrenadeConfigHolder => _grenadeConfigHolder;
 	public BonusConfigHolder BonusConfigHolder => _bonusConfigHolder;

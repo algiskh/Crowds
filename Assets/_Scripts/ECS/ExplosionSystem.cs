@@ -5,11 +5,11 @@ using UnityEngine;
 namespace ECS
 {
 	/// <summary>
-	/// Взрыв по требованию: обрабатывает RequestExplosionComponent.
-	/// Пока Delay (фитиль) > 0 — обратный отсчёт. На детонации:
-	///  - запрашивает пулевой эффект взрыва (RequestEffectComponent);
-	///  - наносит радиальный урон мобам в круге: максимум в центре,
-	///    минимум на краю радиуса (линейный спад).
+	/// On-demand explosion: processes RequestExplosionComponent.
+	/// While Delay (fuse) > 0 — countdown. On detonation:
+	///  - requests the explosion visual effect (RequestEffectComponent);
+	///  - deals radial damage to mobs in a circle: maximum at the center,
+	///    minimum at the radius edge (linear falloff).
 	/// </summary>
 	public sealed class ExplosionSystem : IEcsRunSystem
 	{
@@ -40,7 +40,7 @@ namespace ECS
 			var breakablePool = world.GetPool<BreakableComponent>();
 			var colliderPool = world.GetPool<ColliderComponent>();
 
-			// collider → mob entity (строим один раз за кадр, когда есть взрывы).
+			// collider → mob entity (built once per frame when there are explosions).
 			_mobColliderMap.Clear();
 			var mobFilter = world.Filter<MobComponent>().Inc<ColliderComponent>().End();
 			foreach (var mobEntity in mobFilter)
@@ -50,7 +50,7 @@ namespace ECS
 					_mobColliderMap[col.Value] = mobEntity;
 			}
 
-			// collider → breakable entity (разрушаемое окружение в радиусе взрыва).
+			// collider → breakable entity (destructible environment within the explosion radius).
 			_breakableColliderMap.Clear();
 			var breakableFilter = world.Filter<BreakableComponent>().Inc<ColliderComponent>().End();
 			foreach (var breakableEntity in breakableFilter)
@@ -71,12 +71,12 @@ namespace ECS
 						continue;
 				}
 
-				// --- Эффект взрыва ---
+				// --- Explosion effect ---
 				ref var effectRequest = ref world.CreateSimpleEntity<RequestEffectComponent>();
 				effectRequest.EffectId = string.IsNullOrEmpty(request.EffectId) ? "explosion" : request.EffectId;
 				effectRequest.Position = request.Position;
 
-				// --- Радиальный урон по мобам (доля MobDamageScale) ---
+				// --- Radial damage to mobs (MobDamageScale share) ---
 				if (request.MobDamageScale > 0f && request.Radius > 0f)
 				{
 					int hitCount = Physics.OverlapSphereNonAlloc(
@@ -124,7 +124,7 @@ namespace ECS
 					}
 				}
 
-				// --- Радиальный урон по игроку (доля PlayerDamageScale) ---
+				// --- Radial damage to the player (PlayerDamageScale share) ---
 				if (request.PlayerDamageScale > 0f && request.Radius > 0f &&
 					world.TryGetAsSingleton<PlayerComponent>(out var playerSingleton))
 				{
@@ -138,6 +138,8 @@ namespace ECS
 						ref var damageRequest = ref world.CreateSimpleEntity<RequestDamageComponent>();
 						damageRequest.Target = world.PackEntity(playerSingleton.Value.Entity);
 						damageRequest.Damage = damage;
+						damageRequest.HasSource = true;
+						damageRequest.SourcePosition = request.Position;
 					}
 				}
 

@@ -5,9 +5,17 @@ namespace ECS
 {
 	public class DamageSystem : IEcsRunSystem
 	{
+		// Seconds left of the player's post-hit invulnerability (PlayerConfig.HitInvulnerabilityTime).
+		private float _playerInvulnerability;
+
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
+
+			if (_playerInvulnerability > 0f)
+				_playerInvulnerability -= Time.deltaTime;
+			var playerConfig = world.GetAsSingleton<MainHolderComponent>().Value.PlayerConfig;
+			float hitInvulnerabilityTime = playerConfig != null ? playerConfig.HitInvulnerabilityTime : 0f;
 
 			ref var fragCount = ref world.GetAsSingleton<FragCountComponent>();
 			var requestDamagePool = world.GetPool<RequestDamageComponent>();
@@ -24,9 +32,9 @@ namespace ECS
 			{
 				var requestDamageComponent = requestDamagePool.Get(requestEntity);
 
-				// Цель могла умереть/переиспользоваться с момента создания запроса (запросы от систем,
-				// идущих после DamageSystem, доживают до следующего кадра). Запрос удаляем всегда,
-				// иначе он висел бы вечно и мог попасть в чужую сущность после рецикла id.
+				// The target could have died/been recycled since the request was created (requests from
+				// systems running after DamageSystem live until the next frame). Always delete the request,
+				// otherwise it would hang forever and could hit an alien entity after an id recycle.
 				if (!requestDamageComponent.Target.Unpack(world, out var target) || !healthPool.Has(target))
 				{
 					requestDamagePool.Del(requestEntity);
@@ -35,9 +43,21 @@ namespace ECS
 
 				var isPlayer = playerPool.Has(target);
 
+				// Post-hit invulnerability: a crowd hitting the player in the same moment deals one hit,
+				// not N. DoT ticks neither are blocked by it nor start it (poison must not grant immunity).
+				if (isPlayer && !requestDamageComponent.IsPeriodic && requestDamageComponent.Damage > 0f)
+				{
+					if (_playerInvulnerability > 0f)
+					{
+						requestDamagePool.Del(requestEntity);
+						continue;
+					}
+					_playerInvulnerability = hitInvulnerabilityTime;
+				}
+
 				ref var healthComponent = ref healthPool.Get(target);
 
-				// Активный щит-бонус режет входящий урон: ShieldModifier.Value — множитель урона (0.5 = −50%).
+				// An active shield bonus cuts incoming damage: ShieldModifier.Value — damage multiplier (0.5 = −50%).
 				var damage = requestDamageComponent.Damage;
 				if (modifierPool.Has(target))
 					damage *= modifierPool.Get(target).GetModifier<ShieldModifier>();
@@ -49,6 +69,18 @@ namespace ECS
 
 				if (isPlayer)
 				{
+					// Hit feedback (vignette / shake / direction marker) — DamageFeedbackSystem.
+					if (damage > 0f)
+					{
+						ref var hitEvent = ref world.CreateSimpleEntity<PlayerDamagedEventComponent>();
+						hitEvent.Damage = damage;
+						hitEvent.CurrentHealth = healthComponent.CurrentHealth;
+						hitEvent.MaxHealth = healthComponent.MaxHealth;
+						hitEvent.IsPeriodic = requestDamageComponent.IsPeriodic;
+						hitEvent.HasSource = requestDamageComponent.HasSource;
+						hitEvent.SourcePosition = requestDamageComponent.SourcePosition;
+					}
+
 					ref var requestUIHealthUpdate = ref world.CreateSimpleEntity<UpdateHealthViewRequestComponent>();
 					if (healthComponent.CurrentHealth <= 0)
 					{
@@ -127,8 +159,6 @@ namespace ECS
 					{
 						DyingMobSystem.ReturnToPool(world, deadMob);
 					}
-
-
 
 					//Request Effect (per-mob-type death effect, fallback to the shared "zombie_dead")
 					var deathEffectId = mobComponent.Config != null ? mobComponent.Config.DeathEffectId : null;

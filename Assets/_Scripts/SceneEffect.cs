@@ -51,4 +51,27 @@ public class SceneEffect : MonoBehaviour
 	{
 		gameObject.SetActive(false);
 	}
+
+	/// <summary>
+	/// Loading-time warm-up (PoolPrewarmer): shows the effect silently for a couple of rendered frames so its
+	/// shaders/pipeline states get compiled under the loading curtain instead of on the first real explosion.
+	/// </summary>
+	public void BeginWarmUp()
+	{
+		if (_audioSource != null)
+			_audioSource.enabled = false;
+		gameObject.SetActive(true);
+		if (_particles != null)
+			_particles.Play(true);
+	}
+
+	/// <summary>Ends <see cref="BeginWarmUp"/>: clears particles, re-enables the audio source (inactive object).</summary>
+	public void EndWarmUp()
+	{
+		if (_particles != null)
+			_particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+		gameObject.SetActive(false);
+		if (_audioSource != null)
+			_audioSource.enabled = true;
+	}
 }

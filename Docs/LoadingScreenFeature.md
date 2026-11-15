@@ -106,3 +106,20 @@ rotating radial-fill gap — nothing breaks either way.
   prewarm/spawning across frames next — the async NavMesh bake already removed the largest hitch.
 - No automated tests — verify in Play mode: menu → level, and a fail/win → restart. Confirm the
   spinner spins, the UniText label renders, and the curtain fades only after the level is visible.
+
+## Warm-up step (`PoolPrewarmer`, added 15.11.2026)
+
+`InitializeAsync` now runs a warm-up step between the navmesh bake and system registration:
+
+1. It binds the player's agent to the fresh navmesh (`NavMeshAgent.Warp`).
+2. It awaits `PoolPrewarmer.RunAsync` (`ECS/PoolPrewarmer.cs`). This fills the pools with:
+   - effects: N per `EffectsHolder` id;
+   - decals: N per `DecalsConfigHolder` id;
+   - bullets: N per projectile prefab, into `BulletPoolComponent.ByPrefab` (moved out of `BulletSystem`);
+   - loot pickups.
+
+One instance of each kind is shown silently next to the player for 3 rendered frames under the curtain (`SceneEffect.BeginWarmUp`/`EndWarmUp` turn audio off). This compiles shaders and pipeline states during loading instead of on the first explosion, decal or bullet.
+
+The counts and an optional recorded `ShaderVariantCollection` live in the `MainHolder` "Warm-up" box. To record a collection: play the level, then Project Settings ▸ Graphics ▸ Shader Loading ▸ Save to asset.
+
+Progress milestones are now 0.2 / 0.5 / 0.7 / 0.8 / 1.0.

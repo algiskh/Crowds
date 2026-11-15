@@ -33,9 +33,9 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Создаёт сущность моба со всеми базовыми компонентами в заданной позиции и возвращает её id.
-		/// Позиция должна быть уже снапнута на navmesh вызывающим. Используется и обычным спауном
-		/// (MobSpawnSystem), и групповым (GroupSpawnSystem), чтобы не дублировать инициализацию.
+		/// Creates a mob entity with all the base components at the given position and returns its id.
+		/// The position must already be snapped to the navmesh by the caller. Used by both regular spawning
+		/// (MobSpawnSystem) and group spawning (GroupSpawnSystem), so initialization isn't duplicated.
 		/// </summary>
 		public static int CreateMob(EcsWorld world, MobConfig mobConfig, Vector3 position)
 		{
@@ -83,13 +83,13 @@ namespace ECS
 			colliderComponent.Value = mob.Collider;
 
 			pathRecalculationComponent.Interval = recalcInterval;
-			// Джиттер: разносим первый пересчёт у пачки мобов, чтобы не пересчитывать всех в один кадр.
+			// Jitter: spread the first recalculation of a mob pack so not all are recalculated in one frame.
 			pathRecalculationComponent.LastTime = now - Random.Range(0f, recalcInterval);
 
 			looker.Transform = mob.ValueBar != null ? mob.ValueBar.Transform : null;
 			looker.FlatBillboard = true;
 
-			// Моб-гренадёр: тот же моб + поведение броска гранат (GrenadierSystem).
+			// Grenadier mob: the same mob + grenade-throw behavior (GrenadierSystem).
 			if (mobConfig is GrenadierMobConfig grenadierConfig)
 			{
 				ref var grenadier = ref world.GetPool<GrenadierComponent>().Add(mobEntity);
@@ -98,7 +98,7 @@ namespace ECS
 				grenadier.Timer = 0f;
 				grenadier.HasFleeTarget = false;
 			}
-			// Моб ближнего боя: тот же моб + телеграфированная атака (MeleeAttackerSystem).
+			// Melee mob: the same mob + telegraphed attack (MeleeAttackerSystem).
 			else if (mobConfig is MeleeMobConfig meleeMobConfig)
 			{
 				ref var attacker = ref world.GetPool<MeleeAttackerComponent>().Add(mobEntity);
@@ -106,7 +106,7 @@ namespace ECS
 				attacker.State = MeleeAttackerState.Chase;
 				attacker.Timer = 0f;
 			}
-			// Моб-стрелок: тот же моб + телеграфированный выстрел (RangedAttackerSystem).
+			// Ranged mob: the same mob + telegraphed shot (RangedAttackerSystem).
 			else if (mobConfig is RangedMobConfig rangedMobConfig)
 			{
 				ref var ranged = ref world.GetPool<RangedAttackerComponent>().Add(mobEntity);
@@ -188,7 +188,7 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Берёт моба по id из стека пула или инстанцирует нового.
+		/// Takes a mob by id from the pool stack or instantiates a new one.
 		/// </summary>
 		private static Mob SpawnMob(ref MobPoolComponent mobPool, MobConfig mobConfig)
 		{
@@ -199,11 +199,30 @@ namespace ECS
 				return stack.Pop();
 
 			var mob = Object.Instantiate(mobConfig.Prefab, mobPool.Parent);
+			SetupNewInstance(mob, mobConfig);
+			return mob;
+		}
+
+		/// <summary>
+		/// One-time per-config setup of a freshly instantiated mob (the pool is per config id, so pooled instances
+		/// keep it). Shared by <see cref="SpawnMob"/> and the pool prewarm in EntryPoint — otherwise prewarmed
+		/// instances would miss the weapon override / helmet.
+		/// </summary>
+		public static void SetupNewInstance(Mob mob, MobConfig mobConfig)
+		{
 			mob.SetId(mobConfig.Id);
-			// Per-config gun on a shared model (pool is per config id → done once per instance).
+			// Per-config gun on a shared model.
 			if (mobConfig is RangedMobConfig ranged && ranged.WeaponOverride != null)
 				mob.ReplaceWeapon(ranged.WeaponOverride);
-			return mob;
+			// Per-config helmet on the Head bone (fresh instance = bind pose, so the fit is clean). VAT mobs don't
+			// animate their bones — a helmet would hang still, so they're skipped.
+			if (mobConfig.Headwear != null)
+			{
+				if (mobConfig.CrowdLibrary == null)
+					Headwear.AttachTo(mob.transform, mobConfig.Headwear);
+				else
+					Debug.LogWarning($"[MobSpawnSystem] '{mobConfig.Id}': Headwear is ignored for VAT crowd mobs (CrowdLibrary set).");
+			}
 		}
 
 		private static void InitializeMobGameObject(Mob mob, MobConfig mobConfig, Vector2 playerPosition)

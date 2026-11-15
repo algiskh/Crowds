@@ -18,7 +18,7 @@ public class DecalConfig
 
     [Header("Per-spawn randomization")]
     [SerializeField] private bool _randomRoll = true;
-    [Tooltip("Случайный множитель масштаба (min, max). (1,1) = без джиттера.")]
+    [Tooltip("Random scale multiplier (min, max). (1,1) = no jitter.")]
     [SerializeField] private Vector2 _scaleJitter = Vector2.one;
     [SerializeField] private bool _randomMirror;
 
@@ -39,8 +39,8 @@ public class DecalConfig
     }
 
     /// <summary>
-    /// Подбирает случайную ячейку атласа. Возвращает false, если атлас не
-    /// используется — тогда UV проектора трогать не нужно.
+    /// Picks a random atlas cell. Returns false if the atlas isn't
+    /// used — then the projector UV doesn't need touching.
     /// </summary>
     public bool TryGetRandomCell(out Vector2 uvScale, out Vector2 uvBias)
     {
@@ -63,7 +63,7 @@ public class DecalConfig
 
         if (_randomMirror && UnityEngine.Random.value < 0.5f)
         {
-            w = -w;       // отражаем ячейку по горизонтали
+            w = -w;       // mirror the cell horizontally
             bx += 1f / cols;
         }
 
@@ -72,7 +72,7 @@ public class DecalConfig
         return true;
     }
 
-    /// <summary>Случайный множитель масштаба из диапазона _scaleJitter.</summary>
+    /// <summary>Random scale multiplier from the _scaleJitter range.</summary>
     public float GetScaleJitter()
     {
         if (_scaleJitter.x <= 0f && _scaleJitter.y <= 0f)
@@ -88,6 +88,7 @@ public class DecalsConfigHolder : ScriptableObject
     [SerializeField] private Decal _prefab;
 
     public Decal Prefab => _prefab;
+    public System.Collections.Generic.IReadOnlyList<DecalConfig> Configs => _configs;
 
     public DecalConfig GetConfig(string id)
     {

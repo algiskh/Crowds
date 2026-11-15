@@ -6,7 +6,7 @@ namespace ECS
 {
 	public class CollisionSystem : IEcsRunSystem
 	{
-		// Переиспользуется между кадрами. Локальная для системы — не singleton-компонент.
+		// Reused between frames. Local to the system — not a singleton component.
 		private readonly List<Modifier> _modifierScratch = new List<Modifier>(8);
 
 		public void Run(IEcsSystems systems)
@@ -47,8 +47,8 @@ namespace ECS
 			foreach (var bulletEntity in bulletFilter)
 			{
 				ref var bulletComponent = ref bulletPool.Get(bulletEntity);
-				// Только Player-пули бьют мобов. Enemy-пули (мобы-стрелки) сюда не заходят
-				// (у них пустой MobHits) — их попадание по игроку разбирается в BulletVsPlayer.
+				// Only Player bullets hit mobs. Enemy bullets (ranged mobs) don't come here
+				// (their MobHits is empty) — their hits on the player are handled in BulletVsPlayer.
 				if (bulletComponent.Team != BulletTeam.Player)
 					continue;
 
@@ -62,11 +62,11 @@ namespace ECS
 				{
 					int mobEntity = overlap.MobHits[i];
 
-					// Entity мог быть удалён (умер/ушёл в пул) между кадрами.
+					// The entity could have been deleted (died/returned to pool) between frames.
 					if (!mobPool.Has(mobEntity))
 						continue;
 
-					int maxPierce = bulletComponent.Bullet.MaxPierceCount;
+					int maxPierce = bulletComponent.MaxPierce;
 					if (maxPierce > 1 && bulletComponent.PiercedTargets.Length < maxPierce - 1)
 					{
 						if (bulletComponent.PiercedTargets.ContainsFixed(mobEntity))
@@ -98,8 +98,8 @@ namespace ECS
 			#endregion
 
 			#region BulletVsBreakable
-			// Пуля попадает в разрушаемый объект: если тот принимает урон от пуль — наносим урон и
-			// гасим пулю (block & consume — объект работает как укрытие). Bullet map строит BulletOverlapSystem.
+			// A bullet hits a breakable object: if it accepts bullet damage — deal damage and
+			// kill the bullet (block & consume — the object acts as cover). The bullet map is built by BulletOverlapSystem.
 			foreach (var bulletEntity in bulletFilter)
 			{
 				ref var disposed = ref disposedPool.Get(bulletEntity);
@@ -124,7 +124,7 @@ namespace ECS
 					damage.Target = world.PackEntity(breakableEntity);
 					damage.Damage = bulletComponent.Damage;
 
-					// Solid prop — пуля останавливается на нём.
+					// Solid prop — the bullet stops on it.
 					disposed.IsDisposed = true;
 					break;
 				}
@@ -132,8 +132,8 @@ namespace ECS
 			#endregion
 
 			#region BulletVsPlayer
-			// Enemy-пули (мобы-стрелки, RangedAttackerSystem): попадание по игроку — урон + гашение пули.
-			// PlayerHit проставляет BulletOverlapSystem по дистанции (у игрока нет коллайдер-карты).
+			// Enemy bullets (ranged mobs, RangedAttackerSystem): a hit on the player — damage + bullet kill.
+			// PlayerHit is set by BulletOverlapSystem via distance (the player has no collider map).
 			foreach (var bulletEntity in bulletFilter)
 			{
 				ref var bulletComponent = ref bulletPool.Get(bulletEntity);
@@ -152,6 +152,9 @@ namespace ECS
 				damage.Target = world.PackEntity(player.Value.Entity);
 				damage.Damage = bulletComponent.Damage;
 				damage.DamageModifiers = BuildShotDebuffs(bulletComponent.Modifiers);
+				// Hit marker points back along the bullet's flight (toward the shooter).
+				damage.HasSource = true;
+				damage.SourcePosition = playerPos - movePool.Get(bulletEntity).Direction * 5f;
 
 				ref var effectRequest = ref world.CreateSimpleEntity<RequestEffectComponent>();
 				effectRequest.EffectId = "playerHit";
@@ -161,9 +164,9 @@ namespace ECS
 				bloodDecal.Position = playerPos;
 				bloodDecal.Id = "Blood";
 				bloodDecal.Direction = playerTransform.forward;
-				bloodDecal.AlignToDirection = false; // EcsLite не сбрасывает переиспользованный компонент
+				bloodDecal.AlignToDirection = false; // EcsLite doesn't reset a reused component
 
-				// Enemy-пуля гасится на игроке (без пробития).
+				// The Enemy bullet dies on the player (no piercing).
 				disposed.IsDisposed = true;
 			}
 			#endregion
@@ -174,8 +177,8 @@ namespace ECS
 			var mobFilter = world.Filter<MobComponent>().End();
 			foreach (var mobEntity in mobFilter)
 			{
-				// Мобы ближнего боя (MeleeAttackerSystem) и стрелки (RangedAttackerSystem) наносят урон
-				// своей телеграфированной атакой/выстрелом, а не контактом — иначе урон по игроку удвоился бы.
+				// Melee mobs (MeleeAttackerSystem) and ranged mobs (RangedAttackerSystem) deal damage
+				// with their telegraphed attack/shot, not by contact — otherwise player damage would double.
 				if (meleeAttackerPool.Has(mobEntity) || rangedAttackerPool.Has(mobEntity))
 					continue;
 
@@ -186,6 +189,8 @@ namespace ECS
 					ref var requestDamage = ref world.CreateSimpleEntity<RequestDamageComponent>();
 					requestDamage.Target = world.PackEntity(player.Value.Entity);
 					requestDamage.Damage = mob.Config.Damage;
+					requestDamage.HasSource = true;
+					requestDamage.SourcePosition = mob.Value.transform.position;
 
 					var attackMods = mob.Config.AttackModifiers;
 					if (attackMods != null && attackMods.Length > 0)
@@ -203,7 +208,7 @@ namespace ECS
 						}
 						if (_modifierScratch.Count > 0)
 						{
-							// Копируем в новый список: RequestDamage живёт дольше scratch'а.
+							// Copy into a new list: RequestDamage outlives the scratch.
 							requestDamage.DamageModifiers = new List<Modifier>(_modifierScratch);
 						}
 					}
@@ -218,7 +223,7 @@ namespace ECS
 					bloodDecal.Position = playerPos;
 					bloodDecal.Id = "Blood";
 					bloodDecal.Direction = playerTransform.forward;
-					bloodDecal.AlignToDirection = false; // EcsLite не сбрасывает переиспользованный компонент
+					bloodDecal.AlignToDirection = false; // EcsLite doesn't reset a reused component
 				}
 				else if (mob.Cooldown > 0)
 				{
@@ -230,6 +235,13 @@ namespace ECS
 			#region PlayerVsLoot
 			var lootFilter = world.Filter<LootComponent>().Inc<DisposableComponent>().End();
 			float lootRadiusSqr = mainHolder.Value.LootRadius * mainHolder.Value.LootRadius;
+			// Optional mode (PlayerConfig.WeaponPickupRequiresInteract, off by default — future perk):
+			// a different weapon is picked up only on Interact (hold). Interact is set by InputSystem
+			// the previous frame. Off → weapons are picked up on contact like any loot.
+			var playerConfig = mainHolder.Value.PlayerConfig;
+			bool pickupRequiresInteract = playerConfig != null && playerConfig.WeaponPickupRequiresInteract;
+			bool interactPressed = world.GetAsSingleton<PlayerInputComponent>().InteractPressed;
+			bool weaponTaken = false;
 			foreach (var lootEntity in lootFilter)
 			{
 				ref var loot = ref lootPool.Get(lootEntity);
@@ -238,6 +250,22 @@ namespace ECS
 
 				if ((playerTransform.position - loot.Loot.transform.position).sqrMagnitude <= lootRadiusSqr)
 				{
+					if (pickupRequiresInteract && loot.LootType == LootType.Weapon && !IsCurrentWeapon(loot, muzzle))
+					{
+						// One weapon per press: with several guns underfoot the first one wins.
+						if (!interactPressed || weaponTaken)
+						{
+							if (!loot.PickupHintShown)
+							{
+								loot.PickupHintShown = true;
+								ref var hintRequest = ref world.CreateSimpleEntity<RequestUILogComponent>();
+								hintRequest.Message = LootLogFormatter.FormatPickupHint(loot, mainHolder.Value, GetInteractKeyName(world));
+							}
+							continue;
+						}
+						weaponTaken = true;
+					}
+
 					disposable.IsDisposed = true;
 
 					ref var logRequest = ref world.CreateSimpleEntity<RequestUILogComponent>();
@@ -293,10 +321,25 @@ namespace ECS
 			#endregion
 		}
 
+		/// <summary>The same gun as in hands: picked up automatically (it only refills the magazine).</summary>
+		private static bool IsCurrentWeapon(in LootComponent loot, in WeaponComponent muzzle)
+			=> muzzle.GunConfig != null && muzzle.GunConfig.Id == loot.Id;
+
+		/// <summary>Display name of the Interact binding for the active control scheme ("E", "Y"...).</summary>
+		private static string GetInteractKeyName(EcsWorld world)
+		{
+			if (!world.TryGetAsSingleton<InputActionsComponent>(out var inputActions) || inputActions.InteractAction == null)
+				return null;
+			// Called statically: a `using UnityEngine.InputSystem` here would clash with ECS.InputSystem.
+			return UnityEngine.InputSystem.InputActionRebindingExtensions.GetBindingDisplayString(
+				inputActions.InteractAction,
+				UnityEngine.InputSystem.InputBinding.DisplayStringOptions.DontIncludeInteractions);
+		}
+
 		/// <summary>
-		/// Клонирует on-shot debuff'ы пули (GunConfig.ShotDebuffs) в свежий список для RequestDamage.
-		/// DamageSystem применит их к цели через TryApplyModifierComponent. Клон обязателен — Modifier'ы
-		/// это shared SO-инстансы, а модель урона может быть stateful (DoT-таймеры). Пустой набор → null.
+		/// Clones the bullet's on-shot debuffs (GunConfig.ShotDebuffs) into a fresh list for RequestDamage.
+		/// DamageSystem applies them to the target via TryApplyModifierComponent. Cloning is mandatory —
+		/// Modifiers are shared SO instances, and the damage model can be stateful (DoT timers). Empty set → null.
 		/// </summary>
 		private static List<Modifier> BuildShotDebuffs(Modifier[] shotDebuffs)
 		{

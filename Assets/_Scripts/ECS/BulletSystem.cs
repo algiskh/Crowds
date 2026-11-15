@@ -6,10 +6,9 @@ namespace ECS
 {
 	public class BulletSystem : IEcsRunSystem
 	{
-		// One pool per projectile prefab: calibers have different meshes (pellet / bullet sizes), so a bullet
+		// One pool per projectile prefab (BulletPoolComponent.ByPrefab): calibers have different meshes, so a bullet
 		// returned by one gun must not be reused by another. Instances without SourcePrefab use the shared
-		// BulletPoolComponent stack (legacy).
-		private readonly Dictionary<Bullet, Stack<Bullet>> _pools = new();
+		// BulletPoolComponent.Value stack (legacy). PoolPrewarmer fills these pools at load.
 
 		public void Run(IEcsSystems systems)
 		{
@@ -67,8 +66,9 @@ namespace ECS
 		{
 			if (prefab == null)
 				return shared.Value ??= new Stack<Bullet>();
-			if (!_pools.TryGetValue(prefab, out var pool))
-				_pools[prefab] = pool = new Stack<Bullet>();
+			shared.ByPrefab ??= new Dictionary<Bullet, Stack<Bullet>>();
+			if (!shared.ByPrefab.TryGetValue(prefab, out var pool))
+				shared.ByPrefab[prefab] = pool = new Stack<Bullet>();
 			return pool;
 		}
 
@@ -109,6 +109,8 @@ namespace ECS
 			}
 
 			bullet.transform.position = bulletRequest.Position;
+			// Pooled bullets are shared by all guns/teams: always (re)apply the gun's color or reset it.
+			bullet.SetColor(bulletRequest.GunConfig.BulletColor);
 			bullet.gameObject.SetActive(true);
 
 			var bulletEntity = world.NewEntity();
@@ -116,14 +118,19 @@ namespace ECS
 			bulletComponent.Bullet = bullet;
 			bulletComponent.Damage = bulletRequest.GunConfig.BulletDamage;
 			bulletComponent.LifeTime = bulletRequest.GunConfig.BulletLifeTime;
-			// Радиус берётся из конфига: без него OverlapSphere/OverlapBox в BulletOverlapSystem
-			// работали бы с радиусом стаблового значения (EcsLite не обнуляет переиспользуемые struct'ы).
+			// Radius comes from the config: without it OverlapSphere/OverlapBox in BulletOverlapSystem
+			// would work with a stale value's radius (EcsLite doesn't zero reusable structs).
 			bulletComponent.Radius = bulletRequest.GunConfig.BulletRadius;
 			bulletComponent.CheckType = bulletRequest.GunConfig.BulletCheckType;
 			bulletComponent.Team = bulletRequest.Team;
-			// On-shot debuffs (если заданы) — применяются к цели через RequestDamage.DamageModifiers.
+			// On-shot debuffs (if set) — applied to the target via RequestDamage.DamageModifiers.
 			bulletComponent.Modifiers = bulletRequest.GunConfig.ShotDebuffs;
 			bulletComponent.PiercedTargets = default;
+			// Per-gun pierce wins over the prefab: the bullet pool is shared between calibers,
+			// so a pooled prefab's own MaxPierceCount isn't a reliable property of this shot.
+			bulletComponent.MaxPierce = bulletRequest.GunConfig.PierceCount > 0
+				? Mathf.Min(bulletRequest.GunConfig.PierceCount, GunConfig.MaxPierceCount)
+				: bullet.MaxPierceCount;
 			ref var moveComponent = ref movePool.Add(bulletEntity);
 			ref var disposeComponent = ref disposePool.Add(bulletEntity);
 			ref var modifierComponent = ref modifierPool.Add(bulletEntity);
@@ -132,7 +139,7 @@ namespace ECS
 			float accuracy = bulletRequest.GunConfig.Accuracy;
 			float maxAngle = (1f - accuracy) * 90f;
 
-			// Отклонение только в горизонтальной плоскости
+			// Deviation only in the horizontal plane
 			float deviationAngle = Random.Range(-maxAngle, maxAngle);
 			Vector3 finalDirection = Quaternion.AngleAxis(deviationAngle, Vector3.up) * bulletRequest.Direction.normalized;
 

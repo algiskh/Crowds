@@ -5,9 +5,9 @@ namespace ECS
 {
 	public class ModifiersSystem : IEcsRunSystem
 	{
-		// Переиспользуемый scratch: (ownerEntity, modifier) пары на удаление.
-		// Раньше был Dictionary<ModifierOwnerComponent, Modifier> — боксинг struct-ключа
-		// и потенциальный конфликт/потеря при нескольких модификаторах у одного owner'а.
+		// Reusable scratch: (ownerEntity, modifier) pairs pending deletion.
+		// Used to be a Dictionary<ModifierOwnerComponent, Modifier> — struct-key boxing
+		// and a potential conflict/loss with several modifiers on one owner.
 		private readonly List<(int ownerEntity, Modifier modifier)> _toRemove = new List<(int, Modifier)>(16);
 
 		public void Run(IEcsSystems systems)
@@ -22,7 +22,7 @@ namespace ECS
 			foreach (var entity in tryApplyFilter)
 			{
 				ref var request = ref tryApplyModifierPool.Get(entity);
-				// Цель могла умереть в DamageSystem прошлого кадра — запрос удаляем в любом случае.
+				// The target could have died in last frame's DamageSystem — delete the request either way.
 				if (!request.Target.Unpack(world, out var target) || !modifierPool.Has(target) || request.Modifier == null)
 				{
 					world.DelEntity(entity);
@@ -94,12 +94,13 @@ namespace ECS
 			{
 				if (modifier is DamageModifier)
 				{
-					// Отдельная сущность на каждый тик: несколько DoT на одной цели могут тикнуть в одном
-					// кадре, а Add на саму цель второй раз бросил бы «already attached».
+					// A separate entity per tick: several DoTs on one target can tick in the same
+					// frame, while a second Add onto the target itself would throw "already attached".
 					ref var request = ref world.CreateSimpleEntity<RequestDamageComponent>();
 					request.Target = world.PackEntity(targetEntity);
 					request.Damage = value;
 					request.IsPeriodic = true;
+					request.HasSource = false; // DoT has no direction
 				}
 			}
 		}

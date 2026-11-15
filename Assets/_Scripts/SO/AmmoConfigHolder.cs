@@ -5,6 +5,8 @@ public class AmmoConfigHolder : ScriptableObject
 {
 	[SerializeField] private AmmoConfig[] _configs;
 
+	public System.Collections.Generic.IReadOnlyList<AmmoConfig> Configs => _configs;
+
 	// First configured ammo type — fallback caliber for unassigned ammo loot when there's no weapon.
 	public AmmoConfig First
 	{
