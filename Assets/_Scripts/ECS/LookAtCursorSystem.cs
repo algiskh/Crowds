@@ -9,6 +9,10 @@ namespace ECS
 		{
 			var world = systems.GetWorld();
 
+			// A dead player doesn't turn after the cursor (the world may keep running behind the fail window).
+			if (world.TryGetAsSingleton<FailSequenceComponent>(out var fail) && fail.Phase != FailSequencePhase.Inactive)
+				return;
+
 			ref var camera = ref world.GetAsSingleton<CameraComponent>().Value;
 			ref var cursor = ref world.GetAsSingleton<VirtualAimCursorComponent>();
 

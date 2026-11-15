@@ -288,7 +288,7 @@ namespace Crowds.EditorTools
 
 		// --- Model / clips ----------------------------------------------------------------------------
 
-		private static void SetupModel(string modelPath, Material material)
+		internal static void SetupModel(string modelPath, Material material)
 		{
 			var imp = (ModelImporter)AssetImporter.GetAtPath(modelPath);
 			imp.animationType = ModelImporterAnimationType.Generic;
@@ -321,7 +321,7 @@ namespace Crowds.EditorTools
 			Debug.Log($"{Log} Model {modelPath}: Generic, {names.Count} material(s) remapped → {material.name}.");
 		}
 
-		private static AnimationClip SetupClip(string path, string clipName, bool loop, bool isModel, string modelPath)
+		internal static AnimationClip SetupClip(string path, string clipName, bool loop, bool isModel, string modelPath)
 		{
 			var imp = (ModelImporter)AssetImporter.GetAtPath(path);
 			imp.animationType = ModelImporterAnimationType.Generic;
@@ -361,7 +361,7 @@ namespace Crowds.EditorTools
 		/// Mobs are moved by the NavMeshAgent, so a clip whose hips travel on XZ would drift and snap back each loop.
 		/// If drift is detected, writes a copy with the linear drift removed (the per-step sway is kept).
 		/// </summary>
-		private static AnimationClip MakeInPlaceIfDrifting(AnimationClip clip, string outPath)
+		internal static AnimationClip MakeInPlaceIfDrifting(AnimationClip clip, string outPath)
 		{
 			var bindings = AnimationUtility.GetCurveBindings(clip)
 				.Where(b => b.type == typeof(Transform) && LastSegment(b.path) == HipsBone)
@@ -434,7 +434,7 @@ namespace Crowds.EditorTools
 		}
 
 		/// <summary>Generic clips bind by transform path — warn if the animation FBX hierarchy doesn't match the model.</summary>
-		private static void ValidateBindings(GameObject model, AnimationClip clip)
+		internal static void ValidateBindings(GameObject model, AnimationClip clip)
 		{
 			int missing = 0, total = 0;
 			string example = null;
@@ -461,7 +461,7 @@ namespace Crowds.EditorTools
 				Debug.Log($"{Log} Clip '{clip.name}' binds all {total} paths.");
 		}
 
-		private static AnimatorController SetupController(string path, List<(string state, AnimationClip clip)> states)
+		internal static AnimatorController SetupController(string path, List<(string state, AnimationClip clip)> states)
 		{
 			var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path)
 			                 ?? AnimatorController.CreateAnimatorControllerAtPath(path);

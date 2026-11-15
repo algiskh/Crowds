@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bca4a2ec80144b5aedf00b55361eab5, type: 3}
+  m_Name: CheerZombieMob_ModelSetup
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::Crowds.EditorTools.MobModelSetupPreset
+  Model: {fileID: 919132149155446097, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+  BaseColor: {fileID: 2800000, guid: 6f17cdfdbb6db35488c72c5625478442, type: 3}
+  Normal: {fileID: 2800000, guid: 6e5c7935e87fef04da52b2712fa21bbe, type: 3}
+  MaterialName: CheerleaderZombieMaterial
+  Clips:
+  - State: idle
+    Fbx: {fileID: 919132149155446097, guid: 5be22df78002a78428d27a85a18f5d20, type: 3}
+    Loop: 1
+    RemoveRootDrift: 1
+  - State: run
+    Fbx: {fileID: 919132149155446097, guid: 235bf9e495f874645abd280440441647, type: 3}
+    Loop: 1
+    RemoveRootDrift: 1
+  - State: die
+    Fbx: {fileID: 919132149155446097, guid: 8dcb84421e9807340a33a462e1e9309a, type: 3}
+    Loop: 0
+    RemoveRootDrift: 0
+  Prefab: {fileID: 4635986969134950211, guid: 14b41132ec1bf68468301f7aa7fcea53, type: 3}
+  VisualName: CheerleaderZombie
+  TargetHeight: 1.8
+  HeightReference: {fileID: 0}
+  RemoveObjects: []
+  HideRenderers: []
+  WeaponPrefab: {fileID: 0}
+  WeaponBone: mixamorig:RightHand
+  WeaponAlignState: aim
+  WeaponLocalPosition: {x: 0, y: 0, z: 0}
+  WeaponLocalEuler: {x: 0, y: 0, z: 0}
+  WeaponScale: 1
+  BakeVat: 0
+  BakeFps: 30
+  Configs:
+  - {fileID: 11400000, guid: 6f45922c96831a64ea5f07df84c59a19, type: 2}

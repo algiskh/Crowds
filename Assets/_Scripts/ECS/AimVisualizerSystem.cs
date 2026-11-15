@@ -48,7 +48,10 @@ namespace ECS
 			ref var aimVisualizer = ref world.GetAsSingleton<AimVisualizerComponent>();
 
 			ref var pauseState = ref world.GetAsSingleton<PauseStateComponent>();
-			if (pauseState.IsPaused)
+			// Player dead: the fail window may open over a still-running world (friendly NPCs alive → no pause),
+			// so death alone must also give the cursor back and hide the crosshair.
+			bool playerDown = world.TryGetAsSingleton<FailSequenceComponent>(out var fail) && fail.Phase != FailSequencePhase.Inactive;
+			if (pauseState.IsPaused || playerDown)
 			{
 				// Don't draw the crosshair over the pause/fail menus; SetAim shows it again on resume.
 				aimVisualizer.Value.SetCrosshairVisible(false);

@@ -118,6 +118,10 @@ namespace ECS
 					await _navMeshManager.RebuildNavMeshAsync().ToUniTask(cancellationToken: token);
 				// The player's agent was enabled before the navmesh existed — bind it to the fresh mesh.
 				var playerAgent = _player.GetComponent<UnityEngine.AI.NavMeshAgent>();
+				// Mob-only navmesh (dark spawn tunnels, see HockeyLevelBuilder): mobs walk out, the player can't walk in.
+				int mobOnlyArea = UnityEngine.AI.NavMesh.GetAreaFromName("MobOnly");
+				if (playerAgent != null && mobOnlyArea >= 0)
+					playerAgent.areaMask &= ~(1 << mobOnlyArea);
 				if (playerAgent != null && playerAgent.isActiveAndEnabled)
 					playerAgent.Warp(_player.transform.position);
 				LoadingScreen.SetProgress(0.7f);
@@ -633,6 +637,8 @@ namespace ECS
 				.Add(new PlayerAnimationSystem())
 				.Add(new CheckEndSystem())
 				.Add(new FailSequenceSystem())
+				.Add(new ScoreboardSystem()) // level scoreboards: deaths:frags (after the fail sequence starts)
+				.Add(new CheerleaderSystem()) // NPC cheerleaders: dance / forgotten→zombies / victory pose / escape (before UILog, PauseSystem)
 				.Add(new SmartConditionSystem())
 				.Add(new AimVisualizerSystem())
 				.Add(new UISystem())

@@ -435,6 +435,8 @@ public struct FailSequenceComponent
 {
 	public FailSequencePhase Phase;
 	public float Timer;
+	// Done with the fail window over a still-running world (friendly NPCs alive); full stop comes later.
+	public bool WorldLive;
 }
 
 /// <summary>Singleton wrapper over the runtime red-veil overlay (created lazily).</summary>
@@ -1109,5 +1111,58 @@ public struct RequestSpawnBreakableComponent
 	public string Id;
 	public Vector3 Position;
 	public float Rotation;
+}
+#endregion
+
+#region Cheerleaders
+public enum CheerleaderState : byte
+{
+	Dancing,     // on the stage, random dance; swaps the dance after being off screen
+	Posing,      // victory: a static pose, each girl her own
+	Escaping,    // player died: jumped down, running to the far corner (zombie target)
+	Safe,        // reached the escape point (still a zombie target)
+	Dead,
+	Transformed  // forgotten during a breather: hidden, zombie cheerleaders spawned instead
+}
+
+/// <summary>One cheerleader NPC (ECS.CheerleaderSystem). Not a mob: no MobComponent/HealthComponent/collider.</summary>
+public struct CheerleaderComponent
+{
+	public Cheerleader View;
+	public CheerleaderStand Stand;
+	public int Index;
+	public CheerleaderState State;
+	public float Health;
+	public float HitCooldown;
+	public bool WasInView;
+}
+
+/// <summary>
+/// Marker: a living friendly NPC (cheerleaders now, any "good" NPC later). While at least one exists when the
+/// player's death sequence reaches the menu, FailSequenceSystem opens the fail window WITHOUT pausing the world (the
+/// NPCs keep fleeing, the horde keeps chasing); the usual full stop follows once none are left. Removed on death /
+/// zombification.
+/// </summary>
+public struct FriendlyNpcComponent
+{
+}
+
+/// <summary>
+/// A non-player target for mobs: after the player's death MobPathfindingSystem sends every mob to the nearest one
+/// (escaping cheerleaders). Removed when the target dies.
+/// </summary>
+public struct ZombieTargetComponent
+{
+	public Transform Value;
+}
+
+/// <summary>
+/// Singleton: outcome of the hidden "don't forget the girls" quest (hockey level). Read-only for now — an
+/// achievement can hook here later (Saved = victory with the cheerleaders never forgotten).
+/// </summary>
+public struct CheerleaderQuestComponent
+{
+	public bool Forgotten;
+	public bool Saved;
 }
 #endregion

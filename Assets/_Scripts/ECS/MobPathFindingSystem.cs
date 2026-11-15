@@ -28,6 +28,13 @@ namespace ECS
 			var targetPos = playerSingleton.Value.transform.position;
 			float now = Time.time;
 
+			// Player down + other targets alive (escaping cheerleaders): every mob goes for the nearest one instead.
+			var altTargetPool = world.GetPool<ZombieTargetComponent>();
+			var altTargetFilter = world.Filter<ZombieTargetComponent>().End();
+			bool useAltTargets = altTargetFilter.GetEntitiesCount() > 0
+			                     && world.TryGetAsSingleton<FailSequenceComponent>(out var fail)
+			                     && fail.Phase != FailSequencePhase.Inactive;
+
 			var filter = world.Filter<MobComponent>().Inc<PathRecalculation>().End();
 			foreach (var entity in filter)
 			{
@@ -48,7 +55,10 @@ namespace ECS
 				recalc.LastTime = now;
 				if (forced) requestPool.Del(entity);
 
-				if (NavMesh.CalculatePath(mobGO.transform.position, targetPos, NavMesh.AllAreas, _navPath)
+				var mobTarget = useAltTargets
+					? NearestTarget(altTargetPool, altTargetFilter, mobGO.transform.position, targetPos)
+					: targetPos;
+				if (NavMesh.CalculatePath(mobGO.transform.position, mobTarget, NavMesh.AllAreas, _navPath)
 					&& _navPath.status == NavMeshPathStatus.PathComplete)
 				{
 					int cornerCount = _navPath.GetCornersNonAlloc(_cornersBuffer);
@@ -85,6 +95,25 @@ namespace ECS
 					pathPool.Del(entity);
 				}
 			}
+		}
+
+		private static Vector3 NearestTarget(EcsPool<ZombieTargetComponent> pool, EcsFilter filter, Vector3 from, Vector3 fallback)
+		{
+			float best = float.MaxValue;
+			Vector3 result = fallback;
+			foreach (var entity in filter)
+			{
+				var t = pool.Get(entity).Value;
+				if (t == null)
+					continue;
+				float d = (t.position - from).sqrMagnitude;
+				if (d < best)
+				{
+					best = d;
+					result = t.position;
+				}
+			}
+			return result;
 		}
 	}
 }
