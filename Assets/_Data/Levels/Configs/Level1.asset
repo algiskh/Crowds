@@ -175,6 +175,13 @@ MonoBehaviour:
     RestTime: 8
     EndConditions: []
     ShowTimer: 1
+  - DifficultyLevel: 8
+    DifficultyTimer: 60
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.18
+    RestTime: 8
+    EndConditions: []
+    ShowTimer: 1
   - DifficultyLevel: 13
     DifficultyTimer: 0
     SpeedMultiplier: 1

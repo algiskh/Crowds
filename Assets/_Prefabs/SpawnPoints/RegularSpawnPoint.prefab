@@ -54,6 +54,8 @@ MonoBehaviour:
       Cooldown: 7
     - DifficultyLevel: 3
       Cooldown: 7
+    - DifficultyLevel: 4
+      Cooldown: 9
   - _mobId: Fast
     _weight: 1
     _spawnPresets:
@@ -67,6 +69,10 @@ MonoBehaviour:
       Cooldown: 3
     - DifficultyLevel: 6
       Cooldown: 2
+    - DifficultyLevel: 7
+      Cooldown: 2.5
+    - DifficultyLevel: 8
+      Cooldown: 2
   - _mobId: Grenadier
     _weight: 0.9
     _spawnPresets:
@@ -78,6 +84,10 @@ MonoBehaviour:
       Cooldown: 10
     - DifficultyLevel: 6
       Cooldown: 12
+    - DifficultyLevel: 7
+      Cooldown: 12
+    - DifficultyLevel: 8
+      Cooldown: 10
   - _mobId: Fatman
     _weight: 0.45
     _spawnPresets:
@@ -89,6 +99,10 @@ MonoBehaviour:
       Cooldown: 11
     - DifficultyLevel: 6
       Cooldown: 10
+    - DifficultyLevel: 7
+      Cooldown: 10
+    - DifficultyLevel: 8
+      Cooldown: 9
   - _mobId: FatmanStrong
     _weight: 0.2
     _spawnPresets:
@@ -96,6 +110,10 @@ MonoBehaviour:
       Cooldown: 16
     - DifficultyLevel: 6
       Cooldown: 15
+    - DifficultyLevel: 7
+      Cooldown: 13
+    - DifficultyLevel: 8
+      Cooldown: 11
   - _mobId: SlowStrong
     _weight: 1
     _spawnPresets:
@@ -105,7 +123,20 @@ MonoBehaviour:
       Cooldown: 8
     - DifficultyLevel: 7
       Cooldown: 7
+    - DifficultyLevel: 8
+      Cooldown: 6
   - _mobId: GunnerMob
+    _weight: 0.5
+    _spawnPresets:
+    - DifficultyLevel: 5
+      Cooldown: 14
+    - DifficultyLevel: 6
+      Cooldown: 11
+    - DifficultyLevel: 7
+      Cooldown: 9
+    - DifficultyLevel: 8
+      Cooldown: 8
+  - _mobId: GunnerBare
     _weight: 0.5
     _spawnPresets:
     - DifficultyLevel: 3
@@ -113,8 +144,15 @@ MonoBehaviour:
     - DifficultyLevel: 4
       Cooldown: 14
     - DifficultyLevel: 5
-      Cooldown: 12
+      Cooldown: 13
     - DifficultyLevel: 6
-      Cooldown: 10
+      Cooldown: 13
+  - _mobId: CheerZombie
+    _weight: 0.6
+    _spawnPresets:
+    - DifficultyLevel: 6
+      Cooldown: 14
     - DifficultyLevel: 7
-      Cooldown: 9
+      Cooldown: 10
+    - DifficultyLevel: 8
+      Cooldown: 7

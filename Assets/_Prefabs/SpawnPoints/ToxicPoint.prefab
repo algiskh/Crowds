@@ -65,6 +65,12 @@ MonoBehaviour:
       Cooldown: 4
     - DifficultyLevel: 5
       Cooldown: 4
+    - DifficultyLevel: 6
+      Cooldown: 5
+    - DifficultyLevel: 7
+      Cooldown: 5
+    - DifficultyLevel: 8
+      Cooldown: 4
   - _mobId: ToxicHelmet
     _weight: 1
     _spawnPresets:
@@ -74,3 +80,7 @@ MonoBehaviour:
       Cooldown: 7
     - DifficultyLevel: 6
       Cooldown: 6
+    - DifficultyLevel: 7
+      Cooldown: 6
+    - DifficultyLevel: 8
+      Cooldown: 5

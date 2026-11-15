@@ -26,4 +26,6 @@ MonoBehaviour:
     Cooldown: 11
   - DifficultyLevel: 7
     Cooldown: 10
+  - DifficultyLevel: 8
+    Cooldown: 9
   _initialDelay: 0.3
