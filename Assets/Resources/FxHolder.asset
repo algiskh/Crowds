@@ -88,3 +88,8 @@ MonoBehaviour:
     HasDuration: 1
     Duration: 0.6
     IsChild: 1
+  - Id: wall_spark
+    Prefab: {fileID: 7993559480540567035, guid: fca29fbe73a158b4fa2845e560a5d54f, type: 3}
+    HasDuration: 1
+    Duration: 0.8
+    IsChild: 0

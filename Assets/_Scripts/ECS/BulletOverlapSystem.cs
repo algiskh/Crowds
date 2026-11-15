@@ -8,17 +8,17 @@ namespace ECS
 	{
 		private const int BUFFER_SIZE = 32;
 
-		// Эффективный «радиус тела» игрока для попадания Enemy-пуль. У игрока нет
-		// зарегистрированного ColliderComponent, поэтому цель проверяется по дистанции
-		// (bullet.Radius + это) — как контактный урон мобов в CollisionSystem.PlayerVsMob.
+		// Effective "body radius" of the player for Enemy-bullet hits. The player has no
+		// registered ColliderComponent, so the target is checked by distance
+		// (bullet.Radius + this) — like mob contact damage in CollisionSystem.PlayerVsMob.
 		private const float PLAYER_HIT_RADIUS = 0.4f;
 
 		private readonly Collider[] _overlapBuffer = new Collider[BUFFER_SIZE];
 		private readonly RaycastHit[] _raycastBuffer = new RaycastHit[BUFFER_SIZE];
 
-		// Переиспользуется каждый кадр: collider → mob entity id.
+		// Reused every frame: collider → mob entity id.
 		private readonly Dictionary<Collider, int> _mobColliderMap = new Dictionary<Collider, int>(64);
-		// collider → breakable entity id (разрушаемое окружение).
+		// collider → breakable entity id (destructible environment).
 		private readonly Dictionary<Collider, int> _breakableColliderMap = new Dictionary<Collider, int>(32);
 
 		public void Run(IEcsSystems systems)
@@ -31,7 +31,7 @@ namespace ECS
 			var mobPool = world.GetPool<MobComponent>();
 
 			var bulletFilter = world.Filter<BulletComponent>().Inc<MoveComponent>().End();
-			// Нет пуль в полёте — не перестраиваем коллайдер-карты мобов/разрушаемого (экономия O(мобов)/кадр).
+			// No bullets in flight — don't rebuild the mob/breakable collider maps (saves O(mobs)/frame).
 			if (bulletFilter.GetEntitiesCount() == 0)
 				return;
 
@@ -39,12 +39,14 @@ namespace ECS
 			if (world.TryGetAsSingleton<MainHolderComponent>(out var mainHolder) && mainHolder.Value != null)
 				layerMask = mainHolder.Value.DamageableLayerMask;
 
-			// Единственная цель Enemy-пуль — игрок. Проверяем по дистанции (у игрока нет коллайдер-карты).
+			// The only target of Enemy bullets — the player. Checked by distance (the player has no collider map).
 			bool hasPlayer = world.TryGetAsSingleton<PlayerComponent>(out var playerSingleton) && playerSingleton.Value != null;
 			Vector3 playerPos = hasPlayer ? playerSingleton.Value.transform.position : default;
 			float dt = world.GameDeltaTime();
+			var disposePool = world.GetPool<DisposableComponent>();
+			var blockers = BulletBlocker.Active;
 
-			// --- Один раз за кадр строим collider → entity карту для всех мобов.
+			// --- Build the collider → entity map for all mobs once per frame.
 			_mobColliderMap.Clear();
 			var mobFilter = world.Filter<MobComponent>().Inc<ColliderComponent>().End();
 			foreach (var mobEntity in mobFilter)
@@ -54,7 +56,7 @@ namespace ECS
 					_mobColliderMap[col.Value] = mobEntity;
 			}
 
-			// --- И карту разрушаемых объектов окружения (тем же паттерном).
+			// --- And the map of breakable environment objects (same pattern).
 			_breakableColliderMap.Clear();
 			var breakableFilter = world.Filter<BreakableComponent>().Inc<ColliderComponent>().End();
 			foreach (var breakableEntity in breakableFilter)
@@ -72,6 +74,23 @@ namespace ECS
 
 				var position = move.Transform.position;
 				bool isEnemyBullet = bullet.Team == BulletTeam.Enemy;
+
+				// Level walls / closed gates (BulletBlocker) stop bullets of both teams: test this frame's path.
+				if (blockers.Count > 0 && TryHitBlocker(blockers, position - move.Direction * (move.Speed * dt), position,
+					    out var wallHit, out var impactEffect))
+				{
+					disposePool.Get(bulletEntity).IsDisposed = true;
+					move.Transform.position = wallHit;
+					if (overlapPool.Has(bulletEntity))
+						overlapPool.Del(bulletEntity);
+					if (!string.IsNullOrEmpty(impactEffect))
+					{
+						ref var fx = ref world.CreateSimpleEntity<RequestEffectComponent>();
+						fx.EffectId = impactEffect;
+						fx.Position = wallHit;
+					}
+					continue;
+				}
 				int hitCount = 0;
 
 				switch (bullet.CheckType)
@@ -106,26 +125,26 @@ namespace ECS
 				{
 					var col = _overlapBuffer[i];
 					if (col == null) continue;
-					// Player-пули бьют мобов; Enemy-пули — нет (без дружественного огня по мобам).
+					// Player bullets hit mobs; Enemy bullets don't (no friendly fire on mobs).
 					if (!isEnemyBullet && _mobColliderMap.TryGetValue(col, out var mobEntityId))
 					{
-						// FixedList128Bytes<int>: ~31 элементов max — с запасом для одной пули.
+						// FixedList128Bytes<int>: ~31 elements max — headroom for a single bullet.
 						if (mobHits.Length < mobHits.Capacity)
 							mobHits.Add(mobEntityId);
 						hasAnyMobHit = true;
 					}
 					else if (_breakableColliderMap.TryGetValue(col, out var breakableEntityId))
 					{
-						// Разрушаемое окружение — укрытие для пуль обеих сторон.
+						// Breakable environment — cover for bullets of both sides.
 						if (breakableHits.Length < breakableHits.Capacity)
 							breakableHits.Add(breakableEntityId);
 						hasAnyBreakableHit = true;
 					}
 				}
 
-				// Enemy-пуля vs игрок: единственная цель. Top-down (считаем горизонтально: пуля летит на
-				// высоте дула, игрок в origin у земли) + свипт-отрезок за кадр против тоннелирования быстрых
-				// пуль — берём ближайшую точку отрезка [prev→cur] к игроку.
+				// Enemy bullet vs player: the only target. Top-down (counted horizontally: the bullet flies at
+				// muzzle height, the player stands at the origin) + swept segment for the frame against tunneling of
+				// fast bullets — take the point of the [prev→cur] segment closest to the player.
 				if (isEnemyBullet && hasPlayer)
 				{
 					Vector3 cur = position; cur.y = 0f;
@@ -158,6 +177,28 @@ namespace ECS
 					overlapPool.Del(bulletEntity);
 				}
 			}
+		}
+
+		// Nearest blocker hit along from→to (by distance from 'from').
+		private static bool TryHitBlocker(System.Collections.Generic.List<BulletBlocker> blockers, Vector3 from, Vector3 to,
+			out Vector3 hit, out string effectId)
+		{
+			hit = default;
+			effectId = null;
+			float best = float.MaxValue;
+			for (int i = 0; i < blockers.Count; i++)
+			{
+				var blocker = blockers[i];
+				if (blocker == null || !blocker.Intersects(from, to, out var point))
+					continue;
+				float distSqr = (point - from).sqrMagnitude;
+				if (distSqr >= best)
+					continue;
+				best = distSqr;
+				hit = point;
+				effectId = blocker.ImpactEffectId;
+			}
+			return best < float.MaxValue;
 		}
 	}
 }

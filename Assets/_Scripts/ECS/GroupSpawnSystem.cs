@@ -6,10 +6,10 @@ using UnityEngine.AI;
 namespace ECS
 {
 	/// <summary>
-	/// Спаунит отряды мобов в строю по точкам GroupSpawnPoint. По кулдауну точки разом создаёт
-	/// ведущего (слот 0) и ведомых (слоты 1..N), считает их локальные офсеты по FormationTable
-	/// и связывает ведомых с ведущим через FormationFollowerComponent (ссылка — EcsPackedEntity).
-	/// Ведомым снимается PathRecalculation/MovePath: они не патфайндят, а рулят к слоту напрямую
+	/// Spawns squads of mobs in formation at GroupSpawnPoints. On the point's cooldown it creates
+	/// the leader (slot 0) and the followers (slots 1..N) at once, computes their local offsets via FormationTable
+	/// and links the followers to the leader via FormationFollowerComponent (an EcsPackedEntity reference).
+	/// Followers lose PathRecalculation/MovePath: they don't pathfind, they steer straight to the slot
 	/// (FormationSystem → MoveComponent.Direction → MoveSystem).
 	/// </summary>
 	public sealed class GroupSpawnSystem : IEcsRunSystem
@@ -28,14 +28,19 @@ namespace ECS
 			if (mobConfigHolder == null)
 				return;
 
-			// Те же зависимости, что и у обычной точки (SpawnPointSystem): стадия сложности
-			// задаёт уровень/кулдаун, навменеджер — радиус активного спауна вокруг игрока.
+			// Same dependencies as a regular point (SpawnPointSystem): the difficulty stage
+			// sets the level/cooldown, the navmesh manager — the active spawn radius around the player.
 			ref var difficulty = ref world.GetAsSingleton<DifficultyComponent>();
 			var stage = difficulty.Stage;
+			// Stage breather (DifficultyStage.RestTime) / finished wave timer: squads wait too.
+			if (stage != null && !stage.IsSpawning(difficulty.DifficultyTimer))
+				return;
 			var level = stage.DifficultyLevel;
 			var manager = world.GetAsSingleton<NavMeshManagerComponent>().Value;
 			Vector3 playerPos = playerSingleton.Value.transform.position;
 			int mobCount = world.Filter<MobComponent>().Inc<HealthComponent>().End().GetEntitiesCount();
+			world.GetAsSingleton<CurrentLevelConfigComponent>().Value
+				.GetSpawnDistance(manager.DistanceBetweenSectors, out float minDistance, out float maxDistance);
 
 			float dt = Time.deltaTime;
 			var pointPool = world.GetPool<GroupSpawnPointComponent>();
@@ -58,21 +63,22 @@ namespace ECS
 				var config = point.Value.Config;
 				Vector3 pointPos = point.Value.transform.position;
 
-				// Гейтинг как у обычной точки: лимит мобов и кольцо дистанции вокруг игрока.
+				// Same gating as a regular point: the mob limit and the distance ring around the player.
 				if (mobCount >= mainHolder.ActiveMobLimit
-					|| playerPos.DistanceTo(pointPos) > manager.DistanceBetweenSectors
-					|| playerPos.DistanceTo(pointPos) < manager.DistanceBetweenSectors / 4)
+					|| playerPos.DistanceTo(pointPos) > maxDistance
+					|| playerPos.DistanceTo(pointPos) < minDistance)
 					continue;
 
-				// Привязка к уровню: нет пресета для текущей стадии — отряд не спаунится.
+				// Level binding: no preset for the current stage — the squad doesn't spawn.
 				if (!config.TryGetCooldown(level, out var cooldown))
 					continue;
 
 				SpawnGroup(world, point.Value.transform, config, mobConfigHolder,
 					followerPool, recalcPool, pathPool);
 
-				// Тот же разгон кулдауна по ходу стадии, что и у обычного спауна.
-				point.Timer = Mathf.Lerp(cooldown, cooldown / stage.SpeedMultiplier,
+				// The same cooldown acceleration over the stage as regular spawning.
+				// DifficultyTimer counts DOWN: t = 1 at the stage start → base cooldown, t = 0 at the end → fastest.
+				point.Timer = Mathf.Lerp(cooldown / stage.SpeedMultiplier, cooldown,
 					difficulty.DifficultyTimer / stage.DifficultyTimer);
 			}
 		}
@@ -82,7 +88,7 @@ namespace ECS
 			EcsPool<FormationFollowerComponent> followerPool,
 			EcsPool<PathRecalculation> recalcPool, EcsPool<MovePath> pathPool)
 		{
-			// Собираем конфиги участников в порядке слотов: слот 0 — ведущий, далее ведомые.
+			// Collect the member configs in slot order: slot 0 — the leader, then the followers.
 			var members = new List<MobConfig>();
 			var leaderConfig = holder.GetConfigById(config.LeaderMobId);
 			if (leaderConfig == null)
@@ -109,14 +115,14 @@ namespace ECS
 			Vector3 basePos = origin.position;
 			Quaternion baseRot = origin.rotation;
 
-			// --- Ведущий (слот 0) ---
+			// --- Leader (slot 0) ---
 			Vector3 leaderPos = basePos;
 			if (NavMesh.SamplePosition(leaderPos, out var leaderHit, 3f, NavMesh.AllAreas))
 				leaderPos = leaderHit.position;
 			int leaderEntity = MobSpawnSystem.CreateMob(world, members[0], leaderPos);
 			var packedLeader = world.PackEntity(leaderEntity);
 
-			// --- Ведомые (слоты 1..N) ---
+			// --- Followers (slots 1..N) ---
 			int count = Mathf.Min(members.Count, offsets.Length);
 			for (int j = 1; j < count; j++)
 			{
@@ -126,7 +132,7 @@ namespace ECS
 
 				int followerEntity = MobSpawnSystem.CreateMob(world, members[j], slotWorld);
 
-				// Ведомые не патфайндят: убираем таймер пересчёта и путь, чтобы их вёл только строй.
+				// Followers don't pathfind: remove the recalc timer and the path so only the formation leads them.
 				if (recalcPool.Has(followerEntity))
 					recalcPool.Del(followerEntity);
 				if (pathPool.Has(followerEntity))

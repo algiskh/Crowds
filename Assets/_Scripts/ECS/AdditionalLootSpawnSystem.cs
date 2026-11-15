@@ -37,7 +37,7 @@ public class AdditionalLootSpawnSystem : IEcsInitSystem, IEcsRunSystem
 		var observerPool = world.GetPool<AdditionalLootObserverComponent>();
 		ref var holder = ref world.GetAsSingleton<AdditionalLootSpawnHolderComponent>();
 
-		// --- Синк "активные точки": если лут, на который указывала точка, исчез, возвращаем её в пул.
+		// --- Sync "active points": if the loot a point referenced disappeared, return it to the pool.
 		if (holder.ActivePoints != null && holder.ActivePoints.Count > 0)
 		{
 			List<Transform> reclaimed = null;
@@ -59,10 +59,10 @@ public class AdditionalLootSpawnSystem : IEcsInitSystem, IEcsRunSystem
 			}
 		}
 
-		// --- Каждый observer обрабатывается независимо. Один observer = максимум один
-		// незавершённый запрос за раз, поэтому событие спауна сопоставляется строго
-		// по SourceEntity == observerEntity (без этого observer'ы перехватывали бы
-		// чужие события — отсюда «несколько лута» / зависший запрос).
+		// --- Each observer is processed independently. One observer = at most one
+		// pending request at a time, so the spawn event is matched strictly
+		// by SourceEntity == observerEntity (without this observers would intercept
+		// each other's events — hence "multiple loot" / a hung request).
 		var observerFilter = world.Filter<AdditionalLootObserverComponent>().End();
 		foreach (var observerEntity in observerFilter)
 		{
@@ -76,10 +76,10 @@ public class AdditionalLootSpawnSystem : IEcsInitSystem, IEcsRunSystem
 
 			if (observer.Process == SpawnProcess.Requesting)
 			{
-				// Ждём результат именно нашего запроса. LootEntity < 0 => дроп-таблица
-				// разыграла «пусто», лут не появился — освобождаем зарезервированную точку.
+				// Wait for the result of exactly our request. LootEntity < 0 => the drop table
+				// rolled "empty", no loot appeared — free the reserved point.
 				if (!TryConsumeOwnSpawnEvent(world, lootSpawnedEventsPool, observerEntity, out int lootEntity))
-					continue; // результат ещё не готов
+					continue; // result not ready yet
 
 				var point = observer.ProcessingPoint;
 				observer.ProcessingPoint = null;
@@ -88,18 +88,18 @@ public class AdditionalLootSpawnSystem : IEcsInitSystem, IEcsRunSystem
 				if (point != null)
 				{
 					if (lootEntity >= 0)
-						holder.ActivePoints[point] = world.PackEntity(lootEntity); // держим точку занятой, пока лут не подберут
+						holder.ActivePoints[point] = world.PackEntity(lootEntity); // keep the point occupied until the loot is picked up
 					else
-						ReturnPointToPool(ref holder, point); // пустой розыгрыш — точка снова свободна
+						ReturnPointToPool(ref holder, point); // empty roll — the point is free again
 				}
 
 				TryStartCooldown(ref observer, ref holder);
 			}
 			else if (observer.Condition != null
 				&& observer.Condition.IsFulfilled
-				&& TryGetFreeLootPoint(holder.LootPointsPool, out var point))
+				&& TryGetFreeLootPoint(world, ref holder, out var point))
 			{
-				// Резервируем точку немедленно, чтобы другой observer не занял ту же самую.
+				// Reserve the point immediately so another observer doesn't take the same one.
 				holder.LootPointsPool.Remove(point);
 
 				ref var request = ref world.CreateSimpleEntity<RequestLootSpawn>();
@@ -115,9 +115,9 @@ public class AdditionalLootSpawnSystem : IEcsInitSystem, IEcsRunSystem
 	}
 
 	/// <summary>
-	/// Находит и поглощает событие спауна, принадлежащее именно этому observer'у
-	/// (Source == AdditionalSpawn и SourceEntity == observerEntity). Возвращает id
-	/// заспауненного лута (или -1, если лут не появился), удаляя событие.
+	/// Finds and consumes the spawn event belonging to exactly this observer
+	/// (Source == AdditionalSpawn and SourceEntity == observerEntity). Returns the id
+	/// of the spawned loot (or -1 if no loot appeared), deleting the event.
 	/// </summary>
 	private bool TryConsumeOwnSpawnEvent(EcsWorld world, EcsPool<LootSpawnedEventComponent> pool,
 		int observerEntity, out int lootEntity)
@@ -144,14 +144,48 @@ public class AdditionalLootSpawnSystem : IEcsInitSystem, IEcsRunSystem
 	}
 
 	/// <summary>
-	/// Берёт первую свободную точку из пула. LootPointsPool семантически хранит
-	/// только свободные точки (занятые живут в ActivePoints), поэтому достаточно
-	/// пропустить null-ссылки и вернуть первую валидную.
+	/// Picks a free point. LootPointsPool semantically stores only free points (occupied ones live in ActivePoints).
+	/// Classic levels: the first valid one. Scripted levels with LevelZones (MissionComponent): if the player stands
+	/// in a zone that holds loot points, only free points of that zone are used ("drop on this platform"; none free →
+	/// wait); outside such zones — the free point nearest to the player.
 	/// </summary>
-	private bool TryGetFreeLootPoint(List<Transform> freePool, out Transform point)
+	private bool TryGetFreeLootPoint(EcsWorld world, ref AdditionalLootSpawnHolderComponent holder, out Transform point)
 	{
 		point = null;
+		var freePool = holder.LootPointsPool;
 		if (freePool == null) return false;
+
+		if (world.TryGetAsSingleton<MissionComponent>(out var mission) && mission.Zones != null && mission.Zones.Count > 0
+			&& world.TryGetAsSingleton<PlayerComponent>(out var player) && player.Value != null)
+		{
+			Vector3 playerPos = player.Value.transform.position;
+			LevelZone playerZone = null;
+			foreach (var zone in mission.Zones)
+			{
+				if (zone != null && zone.Contains(playerPos) && ZoneHasLootPoint(zone, freePool, holder.ActivePoints))
+				{
+					playerZone = zone;
+					break;
+				}
+			}
+
+			float best = float.MaxValue;
+			for (int i = 0; i < freePool.Count; i++)
+			{
+				var candidate = freePool[i];
+				if (candidate == null) continue;
+				var pos = candidate.position;
+				if (playerZone != null && !playerZone.Contains(pos)) continue;
+				float distSqr = (pos - playerPos).sqrMagnitude;
+				if (distSqr < best)
+				{
+					best = distSqr;
+					point = candidate;
+				}
+			}
+			return point != null;
+		}
+
 		for (int i = 0; i < freePool.Count; i++)
 		{
 			var candidate = freePool[i];
@@ -161,6 +195,19 @@ public class AdditionalLootSpawnSystem : IEcsInitSystem, IEcsRunSystem
 				return true;
 			}
 		}
+		return false;
+	}
+
+	private static bool ZoneHasLootPoint(LevelZone zone, List<Transform> freePool,
+		Dictionary<Transform, EcsPackedEntity> activePoints)
+	{
+		for (int i = 0; i < freePool.Count; i++)
+			if (freePool[i] != null && zone.Contains(freePool[i].position))
+				return true;
+		if (activePoints != null)
+			foreach (var kvp in activePoints)
+				if (kvp.Key != null && zone.Contains(kvp.Key.position))
+					return true;
 		return false;
 	}
 
