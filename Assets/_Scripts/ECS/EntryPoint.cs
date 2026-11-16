@@ -600,6 +600,7 @@ namespace ECS
 				.Add(new MeleeAttackerSystem())
 				.Add(new RangedAttackerSystem())
 				.Add(new MoveSystem())
+				.Add(new MobSkidSystem()) // after MoveSystem (overrides its facing), before AnimationSystem/CrowdRenderSystem
 				.Add(new CameraShakeSystem(apply: false)) // remove last frame's shake before following
 				.Add(new FollowSystem())
 				.Add(new LookAtCameraSystem())

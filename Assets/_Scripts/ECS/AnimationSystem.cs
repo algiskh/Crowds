@@ -37,14 +37,15 @@ namespace ECS
 
 				ref var anim = ref animPool.Has(entity) ? ref animPool.Get(entity) : ref AddDefault(animPool, entity);
 
-				if (anim.Restart && anim.HasCurrent && anim.Requested == anim.Current)
+				var effective = anim.Effective; // Requested, unless a visual override (ice skid) is active
+				if (anim.Restart && anim.HasCurrent && effective == anim.Current)
 				{
-					mob.Value.Animator.RestartAnimation(anim.Requested);
+					mob.Value.Animator.RestartAnimation(effective);
 				}
-				else if (!anim.HasCurrent || anim.Requested != anim.Current)
+				else if (!anim.HasCurrent || effective != anim.Current)
 				{
-					mob.Value.Animator.SetAnimation(anim.Requested);
-					anim.Current = anim.Requested;
+					mob.Value.Animator.SetAnimation(effective);
+					anim.Current = effective;
 					anim.HasCurrent = true;
 				}
 				anim.Restart = false;
@@ -54,7 +55,8 @@ namespace ECS
 		private static ref AnimationStateComponent AddDefault(EcsPool<AnimationStateComponent> pool, int entity)
 		{
 			ref var anim = ref pool.Add(entity);
-			anim.Requested = AnimationType.Run; // mobs run by default; HasCurrent stays false so it applies this frame
+			anim.Requested = AnimationType.Run;
+			anim.OverrideActive = false; // mobs run by default; HasCurrent stays false so it applies this frame
 			return ref anim;
 		}
 	}

@@ -77,7 +77,7 @@ namespace ECS
 					continue;
 
 				// Reconcile requested animation -> current clip; reset playback time when the clip changes.
-				AnimationType requested = animPool.Has(entity) ? animPool.Get(entity).Requested : AnimationType.Run;
+				AnimationType requested = animPool.Has(entity) ? animPool.Get(entity).Effective : AnimationType.Run;
 				if (!crowd.Initialized || crowd.CurrentClip != requested)
 				{
 					crowd.CurrentClip = requested;

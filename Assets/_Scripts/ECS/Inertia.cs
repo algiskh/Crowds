@@ -43,6 +43,8 @@ namespace ECS
 				added.LastStep = Vector3.zero;
 				added.LastDt = 0f;
 				added.Sliding = false;
+				added.Skidding = false;
+				added.SkidTimer = 0f;
 			}
 			return Step(ref pool.Get(entity), position, desiredVelocity, grip, dt);
 		}

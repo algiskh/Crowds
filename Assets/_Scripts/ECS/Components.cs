@@ -91,6 +91,11 @@ public struct AnimationStateComponent
 	// One-shot: replay Requested from the start even if it's already playing (e.g. recoil on every burst shot).
 	// Consumed by AnimationSystem.
 	public bool Restart;
+	// Temporary visual override on top of Requested (e.g. MobSkidSystem: idle while skidding on ice). Gameplay
+	// systems keep owning Requested; when the override ends the view goes back to it. Read via Effective.
+	public bool OverrideActive;
+	public Scene.Animation.AnimationType Override;
+	public Scene.Animation.AnimationType Effective => OverrideActive ? Override : Requested;
 }
 
 /// <summary>
@@ -795,6 +800,9 @@ public struct InertiaComponent
 	public Vector3 LastStep;      // displacement applied last frame
 	public float LastDt;
 	public bool Sliding;          // last frame was on slippery ground
+	// Mob skid state (MobSkidSystem): real velocity disagrees with the intended direction.
+	public bool Skidding;
+	public float SkidTimer;       // time the enter (or, while skidding, the exit) condition has held
 }
 
 // Wave quota of the current stage (DifficultyStage.MobQuota): mobs left to spawn per mob id. Rebuilt by
