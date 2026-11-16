@@ -10,10 +10,11 @@ namespace Crowds.EditorTools
 	///     bar, Mob component), its visual is then swapped by the standard pipeline.
 	///  2. Preset Assets/_Data/Crowd/Setup/CheerZombieMob_ModelSetup.asset (created/updated in code) for
 	///     Assets/Model/Cheerleader Zombie: idle = "Zombie Idle", run = "Treadmill Running", die = "Dying";
-	///     skinned only (BakeVat off — only 3 of them ever spawn), visual 1.8 m like the cheerleaders.
-	///  3. MobModelPipeline.Run(preset): material, Generic clips, controller, prefab visual.
+	///     VAT-baked (they also come in Infinite Scroll waves), visual 1.8 m like the cheerleaders.
+	///  3. MobModelPipeline.Run(preset): material, Generic clips, controller, prefab visual, VAT bake into
+	///     Assets/_Data/Crowd/CheerZombieMob/ and CrowdLibrary on the config.
 	///  4. MobConfig CheerZombie (Fast stats, created from Fast.asset if missing): prefab → CheerZombieMob, 150 HP,
-	///     no VAT library, death animation 2 s.
+	///     own VAT library, death animation 2 s (skinned fallback only).
 	/// No pompoms on the zombie version. See Docs/CheerleaderFeature.md.
 	/// </summary>
 	public static class CheerZombieMobBuilder
@@ -83,7 +84,7 @@ namespace Crowds.EditorTools
 			preset.VisualName = "CheerleaderZombie";
 			preset.TargetHeight = Height;
 			preset.WeaponPrefab = null;
-			preset.BakeVat = false;
+			preset.BakeVat = true;
 			preset.Configs = new List<MobConfig> { config };
 			EditorUtility.SetDirty(preset);
 			AssetDatabase.SaveAssets();
@@ -100,7 +101,8 @@ namespace Crowds.EditorTools
 			so.FindProperty("_id").stringValue = ConfigId;
 			so.FindProperty("_prefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath).GetComponent<Mob>();
 			so.FindProperty("_health").floatValue = Health;
-			so.FindProperty("_crowdLibrary").objectReferenceValue = null; // skinned (Fast's VAT library doesn't match)
+			// _crowdLibrary is set by the pipeline (own VAT bake). VAT mobs ignore DeathAnimationTime (no live Animator);
+			// it still applies if the library is cleared to fall back to the skinned visual.
 			so.FindProperty("_deathAnimationTime").floatValue = DeathAnimationTime;
 			var headwear = so.FindProperty("_headwear");
 			if (headwear != null) headwear.objectReferenceValue = null;

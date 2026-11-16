@@ -64,7 +64,7 @@ MonoBehaviour:
   _attackModifiers: []
   _damageDecals: []
   _deathEffectId: zombie_dead
-  _crowdLibrary: {fileID: 0}
+  _crowdLibrary: {fileID: 11400000, guid: e56ee576aeaabf14e969210cc7c74e67, type: 2}
   _tint: {r: 1, g: 1, b: 1, a: 1}
   _scale: 1
   _headwear: {fileID: 0}

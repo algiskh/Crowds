@@ -148,7 +148,7 @@ Transform:
   m_Children:
   - {fileID: 3198252904759334250}
   - {fileID: 7655005048448598713}
-  - {fileID: 90065187269150525}
+  - {fileID: 4744767050620415895}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4635986969134950211
@@ -165,7 +165,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _valueBar: {fileID: 3305578397678757618}
   _collider: {fileID: 4358559445545799627}
-  _animator: {fileID: 3007252013382599596}
+  _animator: {fileID: 616200389462103413}
   _weapon: {fileID: 0}
 --- !u!195 &8641291612382326793
 NavMeshAgent:
@@ -211,111 +211,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!1001 &483363672479228118
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 5689457051142550505}
-    m_Modifications:
-    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1.6565412
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1.6565412
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1.6565412
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_Name
-      value: CheerleaderZombie
-      objectReference: {fileID: 0}
-    - target: {fileID: 5866666021909216657, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      propertyPath: m_Controller
-      value: 
-      objectReference: {fileID: 9100000, guid: 9f023f05fd5574d40841c6e9c6a908bd, type: 2}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 3007252013382599596}
-  m_SourcePrefab: {fileID: 100100000, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
---- !u!4 &90065187269150525 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-  m_PrefabInstance: {fileID: 483363672479228118}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &753272543384624519 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-  m_PrefabInstance: {fileID: 483363672479228118}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &3007252013382599596
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 753272543384624519}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eee9ce9dc587fa148b4326eb7ff824b3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SimpleAnimator
-  _animator: {fileID: 6332013913058794823}
-  _defaultAnimationName: idle
---- !u!95 &6332013913058794823 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
-  m_PrefabInstance: {fileID: 483363672479228118}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2818402747581793012
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -389,3 +284,108 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5557706739152896077, guid: 4917333813c1bb94a9177e49adb0c6b0, type: 3}
   m_PrefabInstance: {fileID: 2818402747581793012}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5067241186969274492
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5689457051142550505}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.6565412
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.6565412
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.6565412
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_Name
+      value: CheerleaderZombie
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 9f023f05fd5574d40841c6e9c6a908bd, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 616200389462103413}
+  m_SourcePrefab: {fileID: 100100000, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+--- !u!95 &1673334286197519853 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+  m_PrefabInstance: {fileID: 5067241186969274492}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &4744767050620415895 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+  m_PrefabInstance: {fileID: 5067241186969274492}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &5373670472821339437 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: eef1694dd6800834f9ac6d00f59caead, type: 3}
+  m_PrefabInstance: {fileID: 5067241186969274492}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &616200389462103413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5373670472821339437}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eee9ce9dc587fa148b4326eb7ff824b3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SimpleAnimator
+  _animator: {fileID: 1673334286197519853}
+  _defaultAnimationName: idle

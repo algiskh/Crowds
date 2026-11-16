@@ -15,9 +15,9 @@ Three cheerleader NPCs dance on a stage in a corner of the hockey arena ("Лед
    - Pompom: `Assets/_Prefabs/Npc/Pompom.prefab`, primitive (white handle, green core, 26 white/green strands). Materials `Assets/_Materials/Npc/Pompom_*`. Root = grip, +Y = toward the fingers. **Shown only while dancing** (`Cheerleader.SetPropsVisible`).
 2. **Tools ▸ Crowds ▸ Build Cheer Zombie Mob** (`Editor/Npc/CheerZombieMobBuilder.cs`), from `Assets/Model/Cheerleader Zombie`. The rigged mesh is `cheerleader_zombie_5k (1).fbx`; the other FBX has no skeleton. The textures were also JPEG-as-png and are renamed to `.jpg`. Steps:
    - copies `FastMob.prefab` → `_Prefabs/Mobs/CheerZombieMob.prefab` once;
-   - writes the preset `_Data/Crowd/Setup/CheerZombieMob_ModelSetup.asset` with idle = Zombie Idle, run = Treadmill Running, die = Dying, 1.8 m, no VAT;
+   - writes the preset `_Data/Crowd/Setup/CheerZombieMob_ModelSetup.asset` with idle = Zombie Idle, run = Treadmill Running, die = Dying, 1.8 m, VAT bake into `_Data/Crowd/CheerZombieMob/` (the library goes to the config; VAT has no live Animator, so the 2 s death animation only plays on the skinned fallback);
    - runs `MobModelPipeline`;
-   - sets `CheerZombie.asset`: prefab → CheerZombieMob, **150 HP**, no crowd library, death animation 2 s. The other stats are copied from Fast.
+   - sets `CheerZombie.asset`: prefab → CheerZombieMob, **150 HP**, death animation 2 s (the crowd library is set by the pipeline). The other stats are copied from Fast.
 
    No pompoms on the zombie.
 3. **Tools ▸ Crowds ▸ Build Hockey Level**. Run it after steps 1–2. It places 3 instances on the stage (and creates `CheerZombie.asset` from Fast if it's missing; re-runs only enforce the id).
