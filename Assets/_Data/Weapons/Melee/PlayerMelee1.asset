@@ -23,6 +23,7 @@ MonoBehaviour:
   _attackSoundId: melee1
   _debuffs:
   - rid: 2646365630254809158
+  _rageEffectId: melee1_rage
   references:
     version: 2
     RefIds:

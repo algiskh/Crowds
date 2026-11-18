@@ -27,6 +27,11 @@ public class MeleeConfig : ScriptableObject
 
 	[SerializeReference, OdinSerialize] private Modifier[] _debuffs;
 
+	[LabelText("Rage effect ID")]
+	[Tooltip("Strike VFX (EffectsHolder id) used while the attacker has the Rage bonus (MeleeStrengthModifier). " +
+	         "Empty = the regular effect (Id).")]
+	[SerializeField] private string _rageEffectId;
+
 	public string Id => _id;
 	public float Damage => _damage;
 	public float Range => _range;
@@ -38,6 +43,7 @@ public class MeleeConfig : ScriptableObject
 	public float Delay => _delay;
 	public float Cooldown => _cooldown;
 	public string AttackSoundId => _attackSoundId;
+	public string RageEffectId => _rageEffectId;
 
 	public IEnumerable<Modifier> GetAllModifiersAsCopies(bool isDebuffs = false)
 	{

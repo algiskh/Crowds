@@ -66,6 +66,7 @@ namespace Crowds.EditorTools
 			c.AddParameter(PlayerAnimator.IsReloadingParam, AnimatorControllerParameterType.Bool);
 			c.AddParameter(PlayerAnimator.ReloadSpeedParam, AnimatorControllerParameterType.Float);
 			c.AddParameter(PlayerAnimator.MeleeParam, AnimatorControllerParameterType.Trigger);
+			c.AddParameter(PlayerAnimator.MeleeSpeedParam, AnimatorControllerParameterType.Float);
 			c.AddParameter(PlayerAnimator.IsChargingThrowParam, AnimatorControllerParameterType.Bool);
 			c.AddParameter(PlayerAnimator.ThrowParam, AnimatorControllerParameterType.Trigger);
 			c.AddParameter(PlayerAnimator.HitParam, AnimatorControllerParameterType.Trigger);
@@ -74,7 +75,8 @@ namespace Crowds.EditorTools
 			// Playback-rate multipliers default to 1 (0 would freeze the states before the first update).
 			var ps = c.parameters;
 			for (int i = 0; i < ps.Length; i++)
-				if (ps[i].name == PlayerAnimator.MoveSpeedParam || ps[i].name == PlayerAnimator.ReloadSpeedParam)
+				if (ps[i].name == PlayerAnimator.MoveSpeedParam || ps[i].name == PlayerAnimator.ReloadSpeedParam ||
+				    ps[i].name == PlayerAnimator.MeleeSpeedParam)
 					ps[i].defaultFloat = 1f;
 			c.parameters = ps;
 		}
@@ -178,6 +180,9 @@ namespace Crowds.EditorTools
 
 			// Shared actions (same clip for every weapon), entered from anywhere, return to the right aim pose.
 			var melee = sm.AddState("Melee", new Vector3(900, 0));
+			// Swing rate (Rage bonus attack speed, set by PlayerAnimator.TriggerMelee).
+			melee.speedParameter = PlayerAnimator.MeleeSpeedParam;
+			melee.speedParameterActive = true;
 			var charge = sm.AddState("ThrowCharge", new Vector3(900, 120));
 			var toss = sm.AddState("Throw", new Vector3(900, 240));
 

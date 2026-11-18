@@ -35,6 +35,11 @@ MonoBehaviour:
     Count: 1
     Chance: 0.03
     AmmoCaliber: 0
+  - LootType: 4
+    Id: rage
+    Count: 1
+    Chance: 0.03
+    AmmoCaliber: 0
   _targetType: 0
   _attackModifiers: []
   _damageDecals: []

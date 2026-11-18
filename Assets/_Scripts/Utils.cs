@@ -22,6 +22,18 @@ public static class Utils
 		return modifier;
 	}
 
+	/// <summary>Product of MeleeStrengthModifier.AttackSpeed (Rage bonus); 1 when there is none.</summary>
+	public static float GetMeleeAttackSpeed(this ModifierOwnerComponent modifiers)
+	{
+		float speed = 1f;
+		if (modifiers.Modifiers == null)
+			return speed;
+		for (int i = 0; i < modifiers.Modifiers.Count; i++)
+			if (modifiers.Modifiers[i] is MeleeStrengthModifier strength && strength.AttackSpeed > 0f)
+				speed *= strength.AttackSpeed;
+		return speed;
+	}
+
 	/// <summary>Lowest Value among modifiers of type T, or <paramref name="fallback"/> when there is none.</summary>
 	public static float GetMinModifier<T>(this ModifierOwnerComponent modifiers, float fallback)
 	{

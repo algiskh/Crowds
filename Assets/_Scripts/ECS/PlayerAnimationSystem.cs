@@ -104,7 +104,10 @@ namespace ECS
 
 			// --- Melee ---
 			if (input.IsMeleeing)
-				view.TriggerMelee();
+			{
+				var meleeModifiers = world.GetPool<ModifierOwnerComponent>();
+				view.TriggerMelee(meleeModifiers.Has(playerEntity) ? meleeModifiers.Get(playerEntity).GetMeleeAttackSpeed() : 1f);
+			}
 
 			// --- Grenade ---
 			view.SetChargingThrow(grenade.IsCharging && grenade.Count > 0);

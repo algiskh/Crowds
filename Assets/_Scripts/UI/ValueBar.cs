@@ -43,6 +43,13 @@ namespace Scene.UI
 			return this;
 		}
 
+		/// <summary>Replaces the fill colour gradient (e.g. to tint a bar cloned at runtime).</summary>
+		public void SetGradient(Gradient gradient)
+		{
+			if (gradient != null)
+				_gradient = gradient;
+		}
+
 		public IValueBar SetMaxValue(float value)
 		{
 			_max = value;

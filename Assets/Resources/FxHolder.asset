@@ -49,7 +49,12 @@ MonoBehaviour:
     Duration: 1
     IsChild: 0
   - Id: melee1
-    Prefab: {fileID: 7970544682367293265, guid: c91dc444c76d55b4693e6cb9f0a1177b, type: 3}
+    Prefab: {fileID: 7970544682367293265, guid: 8346460dcf6f4b45a427552fd9e88e17, type: 3}
+    HasDuration: 1
+    Duration: 1
+    IsChild: 0
+  - Id: melee1_rage
+    Prefab: {fileID: 7970544682367293265, guid: 460a49b6947f4b67ad64862611870945, type: 3}
     HasDuration: 1
     Duration: 1
     IsChild: 0

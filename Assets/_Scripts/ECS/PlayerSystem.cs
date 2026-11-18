@@ -31,7 +31,10 @@ namespace ECS
 
 				if (playerInput.IsMeleeing)
 				{
-					playerInput.MeleeCooldown = player.Value.MeleeConfig.Cooldown;
+					// Rage bonus: faster strikes — windup and recovery shortened by the attack-speed multiplier.
+					var modifierPool = world.GetPool<ModifierOwnerComponent>();
+					float attackSpeed = modifierPool.Has(entity) ? modifierPool.Get(entity).GetMeleeAttackSpeed() : 1f;
+					playerInput.MeleeCooldown = player.Value.MeleeConfig.Cooldown / attackSpeed;
 					var meleeEntity = world.NewEntity();
 					ref var requestMeleeComponent = ref world.GetPool<RequestMeleeComponent>().Add(meleeEntity);
 					requestMeleeComponent.Position = player.Value.transform.GetForwardPosition(player.Value.MeleeConfig.Range);
@@ -42,7 +45,7 @@ namespace ECS
 						Debug.LogError($"Player {entity} has no melee config assigned!");
 					}
 					requestMeleeComponent.Config = player.Value.MeleeConfig;
-					requestMeleeComponent.Delay = player.Value.MeleeConfig.Delay;
+					requestMeleeComponent.Delay = player.Value.MeleeConfig.Delay / attackSpeed;
 				}
 			}
 		}

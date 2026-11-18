@@ -34,8 +34,17 @@ namespace ECS
 				}
 
 
+				// Attacker's melee strength (Rage bonus, MeleeStrengthModifier): 1 when there's none.
+				float strength = modifierPool.Has(spawnRequest.SourceEntity)
+					? modifierPool.Get(spawnRequest.SourceEntity).GetModifier<MeleeStrengthModifier>()
+					: 1f;
+				bool rage = !Mathf.Approximately(strength, 1f);
+				float strikeDamage = spawnRequest.Config.Damage * strength;
+
 				ref var effectRequest = ref world.CreateSimpleEntity<RequestEffectComponent>();
-				effectRequest.EffectId = spawnRequest.Config.Id;
+				effectRequest.EffectId = rage && !string.IsNullOrEmpty(spawnRequest.Config.RageEffectId)
+					? spawnRequest.Config.RageEffectId
+					: spawnRequest.Config.Id;
 				effectRequest.Position = spawnRequest.Position;
 				effectRequest.Rotation = spawnRequest.Rotation;
 
@@ -66,7 +75,7 @@ namespace ECS
 						damageRequestPool.Add(world.NewEntity()) = new RequestDamageComponent
 						{
 							Target = world.PackEntity(targetEntity),
-							Damage = spawnRequest.Config.Damage,
+							Damage = strikeDamage,
 							HasSource = true,
 							SourcePosition = spawnRequest.Position
 						};
@@ -108,7 +117,7 @@ namespace ECS
 					damageRequestPool.Add(world.NewEntity()) = new RequestDamageComponent
 					{
 						Target = world.PackEntity(breakableEntity),
-						Damage = spawnRequest.Config.Damage
+						Damage = strikeDamage
 					};
 				}
 				meleeSpawnPool.Del(entity);

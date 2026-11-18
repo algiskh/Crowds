@@ -1,6 +1,6 @@
 # Bonus Feature — Reference
 
-Pickable player bonuses (speed up, shield) built **on top of the existing modifier system**
+Pickable player bonuses (speed up, shield, rage) built **on top of the existing modifier system**
 (`Modifier.cs` / `ModifiersSystem.cs`). A bonus is just a configured `Modifier` granted to the
 player on pickup, with a UI bar showing remaining time. This doc is the source of truth so the
 code doesn't need re-exploring.
@@ -127,7 +127,28 @@ a **looping** particle so it lasts the bonus duration; its `FxWrapper.Duration` 
 ## Reuse / extension notes
 
 - New bonus types: add a `BonusType`, a bar to `PlayerStats.GetBonusBar`, and (if it needs a runtime
-  effect) consume its modifier where relevant. `Strength` already exists in the enum but has no bar
-  and no consumer yet.
+  effect) consume its modifier where relevant.
 - Bonuses are pure data: a `BonusConfig` is any `Modifier` + a `BonusType` for which bar to drive.
 - No automated tests — verify feel in Play mode.
+
+## Rage (melee strength) — `rage`
+
+- `Assets/_Data/Bonuses/rage.asset`: `Type = Strength`, **`MeleeStrengthModifier`** (`Id = StrengthMeleeRage`,
+  `Value = 3` = melee damage x3, `AttackSpeed = 2.5` = strikes 2.5× faster, `Lifetime = 15` — same as the shield).
+  No follow-VFX yet (`HasEffect = 0`).
+- Attack speed: `PlayerSystem` divides `MeleeConfig.Cooldown` and `Delay` by `Utils.GetMeleeAttackSpeed()`
+  (1.5 s → 0.6 s, 0.2 s → 0.08 s); `PlayerAnimationSystem` → `PlayerAnimator.TriggerMelee(speed)` sets the
+  `MeleeSpeed` float, the speed multiplier of the `Melee` state in `Player.controller` (default 1; also in
+  `PlayerAnimatorControllerBuilder`).
+- Consumer: `MeleeSpawnSystem` — strike damage (mobs and breakables) = `MeleeConfig.Damage *
+  GetModifier<MeleeStrengthModifier>()` of `RequestMeleeComponent.SourceEntity` (1 without the bonus; mobs never have it).
+- Bar: `RageBG` (+ `RageFill`) in `HealthPanel` of `SampleScene`, assigned to `PlayerStats._strengthbar`: icon-shaped
+  fill like Speed/Shield, red-orange gradient, to the right of them. If `_strengthbar` is unassigned (other scenes),
+  `Awake` clones the shield bar as a fallback (`ValueBar.SetGradient`).
+- Icon: `Assets/Sprites/UI/Bonuses/rage.png` (white silhouette, tinted by the bar) — `BonusConfig.Preview` and the
+  map-loot prefab `_Prefabs/MapLoot/Rage.prefab`.
+- Drops: `Fatman` (3%, like its shield drop); stage loot of the 2nd breather on the ice arena.
+- Strike VFX: the player's `melee1` effect is its own prefab `_Prefabs/Effects/PlayerMelee1.prefab` (SwordWaveBlue at
+  0.7 scale, matching the −30% range/radius; `Melee1.prefab` stays full-size for `FatmanMelee`). Under Rage,
+  `MeleeSpawnSystem` plays `MeleeConfig.RageEffectId` instead — `melee1_rage` = `PlayerMelee1Rage.prefab`
+  (SwordWaveRed, same scale).

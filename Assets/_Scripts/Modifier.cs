@@ -34,6 +34,8 @@ public static class ModifierConstants
 	public static string ShieldFire = "ShieldFire";
 	public static string ShieldMagic = "ShieldMagic";
 	public static string ShieldPhysical = "ShieldPhysical";
+
+	public static string StrengthMeleeRage = "StrengthMeleeRage";
 }
 
 public interface IIteratableModifier
@@ -76,6 +78,9 @@ public abstract class Modifier
 
 		if (type == typeof(TractionModifier))
 			return GetConstantsByPrefix("Traction");
+
+		if (type == typeof(MeleeStrengthModifier))
+			return GetConstantsByPrefix("Strength");
 
 		return Enumerable.Empty<string>();
 	}
@@ -158,4 +163,17 @@ public class DamageModifier : Modifier, IIteratableModifier
 public class ShieldModifier : Modifier
 {
 	public DamageType ImmuneType;
+}
+
+/// <summary>
+/// Melee strength (the "Rage" bonus): Value = multiplier of the owner's melee damage (e.g. 3 = triple),
+/// AttackSpeed = melee rate multiplier (windup and recovery are divided by it, the swing animation plays faster).
+/// Damage is consumed in MeleeSpawnSystem for the attacker (RequestMeleeComponent.SourceEntity), the rate in
+/// PlayerSystem / PlayerAnimationSystem (Utils.GetMeleeAttackSpeed). Several → multiplied. See Docs/BonusFeature.md.
+/// </summary>
+[Serializable]
+public class MeleeStrengthModifier : Modifier
+{
+	[UnityEngine.Tooltip("Melee rate multiplier: 2.5 = windup and recovery 2.5× shorter, the swing animation 2.5× faster.")]
+	public float AttackSpeed = 1f;
 }

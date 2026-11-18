@@ -28,6 +28,7 @@ public class PlayerAnimator : MonoBehaviour
 	public const string IsReloadingParam = "IsReloading";
 	public const string ReloadSpeedParam = "ReloadSpeed";
 	public const string MeleeParam = "Melee";
+	public const string MeleeSpeedParam = "MeleeSpeed";
 	public const string IsChargingThrowParam = "IsChargingThrow";
 	public const string ThrowParam = "Throw";
 	public const string HitParam = "Hit";
@@ -43,6 +44,7 @@ public class PlayerAnimator : MonoBehaviour
 	private static readonly int IsReloading = Animator.StringToHash(IsReloadingParam);
 	private static readonly int ReloadSpeed = Animator.StringToHash(ReloadSpeedParam);
 	private static readonly int Melee = Animator.StringToHash(MeleeParam);
+	private static readonly int MeleeSpeed = Animator.StringToHash(MeleeSpeedParam);
 	private static readonly int IsChargingThrow = Animator.StringToHash(IsChargingThrowParam);
 	private static readonly int Throw = Animator.StringToHash(ThrowParam);
 	private static readonly int Hit = Animator.StringToHash(HitParam);
@@ -349,8 +351,10 @@ public class PlayerAnimator : MonoBehaviour
 		}
 	}
 
-	public void TriggerMelee()
+	/// <param name="speed">Swing playback-rate multiplier (Rage bonus attack speed; 1 = normal).</param>
+	public void TriggerMelee(float speed = 1f)
 	{
+		if (Has(MeleeSpeed)) _animator.SetFloat(MeleeSpeed, speed > 0.01f ? speed : 1f);
 		if (Has(Melee)) _animator.SetTrigger(Melee);
 	}
 
