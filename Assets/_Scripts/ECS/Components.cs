@@ -312,6 +312,8 @@ public struct BulletComponent
 	// How many mobs this bullet may hit (GunConfig.PierceCount, else the prefab's MaxPierceCount).
 	public int MaxPierce;
 	public FixedList32Bytes<int> PiercedTargets;
+	// Gun that fired the bullet (pierce blood trail settings, explicit pierce count).
+	public GunConfig Gun;
 }
 
 public struct BulletOverlapComponent
@@ -552,6 +554,8 @@ public struct RequestDecalComponent
 	public Vector3 Position;
 	// Orient the decal strictly along Direction (e.g. along the bullet trajectory), without random rotation.
 	public bool AlignToDirection;
+	// Size multiplier on top of the config size + jitter. 0 is treated as 1.
+	public float Scale;
 }
 #endregion
 

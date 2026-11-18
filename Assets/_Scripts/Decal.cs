@@ -25,7 +25,7 @@ public class Decal : MonoBehaviour
 	/// If <paramref name="alignToDirection"/> — the random rotation is skipped, to
 	/// keep the orientation along the given direction (e.g. along the bullet trajectory).
 	/// </summary>
-	public void ApplyVariation(DecalConfig config, bool alignToDirection = false)
+	public void ApplyVariation(DecalConfig config, bool alignToDirection = false, float scale = 1f)
 	{
 		if (_projector == null)
 			_projector = GetComponent<DecalProjector>();
@@ -36,7 +36,7 @@ public class Decal : MonoBehaviour
 			_projector.uvBias = uvBias;
 		}
 
-		transform.localScale = Vector3.one * config.Size * config.GetScaleJitter();
+		transform.localScale = Vector3.one * config.Size * config.GetScaleJitter() * (scale > 0f ? scale : 1f);
 
 		if (config.RandomRoll && !alignToDirection)
 			transform.Rotate(0f, 0f, UnityEngine.Random.Range(0f, 360f), Space.Self);

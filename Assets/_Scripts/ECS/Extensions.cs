@@ -164,6 +164,46 @@ namespace ECS
 			decal.Id = id;
 			decal.Direction = direction;
 			decal.AlignToDirection = alignToDirection;
+			decal.Scale = 1f;
+		}
+
+		/// <summary>
+		/// Exit-wound trail of a bullet that passed through a target (GunConfig.PierceBloodTrail): a row of
+		/// shrinking blood decals behind <paramref name="exitPoint"/> along the shot, with a little scatter.
+		/// Count/spacing come from the gun config.
+		/// </summary>
+		public static void RequestPierceBloodTrail(this EcsWorld world, GunConfig gun, string decalId,
+			Vector3 exitPoint, Vector3 direction)
+		{
+			if (gun == null || string.IsNullOrEmpty(decalId))
+				return;
+
+			direction.y = 0f;
+			if (direction.sqrMagnitude < 1e-6f)
+				return;
+			direction.Normalize();
+			var side = Vector3.Cross(Vector3.up, direction);
+
+			var range = gun.PierceTrailDecals;
+			int min = Mathf.Max(1, Mathf.Min(range.x, range.y));
+			int max = Mathf.Max(min, Mathf.Max(range.x, range.y));
+			int count = Random.Range(min, max + 1);
+			float spacing = gun.PierceTrailSpacing;
+
+			for (int i = 0; i < count; i++)
+			{
+				float t = count > 1 ? i / (float)(count - 1) : 0f;
+				float along = spacing * (i + 0.6f) + Random.Range(-0.2f, 0.2f) * spacing;
+				// The spray fans out a little with distance.
+				float across = Random.Range(-0.12f, 0.12f) * (i + 1);
+
+				ref var decal = ref world.CreateSimpleEntity<RequestDecalComponent>();
+				decal.Id = decalId;
+				decal.Position = exitPoint + direction * along + side * across;
+				decal.Direction = direction;
+				decal.AlignToDirection = true;
+				decal.Scale = Mathf.Lerp(0.8f, 0.4f, t);
+			}
 		}
 
 		/// <summary>

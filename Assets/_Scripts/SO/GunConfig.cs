@@ -80,6 +80,17 @@ public class GunConfig : ScriptableObject
 	         "Capped by BulletComponent.PiercedTargets capacity.")]
 	[SerializeField] private int _pierceCount;
 
+	[LabelText("Pierce blood trail"),
+	 Tooltip("A target the bullet passes through (mob, or the player for enemy bullets) leaves a trail of blood " +
+	         "decals behind it along the shot. The target the bullet stops in gets the regular hit decal.")]
+	[SerializeField] private bool _pierceBloodTrail;
+
+	[LabelText("Trail decals (min/max)"), ShowIf(nameof(_pierceBloodTrail)), MinValue(1)]
+	[SerializeField] private Vector2Int _pierceTrailDecals = new Vector2Int(3, 4);
+
+	[LabelText("Trail spacing"), ShowIf(nameof(_pierceBloodTrail)), MinValue(0.1f), SuffixLabel("m", true)]
+	[SerializeField] private float _pierceTrailSpacing = 0.55f;
+
 	[LabelText("Bullet color"),
 	 Tooltip("Tint of the projectile mesh and trail (e.g. red enemy bullets). " +
 	         "Alpha 0 = keep the prefab's own look.")]
@@ -124,6 +135,9 @@ public class GunConfig : ScriptableObject
 	public int MagazineCapacity => _magazineCapacity;
 	public float SpinUpTime => _spinUpTime;
 	public int PierceCount => _pierceCount;
+	public bool PierceBloodTrail => _pierceBloodTrail;
+	public Vector2Int PierceTrailDecals => _pierceTrailDecals;
+	public float PierceTrailSpacing => _pierceTrailSpacing;
 	public Color BulletColor => _bulletColor;
 	public string FireSoundId => _fireSoundId;
 	public string ReloadSoundId => _reloadSoundId;

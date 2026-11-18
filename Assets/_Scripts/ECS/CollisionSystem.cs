@@ -67,11 +67,13 @@ namespace ECS
 						continue;
 
 					int maxPierce = bulletComponent.MaxPierce;
+					bool passedThrough = false;
 					if (maxPierce > 1 && bulletComponent.PiercedTargets.Length < maxPierce - 1)
 					{
 						if (bulletComponent.PiercedTargets.ContainsFixed(mobEntity))
 							continue;
 						bulletComponent.PiercedTargets.Add(mobEntity);
+						passedThrough = true;
 					}
 					else
 					{
@@ -84,9 +86,22 @@ namespace ECS
 					damage.DamageModifiers = BuildShotDebuffs(bulletComponent.Modifiers);
 
 					ref var move = ref movePool.Get(bulletEntity);
-					var hitMobConfig = mobPool.Get(mobEntity).Config;
+					ref var hitMob = ref mobPool.Get(mobEntity);
+					var hitMobConfig = hitMob.Config;
 
-					world.RequestDamageDecal(hitMobConfig, DamageSourceType.Bullet, bulletTransform.position, move.Direction, alignToDirection: true);
+					if (passedThrough && bulletComponent.Gun != null && bulletComponent.Gun.PierceBloodTrail)
+					{
+						// Shot clean through: a blood trail behind the mob along the shot instead of a single splat.
+						var exitPoint = hitMob.Value != null ? hitMob.Value.transform.position : bulletTransform.position;
+						exitPoint.y = bulletTransform.position.y;
+						string trailId = hitMobConfig != null ? hitMobConfig.GetDecalId(DamageSourceType.Bullet) : null;
+						world.RequestPierceBloodTrail(bulletComponent.Gun, string.IsNullOrEmpty(trailId) ? "Blood" : trailId,
+							exitPoint, move.Direction);
+					}
+					else
+					{
+						world.RequestDamageDecal(hitMobConfig, DamageSourceType.Bullet, bulletTransform.position, move.Direction, alignToDirection: true);
+					}
 
 					ref var bloodEffect = ref world.CreateSimpleEntity<RequestEffectComponent>();
 					bloodEffect.EffectId = "blood";
@@ -148,6 +163,20 @@ namespace ECS
 				if (!overlap.PlayerHit)
 					continue;
 
+				// Enemy bullets die on the player, unless the gun explicitly pierces (GunConfig.PierceCount > 1):
+				// then the bullet goes through once (PiercedTargets keeps it from hitting again next frame).
+				int playerEntity = player.Value.Entity;
+				var gun = bulletComponent.Gun;
+				bool passedThrough = false;
+				if (gun != null && gun.PierceCount > 1 &&
+				    bulletComponent.PiercedTargets.Length < bulletComponent.MaxPierce - 1)
+				{
+					if (bulletComponent.PiercedTargets.ContainsFixed(playerEntity))
+						continue;
+					bulletComponent.PiercedTargets.Add(playerEntity);
+					passedThrough = true;
+				}
+
 				ref var damage = ref world.CreateSimpleEntity<RequestDamageComponent>();
 				damage.Target = world.PackEntity(player.Value.Entity);
 				damage.Damage = bulletComponent.Damage;
@@ -160,14 +189,25 @@ namespace ECS
 				effectRequest.EffectId = "playerHit";
 				effectRequest.Position = bulletComponent.Bullet.transform.position;
 
-				ref var bloodDecal = ref world.CreateSimpleEntity<RequestDecalComponent>();
-				bloodDecal.Position = playerPos;
-				bloodDecal.Id = "Blood";
-				bloodDecal.Direction = playerTransform.forward;
-				bloodDecal.AlignToDirection = false; // EcsLite doesn't reset a reused component
+				var bulletDir = movePool.Get(bulletEntity).Direction;
+				if (passedThrough && gun.PierceBloodTrail)
+				{
+					var exitPoint = playerPos;
+					exitPoint.y = bulletComponent.Bullet.transform.position.y;
+					world.RequestPierceBloodTrail(gun, "Blood", exitPoint, bulletDir);
+				}
+				else
+				{
+					ref var bloodDecal = ref world.CreateSimpleEntity<RequestDecalComponent>();
+					bloodDecal.Position = playerPos;
+					bloodDecal.Id = "Blood";
+					bloodDecal.Direction = playerTransform.forward;
+					bloodDecal.AlignToDirection = false; // EcsLite doesn't reset a reused component
+					bloodDecal.Scale = 1f;
+				}
 
-				// The Enemy bullet dies on the player (no piercing).
-				disposed.IsDisposed = true;
+				if (!passedThrough)
+					disposed.IsDisposed = true;
 			}
 			#endregion
 
@@ -224,6 +264,7 @@ namespace ECS
 					bloodDecal.Id = "Blood";
 					bloodDecal.Direction = playerTransform.forward;
 					bloodDecal.AlignToDirection = false; // EcsLite doesn't reset a reused component
+					bloodDecal.Scale = 1f;
 				}
 				else if (mob.Cooldown > 0)
 				{

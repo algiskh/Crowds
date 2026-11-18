@@ -26,10 +26,13 @@ MonoBehaviour:
   _bulletCheckType: 0
   _projectilesNumber: 1
   _bulletSpeed: 42
-  _bulletDamage: 220
+  _bulletDamage: 145
   _bulletLifeTime: 1.9
   _radius: 0.2
   _pierceCount: 4
+  _pierceBloodTrail: 1
+  _pierceTrailDecals: {x: 3, y: 4}
+  _pierceTrailSpacing: 0.55
   _bulletColor: {r: 1, g: 1, b: 1, a: 0}
   _reloadTime: 2
   _shutterTime: 0.1

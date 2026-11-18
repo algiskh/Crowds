@@ -126,6 +126,7 @@ namespace ECS
 			// On-shot debuffs (if set) — applied to the target via RequestDamage.DamageModifiers.
 			bulletComponent.Modifiers = bulletRequest.GunConfig.ShotDebuffs;
 			bulletComponent.PiercedTargets = default;
+			bulletComponent.Gun = bulletRequest.GunConfig;
 			// Per-gun pierce wins over the prefab: the bullet pool is shared between calibers,
 			// so a pooled prefab's own MaxPierceCount isn't a reliable property of this shot.
 			bulletComponent.MaxPierce = bulletRequest.GunConfig.PierceCount > 0

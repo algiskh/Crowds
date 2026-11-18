@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MeleeConfig
   _id: melee1
   _damage: 25
-  _range: 1
-  _radius: 2
+  _range: 0.7
+  _radius: 1.4
   _modifiers: []
   _targetType: 5
   _delay: 0.2
-  _cooldown: 1
+  _cooldown: 1.5
   _attackSoundId: melee1
   _debuffs:
   - rid: 2646365630254809158

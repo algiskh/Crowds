@@ -219,3 +219,12 @@ VAT mobs ignore the field (no live Animator).
   mode. If enemy bullets feel like they phase through the player, raise `PLAYER_HIT_RADIUS` or the
   gun's `BulletRadius`, or lower `BulletSpeed`.
 ```
+
+## Pierce blood trail (`GunConfig.PierceBloodTrail`)
+
+A target the bullet passes **through** (it went into `BulletComponent.PiercedTargets`) gets a row of 3–4
+shrinking blood decals behind it along the shot (`Extensions.RequestPierceBloodTrail`; count = `PierceTrailDecals`
+min/max, step = `PierceTrailSpacing`, decal id = the mob's Bullet decal or `Blood`) instead of the single hit splat;
+the target the bullet stops in gets the regular decal. `BulletComponent.Gun` carries the firing `GunConfig`;
+`RequestDecalComponent.Scale` (0 = 1) sizes the trail decals. Enemy bullets pierce the player only when the gun
+sets `PierceCount > 1` explicitly (otherwise they still die on the player). Enabled on `RifleConfig`.
