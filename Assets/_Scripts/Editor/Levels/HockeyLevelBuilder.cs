@@ -19,7 +19,7 @@ namespace Crowds.EditorTools
 	///                sides; the ice is an IceRink ModifierZone → TractionModifier → inertial sliding for everybody;
 	///   8 tunnel portals in the stands = mob spawn points; player starts at centre ice.
 	/// Script: 3 quota waves (DifficultyStage.MobQuota) — 25 Slow + 15 Fast; 70 Fast + 8 Fatman;
-	///   5 GunnerBare + 5 GunnerMob (helmet) + 45 Fast — with 12 s breathers in between when loot is thrown onto the ice.
+	///   5 GunnerBare + 5 GunnerMob (helmet) + 45 Fast + 40 Slow — with 12 s breathers in between when loot is thrown onto the ice.
 	/// Loot: no shotguns, 12ga or shield (mob drops filtered by LevelConfig); ammo fallback on the ice.
 	/// Produces: LevelConfig _Data/Levels/Configs/Level_Hockey, prefab _Prefabs/Levels/Level_03_Hockey (+ meshes),
 	/// mob config _Data/Mobs/GunnerBare, LevelDefinition _Data/Levels/Definitions/Level_Hockey (3rd campaign level).
@@ -102,7 +102,7 @@ namespace Crowds.EditorTools
 					("Fast", 70), ("Fatman", 8)),
 				Breather(DifficultyLevel.level4, 12f, "Передышка: на лёд выбросили припасы"),
 				QuotaWave(DifficultyLevel.level5, rest: 3f, interSpawn: 0.25f, cleared, "Волна 3/3: стрелки!",
-					(GunnerBareId, 5), ("GunnerMob", 5), ("Fast", 45)),
+					(GunnerBareId, 5), ("GunnerMob", 5), ("Fast", 45), ("Slow", 40)),
 				new() { DifficultyLevel = DifficultyLevel.finish, DifficultyTimer = 0f, SpeedMultiplier = 1f,
 					InterSpawnCooldown = 0.5f, EndConditions = System.Array.Empty<SmartConditionWrapper>(), ShowTimer = false },
 			};
@@ -220,7 +220,7 @@ namespace Crowds.EditorTools
 				StageLootPoint(loot, "Break2_East", new Vector3(10, FloorY, 6), DifficultyLevel.level4, 1.2f,
 					Health(40), Grenade());
 				StageLootPoint(loot, "Break2_South", new Vector3(0, FloorY, -8), DifficultyLevel.level4, 1.2f,
-					Ammo(Caliber.None, 40), Health(25));
+					Ammo(Caliber.None, 40), Health(25), Bonus("rage"));
 
 				// Ammo fallback points on the ice (AdditionalSpawn tag → AdditionalLootSpawnSystem).
 				var fallbackPoints = Child(root.transform, "AmmoFallbackPoints");
@@ -236,7 +236,7 @@ namespace Crowds.EditorTools
 				var spawns = Child(root.transform, "SpawnPoints");
 				var mobs = new[]
 				{
-					Mob("Slow", 5, (DifficultyLevel.level1, 3.5f)),
+					Mob("Slow", 5, (DifficultyLevel.level1, 3.5f), (DifficultyLevel.level5, 2.5f)),
 					Mob("Fast", 3, (DifficultyLevel.level1, 3.5f), (DifficultyLevel.level3, 2.2f), (DifficultyLevel.level5, 2.5f)),
 					Mob("Fatman", 1, (DifficultyLevel.level3, 2.2f)),
 					Mob(GunnerBareId, 1, (DifficultyLevel.level5, 2.5f)),

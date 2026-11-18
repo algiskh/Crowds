@@ -40,8 +40,8 @@ Floor top is at y = −0.5. The floor is one `FloorSector` (Sliding). Rendering 
 | level1 | Wave 1/3, quota **25 Slow + 15 Fast**. 5 s of rest at the start. 9mm ammo at centre ice. | The quota is spent and all mobs are dead (`MobsCleared`). |
 | level2 | Breather, 12 s with a timer on screen. Loot is thrown onto the ice: SMG + 9mm, health + grenade, ammo for the current weapon + 9mm. | After 12 s. |
 | level3 | Wave 2/3, quota **70 Fast + 8 Fatman**. | The quota is spent and all mobs are dead. |
-| level4 | Breather, 12 s. Loot: AR + 5.56, health + grenade, ammo for the current weapon + health. | After 12 s. |
-| level5 | Wave 3/3, quota **5 GunnerBare + 5 GunnerMob (helmet) + 45 Fast**. | The quota is spent and all mobs are dead. |
+| level4 | Breather, 12 s. Loot: AR + 5.56, health + grenade, ammo for the current weapon + health + the `rage` bonus (`Loot_Break2_South`). | After 12 s. |
+| level5 | Wave 3/3, quota **5 GunnerBare + 5 GunnerMob (helmet) + 45 Fast + 40 Slow** (Slow spawn presets on level5, cooldown 2.5). | The quota is spent and all mobs are dead. |
 | finish | — | Victory. |
 
 The banner shows the wave objective plus "Осталось: N", where N = alive mobs + quota left + pending spawns.

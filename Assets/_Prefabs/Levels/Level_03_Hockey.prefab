@@ -3338,6 +3338,11 @@ MonoBehaviour:
     Count: 25
     Chance: 1
     AmmoCaliber: 0
+  - LootType: 4
+    Id: rage
+    Count: 1
+    Chance: 1
+    AmmoCaliber: 0
 --- !u!1 &719340364472078889
 GameObject:
   m_ObjectHideFlags: 0
@@ -7613,6 +7618,8 @@ MonoBehaviour:
     _spawnPresets:
     - DifficultyLevel: 1
       Cooldown: 3.5
+    - DifficultyLevel: 5
+      Cooldown: 2.5
   - _mobId: Fast
     _weight: 3
     _spawnPresets:
@@ -7749,6 +7756,8 @@ MonoBehaviour:
     _spawnPresets:
     - DifficultyLevel: 1
       Cooldown: 3.5
+    - DifficultyLevel: 5
+      Cooldown: 2.5
   - _mobId: Fast
     _weight: 3
     _spawnPresets:
@@ -13229,6 +13238,8 @@ MonoBehaviour:
     _spawnPresets:
     - DifficultyLevel: 1
       Cooldown: 3.5
+    - DifficultyLevel: 5
+      Cooldown: 2.5
   - _mobId: Fast
     _weight: 3
     _spawnPresets:
@@ -15705,6 +15716,8 @@ MonoBehaviour:
     _spawnPresets:
     - DifficultyLevel: 1
       Cooldown: 3.5
+    - DifficultyLevel: 5
+      Cooldown: 2.5
   - _mobId: Fast
     _weight: 3
     _spawnPresets:
@@ -18606,6 +18619,8 @@ MonoBehaviour:
     _spawnPresets:
     - DifficultyLevel: 1
       Cooldown: 3.5
+    - DifficultyLevel: 5
+      Cooldown: 2.5
   - _mobId: Fast
     _weight: 3
     _spawnPresets:
@@ -27218,6 +27233,8 @@ MonoBehaviour:
     _spawnPresets:
     - DifficultyLevel: 1
       Cooldown: 3.5
+    - DifficultyLevel: 5
+      Cooldown: 2.5
   - _mobId: Fast
     _weight: 3
     _spawnPresets:
@@ -31080,6 +31097,8 @@ MonoBehaviour:
     _spawnPresets:
     - DifficultyLevel: 1
       Cooldown: 3.5
+    - DifficultyLevel: 5
+      Cooldown: 2.5
   - _mobId: Fast
     _weight: 3
     _spawnPresets:
@@ -36546,6 +36565,8 @@ MonoBehaviour:
     _spawnPresets:
     - DifficultyLevel: 1
       Cooldown: 3.5
+    - DifficultyLevel: 5
+      Cooldown: 2.5
   - _mobId: Fast
     _weight: 3
     _spawnPresets:

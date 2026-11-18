@@ -746,6 +746,8 @@ namespace Crowds.EditorTools
 			new() { LootType = LootType.Weapon, Id = id, Count = 1, Chance = 1f };
 		internal static PossibleLoot Grenade() =>
 			new() { LootType = LootType.Grenade, Id = string.Empty, Count = 1, Chance = 1f };
+		internal static PossibleLoot Bonus(string id) =>
+			new() { LootType = LootType.Bonus, Id = id, Count = 1, Chance = 1f };
 
 		internal static IEnumerable<Vector3> Concat(params Vector3[][] arrays)
 		{

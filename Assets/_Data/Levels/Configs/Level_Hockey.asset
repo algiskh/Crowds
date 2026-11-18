@@ -174,6 +174,8 @@ MonoBehaviour:
       Count: 5
     - MobId: Fast
       Count: 45
+    - MobId: Slow
+      Count: 40
   - DifficultyLevel: 13
     DifficultyTimer: 0
     SpeedMultiplier: 1
