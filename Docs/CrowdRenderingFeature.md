@@ -90,6 +90,9 @@ useful as a placeholder clip); **weapon**: `WeaponPrefab` (`MobWeapon`) is insta
 character's forward in frame 0 of `WeaponAlignState` (default `aim`), and assigned to `Mob._weapon`. A weapon already
 in the prefab keeps its hand-tuned local pose on re-runs. Example: `Gunner_ModelSetup`.
 
+A preset reference whose fileID doesn't resolve (hand-written YAML; an FBX root's fileID differs per file) is
+recovered by the guid in the preset's YAML (`Recovered reference …` in the log) and saved back.
+
 All steps log with `[MobModel]` (verts/tris, scale, clip bindings, drift). Example: `FastMob_ModelSetup`
 (ZombieFemale 5k). A project skill `mob-model` (`.claude/skills/`) describes the agent-side workflow.
 

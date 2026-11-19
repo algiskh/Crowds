@@ -79,6 +79,7 @@ namespace Crowds.EditorTools
 				Clip("idle", "Zombie Idle", loop: true),
 				Clip("run", "Treadmill Running", loop: true),
 				Clip("die", "Dying", loop: false),
+				Clip("skid", "Wobbling", loop: true), // ice skid (MobSkidSystem)
 			};
 			preset.Prefab = mob;
 			preset.VisualName = "CheerleaderZombie";

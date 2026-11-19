@@ -112,21 +112,56 @@ namespace Crowds.EditorTools
 		/// <summary>
 		/// Hand-written preset YAML may point at an FBX's legacy "Prefab" object (fileID 100100000) instead of its root
 		/// GameObject — reload every model/clip reference by path so it's a real GameObject, and write it back.
+		/// A reference with a wrong fileID (an FBX root's fileID differs per file) reads as missing: it is recovered
+		/// from the guid written in the preset's YAML.
 		/// </summary>
 		private static void NormalizeReferences(MobModelSetupPreset p)
 		{
-			GameObject Fix(GameObject go)
+			var yaml = ReadReferenceGuids(p);
+
+			GameObject Fix(GameObject go, string key)
 			{
-				if (ReferenceEquals(go, null)) return null;
+				if (go == null)
+				{
+					if (!yaml.TryGetValue(key, out var guid)) return null;
+					string guidPath = AssetDatabase.GUIDToAssetPath(guid);
+					var recovered = string.IsNullOrEmpty(guidPath) ? null : AssetDatabase.LoadAssetAtPath<GameObject>(guidPath);
+					if (recovered != null) Debug.Log($"{Log} Recovered reference '{key}' by guid → {guidPath}.", p);
+					return recovered;
+				}
 				string path = AssetDatabase.GetAssetPath(go);
 				return string.IsNullOrEmpty(path) ? go : AssetDatabase.LoadAssetAtPath<GameObject>(path);
 			}
 
-			p.Model = Fix(p.Model);
-			p.HeightReference = Fix(p.HeightReference);
-			foreach (var c in p.Clips) c.Fbx = Fix(c.Fbx);
+			p.Model = Fix(p.Model, "Model");
+			p.HeightReference = Fix(p.HeightReference, "HeightReference");
+			for (int i = 0; i < p.Clips.Count; i++) p.Clips[i].Fbx = Fix(p.Clips[i].Fbx, $"Clips[{i}]");
 			EditorUtility.SetDirty(p);
 			AssetDatabase.SaveAssetIfDirty(p);
+		}
+
+		/// <summary>
+		/// Guids of the preset's GameObject references as written in its .asset YAML: "Model", "HeightReference",
+		/// "Clips[i]" (the i-th "Fbx:" line under "Clips:").
+		/// </summary>
+		private static Dictionary<string, string> ReadReferenceGuids(MobModelSetupPreset p)
+		{
+			var result = new Dictionary<string, string>();
+			string assetPath = AssetDatabase.GetAssetPath(p);
+			if (string.IsNullOrEmpty(assetPath) || !File.Exists(assetPath)) return result;
+
+			var guidRx = new System.Text.RegularExpressions.Regex(@"guid:\s*([0-9a-fA-F]{32})");
+			int clip = 0;
+			foreach (var raw in File.ReadAllLines(assetPath))
+			{
+				string line = raw.Trim();
+				var m = guidRx.Match(line);
+				if (!m.Success) continue;
+				if (line.StartsWith("Model:")) result["Model"] = m.Groups[1].Value;
+				else if (line.StartsWith("HeightReference:")) result["HeightReference"] = m.Groups[1].Value;
+				else if (line.StartsWith("Fbx:")) result[$"Clips[{clip++}]"] = m.Groups[1].Value;
+			}
+			return result;
 		}
 
 		/// <summary>Empty texture slots are filled from the model folder by name (BaseColor/Albedo/Diffuse, Normal).</summary>

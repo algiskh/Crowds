@@ -67,6 +67,8 @@ MonoBehaviour:
   _crowdLibrary: {fileID: 11400000, guid: 8206d8b144d65264f920f4ae7d3224fb, type: 2}
   _tint: {r: 1, g: 1, b: 1, a: 1}
   _scale: 1
+  _headwear: {fileID: 0}
+  _deathAnimationTime: 0
   references:
     version: 2
     RefIds: []

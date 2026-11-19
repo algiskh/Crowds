@@ -63,6 +63,14 @@ public class SimpleAnimator : MonoBehaviour
 	}
 
 	/// <summary>
+	/// True if the controller has a base-layer state for <paramref name="type"/> (optional states like Skid).
+	/// </summary>
+	public bool HasState(AnimationType type)
+	{
+		return _animator != null && _animator.runtimeAnimatorController != null && _animator.HasState(0, type.ToHash());
+	}
+
+	/// <summary>
 	/// Plays <paramref name="type"/> from its start even if it's the current state (e.g. recoil on every shot of a burst).
 	/// </summary>
 	public void RestartAnimation(AnimationType type, float crossFadeTime = 0.05f)

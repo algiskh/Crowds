@@ -25,10 +25,22 @@ MonoBehaviour:
     Fbx: {fileID: -927199367670048503, guid: b753bbdce5334de89ddf743028c66daa, type: 3}
     Loop: 1
     RemoveRootDrift: 1
+  - State: skid
+    Fbx: {fileID: 919132149155446097, guid: b331e88ab099d0343bbc0437940f8835, type: 3}
+    Loop: 1
+    RemoveRootDrift: 1
   Prefab: {fileID: 4635986969134950211, guid: bc278afd50f0a934d887fa70147ae12e, type: 3}
   VisualName: ZombieFemale
   TargetHeight: 0
   HeightReference: {fileID: 919132149155446097, guid: 292f6ae3ab8eb754ead3f862fe3188d4, type: 3}
+  RemoveObjects: []
+  HideRenderers: []
+  WeaponPrefab: {fileID: 0}
+  WeaponBone: mixamorig:RightHand
+  WeaponAlignState: aim
+  WeaponLocalPosition: {x: 0, y: 0, z: 0}
+  WeaponLocalEuler: {x: 0, y: 0, z: 0}
+  WeaponScale: 1
   BakeVat: 1
   BakeFps: 30
   Configs:

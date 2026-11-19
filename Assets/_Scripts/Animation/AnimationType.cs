@@ -12,7 +12,8 @@ namespace Scene.Animation
 		Throw,
 		ThrowCooldown,
 		Aim,   // ranged windup: weapon raised, telegraph before the shot
-		Shoot  // ranged shot: recoil, played when the bullet leaves the muzzle
+		Shoot, // ranged shot: recoil, played when the bullet leaves the muzzle
+		Skid   // ice skid: off-balance wobble while gliding (MobSkidSystem); falls back to Idle if the view lacks it
 	}
 
 	/// <summary>
@@ -32,7 +33,8 @@ namespace Scene.Animation
 			"throw",           // Throw
 			"throw_cooldown",  // ThrowCooldown
 			"aim",             // Aim
-			"shoot"            // Shoot
+			"shoot",           // Shoot
+			"skid"             // Skid
 		};
 
 		private static readonly int[] _hashes = BuildHashes();

@@ -17,9 +17,9 @@ MonoBehaviour:
   _normalMap: {fileID: 2800000, guid: 50f2afe4b89a09a4b94b6ac4f57dc9a9, type: 2}
   _material: {fileID: 2100000, guid: 1ad94a3b6811a6c4bbf8ee199466437b, type: 2}
   _vertexCount: 4993
-  _frameCount: 144
+  _frameCount: 256
   _textureWidth: 8192
-  _textureHeight: 88
+  _textureHeight: 157
   _bakeFps: 30
   _clips:
   - Type: 0
@@ -29,4 +29,8 @@ MonoBehaviour:
   - Type: 2
     StartFrame: 128
     FrameCount: 16
+    Loop: 1
+  - Type: 9
+    StartFrame: 144
+    FrameCount: 112
     Loop: 1

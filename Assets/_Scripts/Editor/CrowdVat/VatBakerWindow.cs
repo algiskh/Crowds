@@ -258,6 +258,7 @@ namespace Crowds.EditorTools
 				case AnimationType.Walk:
 				case AnimationType.Run:
 				case AnimationType.Aim:
+				case AnimationType.Skid:
 					return true;
 				default:
 					return false; // attack/die/throw/throw_cooldown/shoot play once

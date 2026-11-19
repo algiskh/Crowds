@@ -7,7 +7,7 @@ namespace ECS
 	/// <summary>
 	/// Ice skid for mobs. On slippery ground (InertiaComponent.Sliding) a mob's real velocity can disagree with where
 	/// it wants to go: it overshoots a turn, drifts sideways or keeps gliding after stopping. While that lasts the
-	/// mob is "skidding": it faces the player and its view plays Idle (placeholder for a dedicated skid clip) through
+	/// mob is "skidding": it faces the player and its view plays Skid (Idle if the view has no skid clip) through
 	/// <see cref="AnimationStateComponent.Override"/>, so gameplay systems keep owning Requested.
 	/// Attack/aim/shoot/throw/die are never overridden (telegraphs must stay readable).
 	/// Runs after MoveSystem (its facing toward the waypoint is replaced) and before AnimationSystem/CrowdRenderSystem.
@@ -28,7 +28,9 @@ namespace ECS
 		// Turn speed toward the player while skidding, 1/s (Slerp factor per second).
 		private const float FaceTurnSpeed = 10f;
 
-		private static readonly AnimationType SkidAnimation = AnimationType.Idle;
+		// Dedicated skid clip (e.g. the Fast zombie's Mixamo "Wobbling"); mobs whose view lacks it play Idle.
+		private const AnimationType SkidAnimation = AnimationType.Skid;
+		private const AnimationType SkidFallback = AnimationType.Idle;
 
 		public void Run(IEcsSystems systems)
 		{
@@ -40,6 +42,7 @@ namespace ECS
 			var movePool = world.GetPool<MoveComponent>();
 			var inertiaPool = world.GetPool<InertiaComponent>();
 			var animPool = world.GetPool<AnimationStateComponent>();
+			var crowdPool = world.GetPool<CrowdInstanceComponent>();
 
 			bool hasPlayer = world.TryGetAsSingleton<PlayerComponent>(out var player) && player.Value != null;
 			Vector3 playerPos = hasPlayer ? player.Value.transform.position : Vector3.zero;
@@ -63,7 +66,7 @@ namespace ECS
 				// Off the ice or busy with an action: stop skidding right away.
 				if (!inertia.Sliding || !overridable)
 				{
-					SetSkid(ref inertia, animPool, entity, false);
+					SetSkid(ref inertia, animPool, crowdPool, mob.Value, entity, false);
 					continue;
 				}
 
@@ -87,7 +90,7 @@ namespace ECS
 				{
 					inertia.SkidTimer += dt;
 					if (inertia.SkidTimer >= (inertia.Skidding ? ExitDelay : EnterDelay))
-						SetSkid(ref inertia, animPool, entity, !inertia.Skidding);
+						SetSkid(ref inertia, animPool, crowdPool, mob.Value, entity, !inertia.Skidding);
 				}
 				else
 				{
@@ -98,7 +101,7 @@ namespace ECS
 					continue;
 
 				// Keep the override applied (a gameplay system may have re-added the component this frame).
-				SetSkid(ref inertia, animPool, entity, true);
+				SetSkid(ref inertia, animPool, crowdPool, mob.Value, entity, true);
 
 				if (hasPlayer && move.Transform != null)
 				{
@@ -111,7 +114,8 @@ namespace ECS
 			}
 		}
 
-		private static void SetSkid(ref InertiaComponent inertia, EcsPool<AnimationStateComponent> animPool, int entity, bool on)
+		private static void SetSkid(ref InertiaComponent inertia, EcsPool<AnimationStateComponent> animPool,
+			EcsPool<CrowdInstanceComponent> crowdPool, Mob mob, int entity, bool on)
 		{
 			if (inertia.Skidding != on)
 				inertia.SkidTimer = 0f;
@@ -129,8 +133,21 @@ namespace ECS
 			}
 
 			ref var anim = ref animPool.Get(entity);
+			// Resolve the clip once per skid (not every frame while it lasts).
+			if (on && !anim.OverrideActive)
+				anim.Override = ResolveSkidAnimation(mob, crowdPool, entity);
 			anim.OverrideActive = on;
-			anim.Override = SkidAnimation;
+		}
+
+		private static AnimationType ResolveSkidAnimation(Mob mob, EcsPool<CrowdInstanceComponent> crowdPool, int entity)
+		{
+			if (crowdPool.Has(entity))
+			{
+				var library = crowdPool.Get(entity).Library;
+				return library != null && library.TryGetClip(SkidAnimation, out _) ? SkidAnimation : SkidFallback;
+			}
+
+			return mob != null && mob.Animator != null && mob.Animator.HasState(SkidAnimation) ? SkidAnimation : SkidFallback;
 		}
 	}
 }
