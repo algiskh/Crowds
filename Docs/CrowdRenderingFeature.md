@@ -154,3 +154,17 @@ Notes:
   the scaled root). Keep scales moderate, or compensate on the prefab if you go extreme.
 - Skinned tint assumes a URP-Lit-style `_BaseColor` property; a mob on a custom shader without it is left
   untinted (VAT path is unaffected — `CrowdVat` always has `_InstColor`).
+
+**Clips posed in Blender** (`BlenderClipImport`, Tools ▸ Crowds ▸ Zombie1 ▸ Import Wobbling (skid) Clip): Blender's
+FBX exporter always adds the armature object as an extra root node (`Armature/mixamorig:Hips/...`) and, with
+*Add Leaf Bones*, `*_end` bones — such a clip doesn't bind to a Mixamo model. `BlenderClipImport.Import(fbx, model,
+out.anim, loop)` aligns the import scale with the model (`MobModelPipeline.SetupClip`), writes an `.anim` copy with
+the root node removed and `_end` bones dropped. The Blender file's hips-parent space (Unity often turns the
+`Armature` node into the asset root, so the paths bind but its rotation/scale sit outside the clip) is expressed in the
+model's hips-parent space and folded into the hips curves (scale → every bone position); the remaining unit factor is the median
+ratio of the model's bone lengths to the clip's (Mixamo bones are rigid); the still tail of Blender's scene range (250 frames by default)
+is trimmed; hips yaw vs the reference clip is checked (a 90°-multiple export axis mismatch is rotated out) and the clip is
+grounded (forward kinematics from the curves + model bind pose, no scene sampling; hips shifted so the lowest foot/toe point over the
+clip stands where the reference clip's feet do — Blender's rest pose may keep the hips at the origin). Then it makes the
+clip in-place, validates bindings and logs the hip height next to a reference clip
+(`[BlenderClip]`); `SetState` adds/repoints one controller state. Used for `Zombie1_skid.anim` → `Zombie1.controller`.
