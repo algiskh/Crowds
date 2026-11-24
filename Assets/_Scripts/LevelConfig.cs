@@ -61,6 +61,24 @@ public class MobQuotaEntry
 	[MinValue(0)] public int Count;
 }
 
+/// <summary>
+/// Per-level look/behaviour of a bonus (BonusConfig.Id): a different loot icon (e.g. skates instead of the speed
+/// boot on the ice arena) plus extra modifiers granted together with the bonus modifier for the same duration.
+/// </summary>
+[Serializable]
+public class BonusLevelOverride
+{
+	[Tooltip("BonusConfig.Id this override applies to (e.g. 'speedup').")]
+	public string BonusId;
+
+	[PreviewField(50, ObjectFieldAlignment.Left), Tooltip("Loot icon on this level. Empty = BonusConfig.Preview.")]
+	public Sprite Preview;
+
+	[Tooltip("Extra modifiers granted with the bonus on this level (cloned; Lifetime is set to the bonus duration), " +
+	         "e.g. SkatesModifier on the ice arena.")]
+	[SerializeReference] public Modifier[] ExtraModifiers = Array.Empty<Modifier>();
+}
+
 [Serializable]
 public class AdditionalLootConfig
 {
@@ -105,6 +123,21 @@ public class LevelConfig : SerializedScriptableObject
 	[SerializeField, BoxGroup("Spawning"),
 	 Tooltip("Bonus ids (LootType.Bonus) mobs never drop on this level, e.g. 'shield'.")]
 	private string[] _bannedMobBonusIds = System.Array.Empty<string>();
+
+	[SerializeField, BoxGroup("Bonuses"),
+	 Tooltip("Per-level bonus overrides: loot icon and extra modifiers by BonusConfig.Id (map, crate and mob loot alike).")]
+	private BonusLevelOverride[] _bonusOverrides = System.Array.Empty<BonusLevelOverride>();
+
+	/// <summary>Override for the bonus <paramref name="bonusId"/> on this level, or null.</summary>
+	public BonusLevelOverride GetBonusOverride(string bonusId)
+	{
+		if (_bonusOverrides == null || string.IsNullOrEmpty(bonusId))
+			return null;
+		for (int i = 0; i < _bonusOverrides.Length; i++)
+			if (_bonusOverrides[i] != null && _bonusOverrides[i].BonusId == bonusId)
+				return _bonusOverrides[i];
+		return null;
+	}
 
 	/// <summary>Spawn distance window; falls back to the sector-based one when not set.</summary>
 	public void GetSpawnDistance(float sectorDistance, out float min, out float max)

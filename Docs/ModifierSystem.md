@@ -256,4 +256,4 @@ auto-VFX). Always clone — never share a config instance across owners.
 - No automated tests — verify modifier feel (durations, stacking, DoT cadence) in Play mode.
 ```
 
-> **Area modifiers.** `ModifierZone` (oil slicks, hockey ice) together with `ModifierZoneSystem` is a producer: while an owner stands in a zone, it gets the zone's modifiers, refreshed every frame and never stacked. See `Docs/HockeyLevelFeature.md`.
+> **Area modifiers.** `ModifierZone` (oil slicks, hockey ice, sewer hatches) together with `ModifierZoneSystem` is a producer: while an owner stands in a zone, it gets the zone's modifiers, refreshed every frame and never stacked. A zone can be player-only (`_affectsMobs`) and can spawn the modifier's linked VFX on entry (`_entryEffect`). See `Docs/HockeyLevelFeature.md` and `Docs/SewerHatchFeature.md`.

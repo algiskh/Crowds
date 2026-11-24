@@ -124,6 +124,14 @@ a **looping** particle so it lasts the bonus duration; its `FxWrapper.Duration` 
 6. Verify in Play mode: bar fills on pickup and drains over the duration, seconds count down, speed
    actually changes / damage is reduced, and same-type re-pickup refreshes the timer.
 
+## Per-level overrides (`LevelConfig._bonusOverrides`)
+
+`BonusLevelOverride { BonusId, Preview, ExtraModifiers[] }`, looked up with `LevelConfig.GetBonusOverride(id)`:
+- `Preview` replaces the loot icon on that level (`LootSystem`; the fallback order is override → `BonusConfig.Preview` → `SpriteHolder."Bonus"`).
+- `ExtraModifiers` (`[SerializeReference]`) are cloned on pickup with `Lifetime` set to the bonus duration and `HasEffect` off, and are stored in `ActiveBonus.Extras`. `BonusSystem` removes them on a same-type refresh and on expiry.
+- The ice arena uses it: `speedup` becomes skates (icon + `SkatesModifier`), see `Docs/HockeyLevelFeature.md`.
+- Mob drops per level are still controlled by `_bannedMobBonusIds`. `speedup` is banned on campaign levels 1–2.
+
 ## Reuse / extension notes
 
 - New bonus types: add a `BonusType`, a bar to `PlayerStats.GetBonusBar`, and (if it needs a runtime

@@ -6,8 +6,9 @@ using UnityEngine;
 /// Old-style seven-segment scoreboard ("HOME:AWAY"). Each digit is 7 segment renderers (a b c d e f g order, see
 /// <see cref="DigitMasks"/>) that swap between a lit and an unlit material. 3 + 3 cells; the numbers grow outward
 /// from the colon (home right-aligned against it, away left-aligned after it), unused cells stay dark ("8" off):
-/// 0 deaths / 51 frags → "   :51 ", 1 / 81 → "  1:81 ". Built by HockeyLevelBuilder; driven by ECS.ScoreboardSystem
-/// (home = player deaths, away = frags). Static registry like BulletBlocker (OnEnable/OnDisable).
+/// 0 deaths / 51 frags → "  0:51 ", 1 / 81 → "  1:81 ". Built by HockeyLevelBuilder; driven by ECS.ScoreboardSystem
+/// (home = player deaths, away = frags, or the breather countdown in seconds). Static registry like BulletBlocker
+/// (OnEnable/OnDisable).
 /// </summary>
 public sealed class ArenaScoreboard : MonoBehaviour
 {
@@ -29,7 +30,7 @@ public sealed class ArenaScoreboard : MonoBehaviour
 	[SerializeField] private Material _offMaterial;
 
 	[BoxGroup("Format"), Tooltip("Home side shows nothing while the value is 0 (no deaths yet).")]
-	[SerializeField] private bool _homeBlankZero = true;
+	[SerializeField] private bool _homeBlankZero;
 	[BoxGroup("Format"), Tooltip("Away side shows nothing while the value is 0 (off = a single '0').")]
 	[SerializeField] private bool _awayBlankZero;
 
@@ -77,6 +78,6 @@ public sealed class ArenaScoreboard : MonoBehaviour
 		}
 	}
 
-	[Button("Preview  :51")]
+	[Button("Preview  0:51")]
 	private void PreviewScore() { _home = _away = -1; SetScore(0, 51); }
 }

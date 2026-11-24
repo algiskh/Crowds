@@ -158,6 +158,11 @@ namespace ECS
 				move.Direction = Vector2.zero;
 			}
 
+			// Ice: Speed 0 only zeroes the desired velocity — the slide itself has to be killed too.
+			var inertiaPool = world.GetPool<InertiaComponent>();
+			foreach (var entity in world.Filter<InertiaComponent>().End())
+				Inertia.Stop(ref inertiaPool.Get(entity));
+
 			// Mobs stay alive and switch to Idle: AnimationSystem/CrowdRenderSystem aren't tied
 			// to the pause and will finish the state change (we don't pause the animators).
 			foreach (var entity in world.Filter<MobComponent>().End())

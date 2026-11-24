@@ -72,6 +72,13 @@ public struct EffectPoolComponent
 }
 #endregion
 
+// Wading in shallow water (ShallowWater pools): how deep the visual is sunk right now, metres (WadeSystem).
+// Skinned visuals are lowered via their transform, VAT crowds via the draw matrix (CrowdRenderSystem).
+public struct WadeComponent
+{
+	public float Depth;
+}
+
 public struct MobComponent
 {
 	public Mob Value;
@@ -779,6 +786,8 @@ public struct MissionComponent
 	public List<LevelKeyPickup> Keys;
 	public List<LevelZone> Zones;
 	public List<StageLoot> StageLoots;
+	// Scene hint arrows (tutorial): shown only during their stages (MissionSystem.OnStageStart).
+	public List<TutorialArrow> Arrows;
 	public HashSet<string> CollectedKeys;
 	public HashSet<string> OpenedGates;
 }
@@ -854,6 +863,9 @@ public struct ActiveBonus
 	// Player-following VFX (parented to the player). BonusSystem owns its lifecycle:
 	// reused on a same-type refresh (no duplicates) and returned to the pool on expiry.
 	public SceneEffect Effect;
+	// Level-override extras (BonusLevelOverride.ExtraModifiers, e.g. SkatesModifier) granted with the bonus,
+	// same Lifetime; removed together with it. Null when the level has no override.
+	public Modifier[] Extras;
 }
 
 // Singleton: list of the player's active bonuses. BonusSystem prunes expired ones and drives the UI.

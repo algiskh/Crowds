@@ -14,7 +14,7 @@ public sealed class LootAura : MonoBehaviour
 {
 	private const int TextureSize = 128;
 	private const float Diameter = 1.7f;
-	private const float GroundOffset = 0.035f;
+	private const float GroundOffset = 0.15f; // above every floor dressing layer (suburb ground tops out at ~0.09 m) + navmesh height error
 	private const float PulseSpeed = 2.6f;
 
 	private static Sprite _sprite;

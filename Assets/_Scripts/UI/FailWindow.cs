@@ -15,9 +15,13 @@ public class FailWindow : MonoBehaviour
 		_restartButton.onClick.AddListener(OnPressRestart);
 	}
 
+	// "Exit" returns to the main menu (it used to call Application.Quit: nothing in the editor, the whole game
+	// closed in a build). Same as the pause menu: timeScale reset, plain load — the main menu has no EntryPoint to
+	// lift a loading curtain.
 	private void OnPressQuit()
 	{
-		Application.Quit();
+		Time.timeScale = 1f;
+		SceneManager.LoadScene(ECS.PauseMenuSystem.MainMenuScene);
 	}
 
 	private void OnPressRestart()

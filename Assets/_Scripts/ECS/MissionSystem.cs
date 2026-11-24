@@ -19,6 +19,8 @@ namespace ECS
 		private ObjectiveBanner _banner;
 		private DifficultyStage _stage;
 		private int _shownRemaining = -1;
+		// Stage objective with the {Action} tokens replaced by key names (InputHintFormatter).
+		private string _objective;
 
 		public void Run(IEcsSystems systems)
 		{
@@ -125,7 +127,15 @@ namespace ECS
 					if (stageLoot != null && stageLoot.OnStage == level)
 						SpawnStageLoot(world, stageLoot);
 
-			_banner.SetText(stage.Objective);
+			if (mission.Arrows != null)
+				foreach (var arrow in mission.Arrows)
+					if (arrow != null)
+						arrow.ApplyStage(level);
+
+			// {Attack} / {Melee} / {Move}… → current key names (rebinds respected).
+			var map = world.TryGetAsSingleton<InputActionsComponent>(out var input) ? input.ActionMap : null;
+			_objective = InputHintFormatter.Format(stage.Objective, map);
+			_banner.SetText(_objective);
 		}
 
 		private static void OpenGate(EcsWorld world, ref MissionComponent mission, LevelGate gate)
@@ -193,7 +203,7 @@ namespace ECS
 				return;
 			_shownRemaining = remaining;
 			string counter = "Осталось: " + remaining;
-			_banner.SetText(string.IsNullOrEmpty(stage.Objective) ? counter : stage.Objective + "\n" + counter);
+			_banner.SetText(string.IsNullOrEmpty(_objective) ? counter : _objective + "\n" + counter);
 		}
 
 		/// <summary>True when <paramref name="position"/> is inside any LevelZone with <paramref name="zoneId"/>.</summary>

@@ -46,7 +46,7 @@ Timing uses plain `Time.deltaTime` — the project pauses with a **flag**, not `
 | `ECS/FailSequenceSystem.cs` | Drives the phases + red fade. Also holds `GameOverActions.StopAllMoves` (shared by win & fail). `PhaseDuration = 0.5f`. Registered after `CheckEndSystem`. |
 | `ECS/CheckEndSystem.cs` | Win → immediate stop + WinWindow. Fail → kick off the sequence (guarded so repeated death damage during the cinematic doesn't restart it). |
 | `UI/FailScreenOverlay.cs` | Runtime-built full-screen red `Canvas`/`Image` (sortingOrder 1000, `raycastTarget` off so it never eats menu clicks). Created lazily; lives in the active scene → destroyed on restart. |
-| `UI/FailWindow.cs` | `Show` bumps its canvas to sortingOrder 1001 (above the red tint). `Restart` resets `Time.timeScale` and reloads the active scene by build index. |
+| `UI/FailWindow.cs` | `Show` bumps its canvas to sortingOrder 1001 (above the red tint). `Restart` resets `Time.timeScale` and reloads the active scene by build index. `Exit` (also on `WinWindow`) resets `Time.timeScale` and loads the main menu (`PauseMenuSystem.MainMenuScene`, no loading curtain). |
 | `ECS/InputSystem.cs`, `ECS/GrenadeThrowSystem.cs` | Honor `InputLock.Locked` alongside `IsPaused`. |
 
 ## Tuning

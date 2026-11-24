@@ -15,13 +15,17 @@ public static class ModifierConstants
 	public static string SpeedReloadDebuff = "SpeedReloadDebuff";
 	public static string SpeedBonusBuff = "SpeedBoostBuff";
 	public static string SpeedOilSlick = "SpeedOilSlick";
+	public static string SpeedHedge = "SpeedHedge";
+	public static string SpeedWater = "SpeedWater";
 
 	public static string TractionIce = "TractionIce";
+	public static string SkatesCounterGrip = "SkatesCounterGrip";
 
 	public static string DamageMeleeBleeding = "DamageMeleeBleeding";
 	public static string DamageMeleeBurning = "DamageMeleeBurning";
 	public static string DamageShotBleeding = "DamageShotBleeding";
 	public static string DamagePoisoning = "DamagePoisoning";
+	public static string DamageSewerStench = "DamageSewerStench";
 
 	public static string HealthBleeding = "HealthBleeding";
 	public static string HealthPoisoning = "HealthPoisoning";
@@ -79,6 +83,9 @@ public abstract class Modifier
 		if (type == typeof(TractionModifier))
 			return GetConstantsByPrefix("Traction");
 
+		if (type == typeof(SkatesModifier))
+			return GetConstantsByPrefix("Skates");
+
 		if (type == typeof(MeleeStrengthModifier))
 			return GetConstantsByPrefix("Strength");
 
@@ -120,6 +127,19 @@ public class SpeedModifier : Modifier
 /// </summary>
 [Serializable]
 public class TractionModifier : Modifier
+{
+
+}
+
+/// <summary>
+/// Skates (hockey-arena override of the speed bonus): Value = grip multiplier while counter-steering on slippery ground.
+/// When the desired velocity points against the current slide, the TractionModifier grip is scaled up to Value
+/// (fully when exactly opposite, lerped by −cos of the angle), so reversing/braking beats the inertia. Turning
+/// sideways or gliding without input is unchanged. Several → multiplied (Utils.GetModifier). Player only
+/// (PlayerMovementSystem → Inertia). See Docs/HockeyLevelFeature.md.
+/// </summary>
+[Serializable]
+public class SkatesModifier : Modifier
 {
 
 }

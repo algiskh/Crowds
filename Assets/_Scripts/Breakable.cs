@@ -22,8 +22,18 @@ public class Breakable : MonoBehaviour
 	[Tooltip("Points on the mesh where destruction effects spawn (referenced by index from the config).")]
 	[SerializeField] private Transform[] _effectPoints;
 
+	[Tooltip("Use this instance's loot instead of the config's (e.g. a crate that always holds a specific bonus).")]
+	[SerializeField, BoxGroup("Loot override")] private bool _overrideLoot;
+	[SerializeField, BoxGroup("Loot override"), ShowIf(nameof(_overrideLoot))] private PossibleLoot[] _lootTable;
+	[SerializeField, BoxGroup("Loot override"), ShowIf(nameof(_overrideLoot)), MinValue(0)] private int _lootCount = 1;
+
 	public BreakableConfig Config => _config;
 	public Collider Collider => _collider;
+
+	/// <summary>True when this instance replaces the config's drop table (<see cref="LootTable"/>/<see cref="LootCount"/>).</summary>
+	public bool OverridesLoot => _overrideLoot;
+	public PossibleLoot[] LootTable => _lootTable;
+	public int LootCount => _lootCount;
 
 	private void Awake()
 	{

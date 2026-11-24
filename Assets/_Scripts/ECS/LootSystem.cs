@@ -1,5 +1,6 @@
 ﻿using Leopotam.EcsLite;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace ECS
 {
@@ -238,9 +239,16 @@ namespace ECS
 										? mainHolder.Value.BonusConfigHolder.Default
 										: mainHolder.Value.BonusConfigHolder.GetConfig(selectedLoot.Id))
 									: null;
-								sprite = bonusCfg != null && bonusCfg.Preview != null
-									? bonusCfg.Preview
-									: mainHolder.Value.SpriteHolder.GetSpriteById(selectedLoot.LootType.ToString());
+								// Level override first (e.g. skates instead of the speed boot on the ice arena).
+								var bonusOverride = bonusCfg != null && world.TryGetAsSingleton<CurrentLevelConfigComponent>(out var currentLevel)
+								                    && currentLevel.Value != null
+									? currentLevel.Value.GetBonusOverride(bonusCfg.Id)
+									: null;
+								sprite = bonusOverride != null && bonusOverride.Preview != null
+									? bonusOverride.Preview
+									: bonusCfg != null && bonusCfg.Preview != null
+										? bonusCfg.Preview
+										: mainHolder.Value.SpriteHolder.GetSpriteById(selectedLoot.LootType.ToString());
 								break;
 							default:
 								sprite = mainHolder.Value.SpriteHolder.GetSpriteById(selectedLoot.LootType.ToString());
@@ -264,7 +272,7 @@ namespace ECS
 
 					disposableComponent.IsDisposed = false;
 					loot.gameObject.SetActive(true);
-					loot.transform.position = requestLootSpawn.Position;
+					loot.transform.position = ResolveSpawnPosition(requestLootSpawn.Position);
 
 					collisionComponent.CollisionType = CollisionType.Loot;
 					//collisionComponent.Radius = mainHolder.Value.DefaultCollisionRadius;
@@ -279,6 +287,27 @@ namespace ECS
 				world.DelEntity(entity); // delete request entity
 			}
 			#endregion
+		}
+
+		// How far around a blocked drop point to look for a reachable spot (a van is 2.2 m wide + carve margin).
+		private const float FreeSpotSearchRadius = 5f;
+		// Horizontal shift below this = the point already is on the navmesh (only the height differs).
+		private const float FreeSpotTolerance = 0.05f;
+
+		/// <summary>
+		/// Keeps loot out of obstacles: a drop point inside a navmesh hole (carving vehicles, breakables, gates, baked
+		/// walls) moves to the nearest walkable point within <see cref="FreeSpotSearchRadius"/>, so the player can reach
+		/// it. Only X/Z change (the floor height of the request is kept). No navmesh nearby (e.g. an inactive Sliding
+		/// sector) → the point is used as is.
+		/// </summary>
+		private static Vector3 ResolveSpawnPosition(Vector3 position)
+		{
+			if (!NavMesh.SamplePosition(position, out var hit, FreeSpotSearchRadius, NavMesh.AllAreas))
+				return position;
+			float dx = hit.position.x - position.x, dz = hit.position.z - position.z;
+			if (dx * dx + dz * dz <= FreeSpotTolerance * FreeSpotTolerance)
+				return position;
+			return new Vector3(hit.position.x, position.y, hit.position.z);
 		}
 
 		// Zero-chance stand-in for a banned weapon drop: keeps the table length (single-entry tables are taken

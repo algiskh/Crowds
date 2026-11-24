@@ -93,6 +93,13 @@ in the prefab keeps its hand-tuned local pose on re-runs. Example: `Gunner_Model
 A preset reference whose fileID doesn't resolve (hand-written YAML; an FBX root's fileID differs per file) is
 recovered by the guid in the preset's YAML (`Recovered reference …` in the log) and saved back.
 
+**Reference check:** the preset's *Reference check* section (`ReferenceImage` — e.g. a Figma frame export in
+`Assets/REFs/`, `ReferenceView` Front/Back/Left/Right, `ReferenceMode` Overlay/SideBySide, opacity/scale/offset/flip)
++ **Show Reference** / **Hide Reference** → `MobReferenceOverlay` opens the prefab in Prefab Mode, sets an
+orthographic Scene camera from that side and lays the picture over the model as a `DontSave` sprite (never saved
+into the prefab): margins trimmed by alpha or the corner colour, drawn character scaled to the visual's height and
+stood on its feet. Inspector changes update it live. Logs with `[MobRef]`.
+
 All steps log with `[MobModel]` (verts/tris, scale, clip bindings, drift). Example: `FastMob_ModelSetup`
 (ZombieFemale 5k). A project skill `mob-model` (`.claude/skills/`) describes the agent-side workflow.
 
@@ -159,7 +166,8 @@ Notes:
 FBX exporter always adds the armature object as an extra root node (`Armature/mixamorig:Hips/...`) and, with
 *Add Leaf Bones*, `*_end` bones — such a clip doesn't bind to a Mixamo model. `BlenderClipImport.Import(fbx, model,
 out.anim, loop)` aligns the import scale with the model (`MobModelPipeline.SetupClip`), writes an `.anim` copy with
-the root node removed and `_end` bones dropped. The Blender file's hips-parent space (Unity often turns the
+the root node removed and `_end` bones dropped; curves on the model root itself (path "": Blender's baked armature
+object transform, scale 0.01 — it shrank the mob to nothing) are always dropped. The Blender file's hips-parent space (Unity often turns the
 `Armature` node into the asset root, so the paths bind but its rotation/scale sit outside the clip) is expressed in the
 model's hips-parent space and folded into the hips curves (scale → every bone position); the remaining unit factor is the median
 ratio of the model's bone lengths to the clip's (Mixamo bones are rigid); the still tail of Blender's scene range (250 frames by default)
@@ -167,4 +175,6 @@ is trimmed; hips yaw vs the reference clip is checked (a 90°-multiple export ax
 grounded (forward kinematics from the curves + model bind pose, no scene sampling; hips shifted so the lowest foot/toe point over the
 clip stands where the reference clip's feet do — Blender's rest pose may keep the hips at the origin). Then it makes the
 clip in-place, validates bindings and logs the hip height next to a reference clip
-(`[BlenderClip]`); `SetState` adds/repoints one controller state. Used for `Zombie1_skid.anim` → `Zombie1.controller`.
+(`[BlenderClip]`); `SetState` adds/repoints one controller state. Used for `Zombie1_skid.anim` → `Zombie1.controller`; Zombie1 is the first zombie's visual (`Mob.prefab` nests
+`RAW/model@Zombie Running.prefab`, configs Slow/SlowStrong), so the import menu then re-bakes its VAT
+(`Mob_CrowdLibrary`, also **Tools ▸ Crowds ▸ Zombie1 ▸ Rebake Mob VAT**).

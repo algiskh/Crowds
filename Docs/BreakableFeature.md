@@ -110,6 +110,10 @@ same frame). For each breakable at `CurrentHealth <= 0`:
   no per-frame managed allocations.
 - Destruction work is O(destroyed-this-frame); `MobContact` polling runs only for opted-in props on a cooldown.
 
+## Per-instance loot override
+
+`Breakable._overrideLoot` + `_lootTable` + `_lootCount` replace the config's drop table for one placed instance (`BreakableSystem` uses `view.OverridesLoot`; spread still comes from the config). Use it when a regular crate must hold something specific, such as the skates crates on the ice arena.
+
 ## Editor setup
 
 1. **Prefab**: a `Breakable` with a **mesh**, a **solid `Collider`** on a breakable layer, a **carving

@@ -15,6 +15,17 @@ namespace ECS
 		/// <summary>Time.deltaTime, or 0 while the world is frozen (see <see cref="IsWorldFrozen"/>).</summary>
 		public static float GameDeltaTime(this EcsWorld world) => world.IsWorldFrozen() ? 0f : UnityEngine.Time.deltaTime;
 
+		/// <summary>
+		/// Longest frame step that movement integrates in one go (s). A hitch (GC, alt-tab back with runInBackground off,
+		/// the freeze/unfreeze scans) gives Time.deltaTime up to 0.33 s — moving by that at once teleported the player
+		/// (and sliding mobs) by metres. Below 20 FPS movement slows down instead of jumping.
+		/// </summary>
+		public const float MaxMoveDeltaTime = 0.05f;
+
+		/// <summary>Movement step: <see cref="Time.deltaTime"/> clamped to <see cref="MaxMoveDeltaTime"/> (0 while frozen).</summary>
+		public static float MoveDeltaTime(this EcsWorld world) =>
+			world.IsWorldFrozen() ? 0f : Mathf.Min(UnityEngine.Time.deltaTime, MaxMoveDeltaTime);
+
 		public delegate void RefEntityAction<T>(ref T item) where T : struct;
 
 		public static ref T GetAsSingleton<T>(this EcsWorld world) where T : struct

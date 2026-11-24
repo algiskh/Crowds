@@ -28,8 +28,9 @@ namespace ECS
 		/// This frame's displacement for <paramref name="entity"/>. Adds InertiaComponent lazily, only once the entity
 		/// first meets slippery ground (no cost for everybody else).
 		/// </summary>
+		/// <param name="counterGrip">Grip multiplier while steering against the slide (SkatesModifier, 1 = none).</param>
 		public static Vector3 Displacement(EcsPool<InertiaComponent> pool, int entity, Vector3 position,
-			Vector3 desiredVelocity, float grip, float dt)
+			Vector3 desiredVelocity, float grip, float dt, float counterGrip = 1f)
 		{
 			bool slippery = !float.IsPositiveInfinity(grip);
 			if (!pool.Has(entity))
@@ -46,10 +47,19 @@ namespace ECS
 				added.Skidding = false;
 				added.SkidTimer = 0f;
 			}
-			return Step(ref pool.Get(entity), position, desiredVelocity, grip, dt);
+			return Step(ref pool.Get(entity), position, desiredVelocity, grip, dt, counterGrip);
 		}
 
-		public static Vector3 Step(ref InertiaComponent state, Vector3 position, Vector3 desiredVelocity, float grip, float dt)
+		/// <summary>Kill the slide at once (game over / death): no velocity, no blocked-step check on the next frame.</summary>
+		public static void Stop(ref InertiaComponent state)
+		{
+			state.Velocity = Vector3.zero;
+			state.LastStep = Vector3.zero;
+			state.Sliding = false;
+		}
+
+		public static Vector3 Step(ref InertiaComponent state, Vector3 position, Vector3 desiredVelocity, float grip, float dt,
+			float counterGrip = 1f)
 		{
 			desiredVelocity.y = 0f;
 			if (float.IsPositiveInfinity(grip) || dt <= 0f)
@@ -68,13 +78,26 @@ namespace ECS
 					state.Velocity = moved / state.LastDt; // blocked: keep only what really moved (slides along walls)
 			}
 
-			state.Velocity = Vector3.MoveTowards(state.Velocity, desiredVelocity, grip * dt);
+			state.Velocity = Vector3.MoveTowards(state.Velocity, desiredVelocity, CounterSteerGrip(state.Velocity, desiredVelocity, grip, counterGrip) * dt);
 			Vector3 step = state.Velocity * dt;
 			state.PrevPosition = position;
 			state.LastStep = step;
 			state.LastDt = dt;
 			state.Sliding = true;
 			return step;
+		}
+
+		// Skates: steering against the slide (desired · velocity < 0) bites harder — grip × lerp(1, counterGrip, −cos).
+		// Exactly opposite = full multiplier, sideways or no input = plain grip (gliding stays as slippery as before).
+		private static float CounterSteerGrip(Vector3 velocity, Vector3 desired, float grip, float counterGrip)
+		{
+			if (counterGrip <= 1f)
+				return grip;
+			float vSqr = velocity.sqrMagnitude, dSqr = desired.sqrMagnitude;
+			if (vSqr < 1e-4f || dSqr < 1e-4f)
+				return grip;
+			float cos = Vector3.Dot(velocity, desired) / Mathf.Sqrt(vSqr * dSqr);
+			return cos >= 0f ? grip : grip * Mathf.Lerp(1f, counterGrip, -cos);
 		}
 	}
 }

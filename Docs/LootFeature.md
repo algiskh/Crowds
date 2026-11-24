@@ -69,7 +69,9 @@ lifetime countdown, and return-to-pool. Each `Run`:
                         b. take a Loot from the pool (or Instantiate MainHolder.LootPrefab)
                         c. build the loot entity (LootComponent + ColliderComponent + DisposableComponent
                            + LookerAtCamera billboard)
-                        d. resolve the sprite by type, position it, (for Mob) attach LifeTimeComponent
+                        d. resolve the sprite by type, position it (ResolveSpawnPosition: a point inside a
+                           navmesh hole — vehicle, breakable, gate, wall — moves to the nearest walkable
+                           point within 5 m, X/Z only; no navmesh nearby → as is), (for Mob) attach LifeTimeComponent
                         e. fire LootSpawnedEventComponent, delete the request
 ```
 
@@ -191,6 +193,8 @@ clean.
 ## Ground aura (`LootAura`)
 
 Every loot item gets a flat ring on the ground under it (`LootAura.cs`, created in `Loot.Awake`). The ring is designed to read on any floor:
+
+The ring floats **0.15 m** above the loot position (`LootAura.GroundOffset`). That clears every floor dressing layer (suburb ground tops out at about 0.09 m) and the navmesh height error. At 0.035 m it z-fought with the road surface in "Тупик Мейпл-Корт" and flickered.
 - On dark floors, you see the bright ring and the soft inner glow, tinted by loot type.
 - On light floors (ice, concrete), you see the dark outer halo and the thin dark inner edge. The tint doesn't affect them because black stays black.
 

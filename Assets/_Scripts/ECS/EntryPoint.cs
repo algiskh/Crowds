@@ -130,6 +130,12 @@ namespace ECS
 				await PoolPrewarmer.RunAsync(_world, _mainHolder, _player.transform.position, token);
 				LoadingScreen.SetProgress(0.8f);
 
+				// 3c) Editor only: the camera keeps rendering the level behind the curtain, which requests every visible
+				//     shader variant; async shader compilation draws them cyan until ready (e.g. Lit See-Through after a
+				//     shader change). Wait for it before the systems start, so nothing plays behind the curtain.
+				//     Builds have the variants prebuilt.
+				await WaitForShaderCompilation(token);
+
 				// 4) Register systems and allow them to run.
 				RegisterSystems();
 				_initialized = true;
@@ -154,6 +160,23 @@ namespace ECS
 				if (!completed && !token.IsCancellationRequested)
 					LoadingScreen.HideAndDestroy();
 			}
+		}
+
+		private async UniTask WaitForShaderCompilation(CancellationToken token)
+		{
+#if UNITY_EDITOR
+			const float timeout = 60f; // never hang on the curtain
+			float start = Time.realtimeSinceStartup;
+			// A few frames first: compile requests are issued while the frames render.
+			for (int i = 0; i < 3; i++)
+				await UniTask.Yield(PlayerLoopTiming.Update, token);
+			while (UnityEditor.ShaderUtil.anythingCompiling && Time.realtimeSinceStartup - start < timeout)
+				await UniTask.Yield(PlayerLoopTiming.Update, token);
+			// One more rendered frame with the compiled shaders before the curtain lifts.
+			await UniTask.WaitForEndOfFrame(this, token);
+#else
+			await UniTask.CompletedTask;
+#endif
 		}
 
 		private void OnDestroy()
@@ -550,7 +573,8 @@ namespace ECS
 			var keys = FindObjectsByType<LevelKeyPickup>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 			var zones = FindObjectsByType<LevelZone>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 			var stageLoots = FindObjectsByType<StageLoot>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-			if (gates.Length + keys.Length + zones.Length + stageLoots.Length == 0)
+			var arrows = FindObjectsByType<TutorialArrow>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+			if (gates.Length + keys.Length + zones.Length + stageLoots.Length + arrows.Length == 0)
 				return;
 
 			ref var mission = ref _world.CreateSimpleEntity<MissionComponent>();
@@ -558,6 +582,7 @@ namespace ECS
 			mission.Keys = new List<LevelKeyPickup>(keys);
 			mission.Zones = new List<LevelZone>(zones);
 			mission.StageLoots = new List<StageLoot>(stageLoots);
+			mission.Arrows = new List<TutorialArrow>(arrows);
 			mission.CollectedKeys = new HashSet<string>();
 			mission.OpenedGates = new HashSet<string>();
 		}
@@ -607,6 +632,7 @@ namespace ECS
 				.Add(new LookAtCursorSystem())
 
 				.Add(new AnimationSystem())
+				.Add(new WadeSystem()) // sinks visuals in pools; before CrowdRenderSystem (VAT matrices)
 				.Add(new CrowdRenderSystem())
 				.Add(new ModifierZoneSystem()) // oil slicks / ice hand out their modifiers before they tick
 				.Add(new ModifiersSystem())
@@ -648,6 +674,7 @@ namespace ECS
 				.Add(new PauseSystem())
 				.Add(new WorldFreezeSystem())
 				.Add(new CameraShakeSystem(apply: true)) // last: the frame renders shaken
+				.Add(new SeeThroughSystem()) // after the final camera position: hole in occluders around the player
 				.Init();
 			#endregion
 		}

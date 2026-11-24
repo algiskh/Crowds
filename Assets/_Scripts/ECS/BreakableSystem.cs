@@ -166,10 +166,14 @@ namespace ECS
 
 			// 2) Loot with spread: the Vogel spiral (r = spread*sqrt(i)) gives a minimum distance of ~spread
 			//    between neighboring items. Each request independently passes the drop table to LootSystem.
-			if (config != null && config.LootTable != null && config.LootTable.Length > 0 && config.LootCount > 0)
+			//    The table/count may be overridden per instance (Breakable._overrideLoot), e.g. a bonus crate.
+			bool lootOverride = view != null && view.OverridesLoot;
+			var lootTable = lootOverride ? view.LootTable : config != null ? config.LootTable : null;
+			int lootCount = lootOverride ? view.LootCount : config != null ? config.LootCount : 0;
+			if (lootTable != null && lootTable.Length > 0 && lootCount > 0)
 			{
-				float spread = Mathf.Max(0f, config.LootSpread);
-				for (int i = 0; i < config.LootCount; i++)
+				float spread = config != null ? Mathf.Max(0f, config.LootSpread) : 0f;
+				for (int i = 0; i < lootCount; i++)
 				{
 					Vector3 pos = center;
 					if (spread > 0f)
@@ -184,7 +188,7 @@ namespace ECS
 					// The Breakable entity is deleted the same frame — don't attach a source (LootSystem
 					// doesn't dereference SourceEntity for non-AdditionalSpawn sources).
 					lootRequest.SourceEntity = -1;
-					lootRequest.PossibleLoots = config.LootTable;
+					lootRequest.PossibleLoots = lootTable;
 					lootRequest.Position = pos;
 				}
 			}

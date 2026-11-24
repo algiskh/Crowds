@@ -59,6 +59,7 @@ namespace ECS
 			var mobPool = world.GetPool<MobComponent>();
 			var crowdPool = world.GetPool<CrowdInstanceComponent>();
 			var animPool = world.GetPool<AnimationStateComponent>();
+			var wadePool = world.GetPool<WadeComponent>();
 
 			foreach (var batch in _batches.Values)
 				batch.Clear();
@@ -101,7 +102,15 @@ namespace ECS
 					_batches[library] = b;
 				}
 
-				b.Matrices.Add(mob.Value.transform.localToWorldMatrix);
+				var matrix = mob.Value.transform.localToWorldMatrix;
+				// Wading in a pool (WadeSystem): the instanced body sinks like the skinned one would.
+				if (wadePool.Has(entity))
+				{
+					float depth = wadePool.Get(entity).Depth;
+					if (depth > 0f)
+						matrix = Matrix4x4.Translate(new Vector3(0f, -depth, 0f)) * matrix;
+				}
+				b.Matrices.Add(matrix);
 				b.Frames.Add(frame);
 				// Per-config tint (MobConfig.Tint). White => unchanged. Zero (unset) would be black,
 				// but MobSpawnSystem always seeds Tint from the config, which defaults to white.

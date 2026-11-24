@@ -123,3 +123,17 @@ One instance of each kind is shown silently next to the player for 3 rendered fr
 The counts and an optional recorded `ShaderVariantCollection` live in the `MainHolder` "Warm-up" box. To record a collection: play the level, then Project Settings ▸ Graphics ▸ Shader Loading ▸ Save to asset.
 
 Progress milestones are now 0.2 / 0.5 / 0.7 / 0.8 / 1.0.
+
+## Shader compilation wait (editor only, added 22.11.2026)
+
+In the editor, shaders compile asynchronously. Until a variant is ready, Unity draws it as a cyan placeholder. The
+whole Infinite Scroll level showed up cyan for about a second after `Crowds/Lit See-Through` arrived.
+
+`InitializeAsync` step 3c (`EntryPoint.WaitForShaderCompilation`) now runs right after the pool warm-up and before
+`RegisterSystems`, so nothing plays behind the curtain:
+
+- it yields 3 frames, so the camera rendering behind the curtain requests every visible variant;
+- it then waits while `ShaderUtil.anythingCompiling` is true (60 s cap);
+- it renders one more frame before the boot goes on.
+
+In builds this step is a no-op, because the variants are prebuilt.

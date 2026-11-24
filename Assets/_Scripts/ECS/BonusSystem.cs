@@ -35,7 +35,7 @@ namespace ECS
 			foreach (var entity in world.Filter<RequestApplyBonusComponent>().End())
 			{
 				ref var request = ref requestPool.Get(entity);
-				ApplyBonus(mainHolder.Value, playerEntity, modifierPool,
+				ApplyBonus(world, mainHolder.Value, playerEntity, modifierPool,
 					ref activeBonuses, ref effectPool, effectsHolder.Value, request.ConfigId);
 				world.DelEntity(entity);
 			}
@@ -54,6 +54,9 @@ namespace ECS
 					// The accompanying VFX ended together with the bonus — return it to the pool.
 					if (bonus.Effect != null)
 						effectPool.Pool(bonus.Effect);
+					// Extras share the Lifetime and normally expire in ModifiersSystem already — make sure anyway.
+					if (modifierPool.Has(playerEntity))
+						RemoveExtras(ref modifierPool.Get(playerEntity), bonus.Extras);
 					list.RemoveAt(i);
 					continue;
 				}
@@ -66,7 +69,7 @@ namespace ECS
 			#endregion
 		}
 
-		private void ApplyBonus(MainHolder mainHolder, int playerEntity,
+		private void ApplyBonus(EcsWorld world, MainHolder mainHolder, int playerEntity,
 			EcsPool<ModifierOwnerComponent> modifierPool, ref ActiveBonusesComponent activeBonuses,
 			ref EffectPoolComponent effectPool, EffectsHolder effectsHolder, string configId)
 		{
@@ -103,12 +106,35 @@ namespace ECS
 				if (list[i].Type != config.Type)
 					continue;
 				modifierOwner.Modifiers.Remove(list[i].Modifier);
+				RemoveExtras(ref modifierOwner, list[i].Extras);
 				if (list[i].Effect != null)
 					reusedEffect = list[i].Effect;
 				list.RemoveAt(i);
 			}
 
 			modifierOwner.Modifiers.Add(modifier);
+
+			// Level override extras (e.g. SkatesModifier on the ice arena): cloned, same duration as the bonus.
+			Modifier[] extras = null;
+			if (world.TryGetAsSingleton<CurrentLevelConfigComponent>(out var level) && level.Value != null)
+			{
+				var bonusOverride = level.Value.GetBonusOverride(config.Id);
+				if (bonusOverride?.ExtraModifiers != null && bonusOverride.ExtraModifiers.Length > 0)
+				{
+					var granted = new List<Modifier>(bonusOverride.ExtraModifiers.Length);
+					foreach (var template in bonusOverride.ExtraModifiers)
+					{
+						if (template == null)
+							continue;
+						var extra = template.Clone<Modifier>();
+						extra.Lifetime = modifier.Lifetime;
+						extra.HasEffect = false; // the bonus itself owns the follow-VFX
+						modifierOwner.Modifiers.Add(extra);
+						granted.Add(extra);
+					}
+					extras = granted.ToArray();
+				}
+			}
 
 			// Player-accompanying VFX: reuse from the previous bonus of the same type,
 			// otherwise take from the pool and parent to the player — the effect rides with them the whole duration.
@@ -121,8 +147,17 @@ namespace ECS
 				Type = config.Type,
 				Modifier = modifier,
 				TotalDuration = modifier.Lifetime,
-				Effect = effect
+				Effect = effect,
+				Extras = extras
 			});
+		}
+
+		private static void RemoveExtras(ref ModifierOwnerComponent owner, Modifier[] extras)
+		{
+			if (extras == null || owner.Modifiers == null)
+				return;
+			foreach (var extra in extras)
+				owner.Modifiers.Remove(extra);
 		}
 
 		/// <summary>
