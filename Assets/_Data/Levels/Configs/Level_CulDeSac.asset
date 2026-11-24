@@ -1,0 +1,229 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3734ec2c50bdc2f4b8869a485acd283e, type: 3}
+  m_Name: Level_CulDeSac
+  m_EditorClassIdentifier: 
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects:
+    - {fileID: 11400000, guid: 14ca4b12f78529f4e8a6f7ca3eec363d, type: 2}
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: _AdditionalLootConfigs
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[AdditionalLootConfig, Assembly-CSharp]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 1|AdditionalLootConfig, Assembly-CSharp
+    - Name: AdditionalLoot
+      Entry: 7
+      Data: 2|System.Collections.Generic.Dictionary`2[[SmartConditionWrapper, Assembly-CSharp],[PossibleLoot[],
+        Assembly-CSharp]], mscorlib
+    - Name: comparer
+      Entry: 7
+      Data: 3|System.Collections.Generic.ObjectEqualityComparer`1[[SmartConditionWrapper,
+        Assembly-CSharp]], mscorlib
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 
+    - Name: $k
+      Entry: 10
+      Data: 0
+    - Name: $v
+      Entry: 7
+      Data: 4|PossibleLoot[], Assembly-CSharp
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 5|PossibleLoot, Assembly-CSharp
+    - Name: LootType
+      Entry: 3
+      Data: 0
+    - Name: Id
+      Entry: 1
+      Data: ammo5
+    - Name: Count
+      Entry: 3
+      Data: 5
+    - Name: Chance
+      Entry: 4
+      Data: 0.5
+    - Name: AmmoCaliber
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 6|PossibleLoot, Assembly-CSharp
+    - Name: LootType
+      Entry: 3
+      Data: 0
+    - Name: Id
+      Entry: 1
+      Data: ammo10
+    - Name: Count
+      Entry: 3
+      Data: 10
+    - Name: Chance
+      Entry: 4
+      Data: 0.25
+    - Name: AmmoCaliber
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  _difficultyStages:
+  - DifficultyLevel: 1
+    DifficultyTimer: 25
+    SpeedMultiplier: 1.2
+    InterSpawnCooldown: 1.5
+    RestTime: 0
+    EndConditions:
+    - {fileID: 11400000, guid: 8f4a20064d66c084d954fa1a351ef77f, type: 2}
+    ShowTimer: 0
+    SpawnOnlyWhileTimer: 0
+    Objective: 
+    MobQuota: []
+  - DifficultyLevel: 2
+    DifficultyTimer: 60
+    SpeedMultiplier: 2
+    InterSpawnCooldown: 0.7
+    RestTime: 0
+    EndConditions: []
+    ShowTimer: 1
+    SpawnOnlyWhileTimer: 0
+    Objective: 
+    MobQuota: []
+  - DifficultyLevel: 3
+    DifficultyTimer: 60
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.25
+    RestTime: 4
+    EndConditions: []
+    ShowTimer: 1
+    SpawnOnlyWhileTimer: 0
+    Objective: 
+    MobQuota: []
+  - DifficultyLevel: 4
+    DifficultyTimer: 30
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.3
+    RestTime: 8
+    EndConditions: []
+    ShowTimer: 1
+    SpawnOnlyWhileTimer: 0
+    Objective: 
+    MobQuota: []
+  - DifficultyLevel: 5
+    DifficultyTimer: 60
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.24
+    RestTime: 6
+    EndConditions: []
+    ShowTimer: 1
+    SpawnOnlyWhileTimer: 0
+    Objective: 
+    MobQuota: []
+  - DifficultyLevel: 6
+    DifficultyTimer: 60
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.24
+    RestTime: 8
+    EndConditions: []
+    ShowTimer: 1
+    SpawnOnlyWhileTimer: 0
+    Objective: 
+    MobQuota: []
+  - DifficultyLevel: 7
+    DifficultyTimer: 45
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.2
+    RestTime: 8
+    EndConditions: []
+    ShowTimer: 1
+    SpawnOnlyWhileTimer: 0
+    Objective: 
+    MobQuota: []
+  - DifficultyLevel: 8
+    DifficultyTimer: 60
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.18
+    RestTime: 8
+    EndConditions: []
+    ShowTimer: 1
+    SpawnOnlyWhileTimer: 0
+    Objective: 
+    MobQuota: []
+  - DifficultyLevel: 13
+    DifficultyTimer: 0
+    SpeedMultiplier: 1
+    InterSpawnCooldown: 0.5
+    RestTime: 0
+    EndConditions: []
+    ShowTimer: 1
+    SpawnOnlyWhileTimer: 0
+    Objective: 
+    MobQuota: []
+  _sectorMode: 1
+  _activeSectorRadius: 1
+  _spawnDistance: {x: 10, y: 45}
+  _allowedMobWeaponDrops: []
+  _bannedMobAmmoCalibers: 
+  _bannedMobBonusIds:
+  - speedup
+  _bonusOverrides: []
+  references:
+    version: 2
+    RefIds: []

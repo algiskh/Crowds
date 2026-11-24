@@ -15,7 +15,12 @@ namespace Crowds.EditorTools
 	/// Z, the scroll direction; the fixed camera looks −X, so the houses at −X face the screen):
 	///
 	///   [houses + white picket fences, off the platform] | front lawns | sidewalk | grass strip | curb | ROAD |
-	///   curb | grass strip | sidewalk | lawn | drop-off (camera side, left open)
+	///   curb | grass strip | sidewalk | front lawns | [houses + fences, off the platform, camera side]
+	///
+	/// Both sides are lined with the same house prefabs: the far (−X) side faces the camera, the near (+X) side turns
+	/// its facades to the street (yaw −90) and is seen from behind/above — the Lit See-Through shader cuts a soft hole
+	/// where it covers the player. Each sector also gets up to 2 boxy hedges (Hedge.prefab, one per side) on the front
+	/// lawns along a property line: no collider, a ModifierZone that slows whoever pushes through, like an oil slick.
 	///
 	/// Prefabs (Assets/_Prefabs/Suburb), each a single baked mesh with one submesh per material:
 	///   Fence_Picket       — 2 m white picket segment (posts, rails, pointed pickets);
@@ -23,11 +28,14 @@ namespace Crowds.EditorTools
 	///   House_Colonial     — 2-story colonial: full-width porch, shuttered windows, side chimney;
 	///   House_Cape         — 1.5-story cape: steep roof with two dormers, small porch;
 	///   Street_Section     — one 50 m sector of street surface: lawns (mowing stripes), sidewalks with joints,
-	///                        grass strips, curbs, asphalt with a dashed centre line, yard ground under the houses,
-	///                        soil face on the open edge;
+	///                        grass strips, curbs, asphalt with a dashed centre line, yard ground under both
+	///                        house rows;
 	///   Row_A / Row_B / Row_C — 3 lots per sector: houses (per-row siding/roof/door colours), fences closing the gaps
-	///                        between them (the drop behind is never visible), driveways and front walks.
-	/// Level_01: every FloorSector gets a "Suburb" child = Street_Section + Row_A/B/C, so the dressing rides along
+	///                        between them (the drop behind is never visible), driveways and front walks;
+	///   Row_A_East / Row_B_East / Row_C_East — the same, mirrored for the camera side (other colours);
+	///   Hedge              — 6 × 1.2 m clipped hedge (Hedge ModifierZone, SpeedModifier 0.55).
+	/// Level_01: every FloorSector gets a "Suburb" child = Street_Section + Row_A/B/C + Row_X_East + Hedges, so the
+	/// dressing rides along
 	/// when CheckSectorSystem leap-frogs the sector. Three slightly different rows repeating every 150 m — the street
 	/// feels endless. See Docs/SuburbFeature.md.
 	/// </summary>
@@ -47,6 +55,13 @@ namespace Crowds.EditorTools
 		private const float HouseFrontX = -28.5f; // porches + steps end ≈ -25.9: everything stays off the platform
 		private const float FenceX = -31f;        // fences between the houses, a bit behind the facades
 		private const float YardMinX = -48f;
+		// Camera (+X) side, mirrored: steps of the deepest porch (colonial, 3.05 m) end at ≈ 24.45, past the slab edge.
+		private const float HouseFrontEX = 27.5f;
+		private const float FenceEX = 30f;
+		private const float YardMaxX = 46f;
+		// Hedges: footprint (length across the lawn × thickness), height; inset from the slab edge.
+		private const float HedgeLength = 6f, HedgeThickness = 1.2f, HedgeHeight = 1.15f, HedgeEdgeInset = 0.3f;
+		private const float HedgeClearance = 1.5f; // keep this far from spawn/loot points and vehicles
 		private const int LotsPerSector = 3;
 		private const float SectorLength = SlabMaxZ - SlabMinZ; // 50
 
@@ -54,25 +69,53 @@ namespace Crowds.EditorTools
 		private const float HLawn = 0.01f, HRoad = 0.006f, HMark = 0.012f, HWalk = 0.03f, HJoint = 0.031f, HCurb = 0.06f,
 			HPath = 0.025f, HDrive = 0.032f;
 
-		private static Material _grass, _grassAlt, _concrete, _joint, _curb, _asphalt, _lineYellow, _drive, _soil;
-		private static Material _trim, _glass, _porch, _foundation, _brick, _fence;
-		private static Material _sidingCream, _sidingBlue, _sidingSage, _sidingBeige, _sidingGrey, _sidingWhite, _sidingYellow;
-		private static Material _roofCharcoal, _roofBrown, _roofSlate;
-		private static Material _doorRed, _doorNavy, _doorGreen, _doorBlack;
-		private static uint _floorLayers = 1;
+		internal static Material _grass, _grassAlt, _concrete, _joint, _curb, _asphalt, _lineYellow, _drive, _soil;
+		internal static Material _trim, _glass, _porch, _foundation, _brick, _fence, _hedge, _hedgeTop;
+		internal static Material _sidingCream, _sidingBlue, _sidingSage, _sidingBeige, _sidingGrey, _sidingWhite, _sidingYellow;
+		internal static Material _roofCharcoal, _roofBrown, _roofSlate;
+		internal static Material _doorRed, _doorNavy, _doorGreen, _doorBlack;
+		internal static uint _floorLayers = 1;
 
 		// Base slot materials the house prefabs are built with (rows swap them per house).
-		private static Material BaseSiding => _sidingWhite;
-		private static Material BaseRoof => _roofCharcoal;
-		private static Material BaseDoor => _doorBlack;
+		internal static Material BaseSiding => _sidingWhite;
+		internal static Material BaseRoof => _roofCharcoal;
+		internal static Material BaseDoor => _doorBlack;
 
-		private class HouseSpec
+		internal class HouseSpec
 		{
 			public GameObject Prefab;
 			public float MinX, MaxX;   // local extents along the street (house local X)
 			public float DoorX;        // local X of the front door (front walk)
 			public float StepsZ;       // local Z where the porch steps end
 			public float? GarageX;     // local X of the garage door centre (driveway), if any
+		}
+
+		/// <summary>House kit shared with SuburbLevelsBuilder (finite suburb levels).</summary>
+		internal sealed class HouseKit
+		{
+			public GameObject Fence, Hedge;
+			public HouseSpec Ranch, Colonial, Cape;
+		}
+
+		/// <summary>
+		/// Creates the materials and (re)builds the fence, hedge and the three house prefabs in place (same guids, so
+		/// Level_01 picks up any change too). Doesn't touch Level_01 itself.
+		/// </summary>
+		internal static HouseKit BuildKit()
+		{
+			EnsureFolder(PrefabFolder);
+			EnsureFolder(MeshFolder);
+			EnsureFolder(MatFolder);
+			CreateSuburbMaterials();
+			ReadFloorLayers();
+			return new HouseKit
+			{
+				Fence = BuildFence(),
+				Ranch = BuildRanch(),
+				Colonial = BuildColonial(),
+				Cape = BuildCape(),
+				Hedge = BuildHedge(),
+			};
 		}
 
 		[MenuItem("Tools/Crowds/Build Suburb (Infinite Scroll)")]
@@ -89,30 +132,53 @@ namespace Crowds.EditorTools
 			var colonial = BuildColonial();
 			var cape = BuildCape();
 			var street = BuildStreet();
+			var hedge = BuildHedge();
 
 			var rows = new[]
 			{
-				BuildRow("Row_A", fence, new[]
+				BuildRow("Row_A", false, fence, new[]
 				{
 					(ranch, _sidingCream, _roofCharcoal, _doorRed),
 					(colonial, _sidingBlue, _roofSlate, _doorNavy),
 					(cape, _sidingWhite, _roofCharcoal, _doorGreen),
 				}),
-				BuildRow("Row_B", fence, new[]
+				BuildRow("Row_B", false, fence, new[]
 				{
 					(colonial, _sidingSage, _roofBrown, _doorBlack),
 					(cape, _sidingYellow, _roofSlate, _doorNavy),
 					(ranch, _sidingGrey, _roofCharcoal, _doorRed),
 				}),
-				BuildRow("Row_C", fence, new[]
+				BuildRow("Row_C", false, fence, new[]
 				{
 					(cape, _sidingBlue, _roofCharcoal, _doorRed),
 					(ranch, _sidingBeige, _roofBrown, _doorGreen),
 					(colonial, _sidingWhite, _roofSlate, _doorBlack),
 				}),
 			};
+			// Camera side: the same prefabs, other orders/colours, so facing houses never match.
+			var eastRows = new[]
+			{
+				BuildRow("Row_A_East", true, fence, new[]
+				{
+					(colonial, _sidingYellow, _roofCharcoal, _doorGreen),
+					(ranch, _sidingWhite, _roofSlate, _doorNavy),
+					(cape, _sidingSage, _roofBrown, _doorBlack),
+				}),
+				BuildRow("Row_B_East", true, fence, new[]
+				{
+					(cape, _sidingGrey, _roofSlate, _doorRed),
+					(colonial, _sidingCream, _roofBrown, _doorNavy),
+					(ranch, _sidingBlue, _roofCharcoal, _doorBlack),
+				}),
+				BuildRow("Row_C_East", true, fence, new[]
+				{
+					(ranch, _sidingSage, _roofCharcoal, _doorRed),
+					(cape, _sidingWhite, _roofBrown, _doorGreen),
+					(colonial, _sidingBeige, _roofSlate, _doorNavy),
+				}),
+			};
 
-			ApplyToLevel(street, rows);
+			ApplyToLevel(street, rows, eastRows, hedge);
 			AssetDatabase.SaveAssets();
 			AssetDatabase.Refresh();
 			Debug.Log($"{Log} Suburb built and applied to {Level01Path}.");
@@ -120,7 +186,7 @@ namespace Crowds.EditorTools
 
 		// ================================================================== level
 
-		private static void ApplyToLevel(GameObject street, GameObject[] rows)
+		internal static void ApplyToLevel(GameObject street, GameObject[] rows, GameObject[] eastRows, GameObject hedge)
 		{
 			var root = PrefabUtility.LoadPrefabContents(Level01Path);
 			try
@@ -132,6 +198,8 @@ namespace Crowds.EditorTools
 					Debug.LogError($"{Log} No FloorSector in {Level01Path}.");
 					return;
 				}
+				var keepClear = CollectKeepClearPoints(root.transform);
+				int hedges = 0;
 				for (int i = 0; i < sectors.Count; i++)
 				{
 					var sector = sectors[i].transform;
@@ -142,7 +210,11 @@ namespace Crowds.EditorTools
 					suburb.SetParent(sector, false);
 					Instance(street, suburb, "Street");
 					Instance(rows[i % rows.Length], suburb, "Houses");
+					// "Houses_East" — VehicleBuilder looks for driveways only under "Houses".
+					Instance(eastRows[i % eastRows.Length], suburb, "Houses_East");
+					hedges += PlaceHedges(hedge, sector, suburb, i, keepClear);
 				}
+				Debug.Log($"{Log} {hedges} hedges placed.");
 				PrefabUtility.SaveAsPrefabAsset(root, Level01Path, out bool ok);
 				if (!ok)
 					Debug.LogError($"{Log} Failed to save {Level01Path}");
@@ -155,7 +227,129 @@ namespace Crowds.EditorTools
 			}
 		}
 
-		private static GameObject Instance(GameObject prefab, Transform parent, string name)
+		// ================================================================== hedges
+
+		// One hedge per side of the street at most, on the front lawn along a property line between two lots
+		// (perpendicular to the street, from the slab edge toward the sidewalk — walks and driveways sit mid-lot and
+		// at the garages, clear of the lines). Sides alternate the two lines per sector; a line too close to a
+		// spawn/loot point or a vehicle is skipped (then the other one is tried).
+		internal static int PlaceHedges(GameObject hedge, Transform sector, Transform suburb, int sectorIndex,
+			List<Transform> keepClear)
+		{
+			var parent = new GameObject("Hedges").transform;
+			parent.SetParent(suburb, false);
+			var vehicles = sector.Find("Vehicles");
+			float lot = SectorLength / LotsPerSector;
+			var lines = new[] { SlabMinZ + lot, SlabMinZ + lot * 2f };
+			int placed = 0;
+			foreach (bool east in new[] { false, true })
+			{
+				float x = east
+					? SlabMaxX - HedgeEdgeInset - HedgeLength * 0.5f
+					: SlabMinX + HedgeEdgeInset + HedgeLength * 0.5f;
+				int first = (sectorIndex + (east ? 1 : 0)) % 2;
+				bool done = false;
+				for (int k = 0; k < lines.Length && !done; k++)
+				{
+					float z = lines[(first + k) % lines.Length];
+					var centre = new Vector3(x, Top + HLawn, z);
+					if (!IsHedgeSpotClear(sector, centre, keepClear, vehicles, out string blocker))
+					{
+						Debug.Log($"{Log} {sector.name}: hedge spot x {x:0.#}, z {z:0.#} skipped, too close to {blocker}.");
+						continue;
+					}
+					var go = (GameObject)PrefabUtility.InstantiatePrefab(hedge, parent);
+					go.name = east ? "Hedge_East" : "Hedge_West";
+					go.transform.SetLocalPositionAndRotation(centre, Quaternion.identity);
+					placed++;
+					done = true;
+				}
+				if (!done)
+					Debug.LogWarning($"{Log} {sector.name}: no clear spot for the {(east ? "east" : "west")} hedge.");
+			}
+			return placed;
+		}
+
+		internal static bool IsHedgeSpotClear(Transform sector, Vector3 localCentre, List<Transform> keepClear,
+			Transform vehicles, out string blocker)
+		{
+			var half = new Vector2(HedgeLength * 0.5f + HedgeClearance, HedgeThickness * 0.5f + HedgeClearance);
+			foreach (var p in keepClear)
+			{
+				var local = sector.InverseTransformPoint(p.position);
+				if (Mathf.Abs(local.x - localCentre.x) <= half.x && Mathf.Abs(local.z - localCentre.z) <= half.y)
+				{
+					blocker = p.name;
+					return false;
+				}
+			}
+			if (vehicles != null)
+			{
+				var world = sector.TransformPoint(localCentre);
+				var box = new Bounds(world, new Vector3(half.x * 2f, 10f, half.y * 2f));
+				foreach (var r in vehicles.GetComponentsInChildren<Renderer>(true))
+				{
+					if (!r.bounds.Intersects(box))
+						continue;
+					blocker = r.name;
+					return false;
+				}
+			}
+			blocker = null;
+			return true;
+		}
+
+		// Spawn points, loot points, breakable spawns and the pre-placed loot (same rule as VehicleBuilder).
+		internal static List<Transform> CollectKeepClearPoints(Transform root)
+		{
+			var list = new List<Transform>();
+			foreach (var t in root.GetComponentsInChildren<Transform>(true))
+			{
+				string n = t.name;
+				if (n.Contains("SpawnPoint") || n.StartsWith("ToxicPoint") || n.StartsWith("LootPoint")
+				    || n.StartsWith("BreakableSpawn") || (t.parent != null && t.parent.name == "_PreplacedLoot"))
+					list.Add(t);
+			}
+			return list;
+		}
+
+		// Clipped hedge: dark body, lighter flat top, a few shallow lumps on the faces so it isn't a bare cube.
+		// Local frame: length along X, thickness along Z, centred, ground at y = 0.
+		internal static GameObject BuildHedge()
+		{
+			var t = Temp("Hedge");
+			try
+			{
+				const float L = HedgeLength, T = HedgeThickness, H = HedgeHeight;
+				Box(t, _hedge, new Vector3(0, H * 0.5f, 0), new Vector3(L, H, T));
+				Box(t, _hedgeTop, new Vector3(0, H + 0.02f, 0), new Vector3(L - 0.08f, 0.04f, T - 0.08f));
+				var random = new System.Random(7);
+				float R(float a, float b) => a + (float)random.NextDouble() * (b - a);
+				foreach (float side in new[] { -1f, 1f })
+				{
+					for (float x = -L * 0.5f + 0.5f; x < L * 0.5f - 0.3f; x += R(0.7f, 1.1f))
+					{
+						float w = R(0.45f, 0.8f), h = R(0.35f, 0.7f), y = R(0.25f, H - 0.3f);
+						Box(t, _hedge, new Vector3(x, y, side * (T * 0.5f + 0.02f)), new Vector3(w, h, 0.08f));
+					}
+				}
+				foreach (float end in new[] { -1f, 1f })
+					Box(t, _hedge, new Vector3(end * (L * 0.5f + 0.02f), R(0.4f, 0.7f), R(-0.2f, 0.2f)),
+						new Vector3(0.08f, R(0.4f, 0.6f), R(0.5f, 0.8f)));
+
+				return Bake(t, "Hedge", null, castShadows: true, receiveDecals: false, extra: go =>
+				{
+					go.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
+					go.AddComponent<Hedge>().ApplyDefaults(new Vector2(L, T));
+				});
+			}
+			finally
+			{
+				Object.DestroyImmediate(t);
+			}
+		}
+
+		internal static GameObject Instance(GameObject prefab, Transform parent, string name)
 		{
 			var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
 			go.name = name;
@@ -166,18 +360,19 @@ namespace Crowds.EditorTools
 
 		// Decal projectors draw only on rendering layer 4 (Decal prefab m_DecalLayerMask = 4); level floors use 1|4.
 		// (The FloorSector prefab itself says 1 — Level_01 overrides it to 5 per instance — so don't read it from there.)
-		private static void ReadFloorLayers() => _floorLayers = FloorRenderingLayers;
+		internal static void ReadFloorLayers() => _floorLayers = FloorRenderingLayers;
 
 		// ================================================================== street
 
-		private static GameObject BuildStreet()
+		internal static GameObject BuildStreet()
 		{
 			var t = Temp("Street_Section");
 			try
 			{
 				float z0 = SlabMinZ, z1 = SlabMaxZ;
-				// Yard ground under the houses: also hides the slab's west face.
+				// Yard ground under both house rows: also hides the slab's side faces.
 				Slab(t, _grassAlt, YardMinX, SlabMinX, z0, z1, -1f, Top + HLawn);
+				Slab(t, _grassAlt, SlabMaxX, YardMaxX, z0, z1, -1f, Top + HLawn);
 				// Lawns with mowing stripes (2.5 m bands along the street).
 				Striped(t, SlabMinX, WalkW0, z0, z1);
 				Striped(t, WalkE1, SlabMaxX, z0, z1);
@@ -202,8 +397,6 @@ namespace Crowds.EditorTools
 				float centre = (Road0 + Road1) * 0.5f;
 				for (float z = z0 + 3.5f; z < z1; z += 10f)
 					Box(t, _lineYellow, new Vector3(centre, Top + HMark - 0.002f, z + 1.5f), new Vector3(0.15f, 0.004f, 3f));
-				// Soil face on the open (camera) edge.
-				Slab(t, _soil, SlabMaxX, SlabMaxX + 0.03f, z0, z1, -1f, Top + HLawn);
 
 				return Bake(t, "Street_Section", null, castShadows: false, receiveDecals: true,
 					extra: go => go.AddComponent<NavMeshModifier>().ignoreFromBuild = true);
@@ -214,7 +407,7 @@ namespace Crowds.EditorTools
 			}
 		}
 
-		private static void Striped(GameObject t, float x0, float x1, float z0, float z1)
+		internal static void Striped(GameObject t, float x0, float x1, float z0, float z1)
 		{
 			const float band = 2.5f; // 20 bands per sector → tiles
 			int n = 0;
@@ -224,17 +417,23 @@ namespace Crowds.EditorTools
 		}
 
 		// Thin surface strip along the whole sector, top at Top + h.
-		private static void Strip(GameObject t, Material m, float x0, float x1, float z0, float z1, float h) =>
+		internal static void Strip(GameObject t, Material m, float x0, float x1, float z0, float z1, float h) =>
 			Box(t, m, new Vector3((x0 + x1) * 0.5f, Top + h - 0.01f, (z0 + z1) * 0.5f), new Vector3(x1 - x0, 0.02f, z1 - z0));
 
-		private static void Slab(GameObject t, Material m, float x0, float x1, float z0, float z1, float y0, float y1) =>
+		internal static void Slab(GameObject t, Material m, float x0, float x1, float z0, float z1, float y0, float y1) =>
 			Box(t, m, new Vector3((x0 + x1) * 0.5f, (y0 + y1) * 0.5f, (z0 + z1) * 0.5f), new Vector3(x1 - x0, y1 - y0, z1 - z0));
 
 		// ================================================================== rows
 
-		private static GameObject BuildRow(string name, GameObject fence,
+		// east = camera (+X) side: houses turned to face −X, everything mirrored across the street.
+		internal static GameObject BuildRow(string name, bool east, GameObject fence,
 			(HouseSpec spec, Material siding, Material roof, Material door)[] lots)
 		{
+			float frontX = east ? HouseFrontEX : HouseFrontX;
+			float facing = east ? -1f : 1f;        // world X direction the facades face
+			float along = east ? 1f : -1f;         // world Z direction of the house's local +X
+			float walkX = east ? WalkE1 : WalkW0;  // front walks end at the near edge of the sidewalk
+			float roadX = east ? Road1 : Road0;    // driveways end at the curb
 			var root = new GameObject(name);
 			try
 			{
@@ -246,24 +445,28 @@ namespace Crowds.EditorTools
 				{
 					var (spec, siding, roof, door) = lots[i];
 					float lotCentre = SlabMinZ + lot * (i + 0.5f);
-					// House local +X maps to world −Z (yaw 90): centre its extents in the lot.
-					float rootZ = lotCentre + (spec.MinX + spec.MaxX) * 0.5f;
+					// House local +X maps to world −Z (yaw 90, far side) / +Z (yaw −90, camera side): centre its
+					// extents in the lot.
+					float rootZ = lotCentre - along * (spec.MinX + spec.MaxX) * 0.5f;
 					var house = (GameObject)PrefabUtility.InstantiatePrefab(spec.Prefab, root.transform);
 					house.name = $"{spec.Prefab.name}_{i + 1}";
-					house.transform.SetLocalPositionAndRotation(new Vector3(HouseFrontX, Top, rootZ), Quaternion.Euler(0, 90f, 0));
+					house.transform.SetLocalPositionAndRotation(new Vector3(frontX, Top, rootZ),
+						Quaternion.Euler(0, east ? -90f : 90f, 0));
 					Recolor(house, siding, roof, door);
-					spans.Add((rootZ - spec.MaxX, rootZ - spec.MinX));
+					float zA = rootZ + along * spec.MinX, zB = rootZ + along * spec.MaxX;
+					spans.Add((Mathf.Min(zA, zB), Mathf.Max(zA, zB)));
 
 					// Front walk: from the porch steps across the front lawn to the sidewalk.
-					float doorZ = rootZ - spec.DoorX;
-					float stepsX = HouseFrontX + spec.StepsZ;
-					Box(ground, _drive, new Vector3((stepsX + WalkW0) * 0.5f, Top + HPath - 0.01f, doorZ), new Vector3(WalkW0 - stepsX, 0.02f, 1.2f));
+					float doorZ = rootZ + along * spec.DoorX;
+					float stepsX = frontX + facing * spec.StepsZ;
+					Box(ground, _drive, new Vector3((stepsX + walkX) * 0.5f, Top + HPath - 0.01f, doorZ),
+						new Vector3(Mathf.Abs(walkX - stepsX), 0.02f, 1.2f));
 					// Driveway from the garage to the road (crosses the sidewalk and the grass strip).
 					if (spec.GarageX.HasValue)
 					{
-						float gz = rootZ - spec.GarageX.Value;
-						Box(ground, _drive, new Vector3((HouseFrontX + Road0) * 0.5f, Top + HDrive - 0.01f, gz),
-							new Vector3(Road0 - HouseFrontX, 0.02f, 3.2f));
+						float gz = rootZ + along * spec.GarageX.Value;
+						Box(ground, _drive, new Vector3((frontX + roadX) * 0.5f, Top + HDrive - 0.01f, gz),
+							new Vector3(Mathf.Abs(roadX - frontX), 0.02f, 3.2f));
 					}
 				}
 
@@ -274,10 +477,10 @@ namespace Crowds.EditorTools
 				int fenceIndex = 0;
 				foreach (var (min, max) in spans)
 				{
-					FenceRun(root.transform, fence, cursor, min, ref fenceIndex);
+					FenceRun(root.transform, fence, east, cursor, min, ref fenceIndex);
 					cursor = max;
 				}
-				FenceRun(root.transform, fence, cursor, SlabMaxZ, ref fenceIndex);
+				FenceRun(root.transform, fence, east, cursor, SlabMaxZ, ref fenceIndex);
 
 				var groundPrefab = Bake(ground, $"{name}_Ground", null, castShadows: false, receiveDecals: true);
 				Object.DestroyImmediate(ground);
@@ -295,8 +498,8 @@ namespace Crowds.EditorTools
 			}
 		}
 
-		// Fence segments (2 m) along Z at FenceX from z0 to z1, stretched slightly to fit exactly.
-		private static void FenceRun(Transform parent, GameObject fence, float z0, float z1, ref int index)
+		// Fence segments (2 m) along Z at FenceX / FenceEX from z0 to z1, stretched slightly to fit exactly.
+		internal static void FenceRun(Transform parent, GameObject fence, bool east, float z0, float z1, ref int index)
 		{
 			float length = z1 - z0;
 			if (length < 0.2f)
@@ -307,14 +510,18 @@ namespace Crowds.EditorTools
 			{
 				var go = (GameObject)PrefabUtility.InstantiatePrefab(fence, parent);
 				go.name = $"Fence_{++index}";
-				// Segment local +X runs along world +Z (yaw −90); pickets face the street.
-				go.transform.SetLocalPositionAndRotation(new Vector3(FenceX, Top, z0 + segment * i), Quaternion.Euler(0, -90f, 0));
+				// Far side: segment local +X runs along world +Z (yaw −90). Camera side: along −Z (yaw 90), so it starts
+				// at the segment's far end. Either way the rails are on the street side.
+				go.transform.SetLocalPositionAndRotation(east
+						? new Vector3(FenceEX, Top, z0 + segment * (i + 1))
+						: new Vector3(FenceX, Top, z0 + segment * i),
+					Quaternion.Euler(0, east ? 90f : -90f, 0));
 				go.transform.localScale = new Vector3(segment / 2f, 1f, 1f);
 			}
 		}
 
 		// Swaps the base siding/roof/door(+shutters) materials on a house instance (instance override).
-		private static void Recolor(GameObject house, Material siding, Material roof, Material door)
+		internal static void Recolor(GameObject house, Material siding, Material roof, Material door)
 		{
 			var r = house.GetComponent<MeshRenderer>();
 			var mats = r.sharedMaterials;
@@ -329,7 +536,7 @@ namespace Crowds.EditorTools
 
 		// ================================================================== fence
 
-		private static GameObject BuildFence()
+		internal static GameObject BuildFence()
 		{
 			var t = Temp("Fence_Picket");
 			try
@@ -358,9 +565,9 @@ namespace Crowds.EditorTools
 		// ================================================================== houses
 		// House local frame: front faces +Z, front wall at z = 0, body to −Z, width along X, ground at y = 0.
 
-		private static Material[] HouseSlots => new[] { BaseSiding, _trim, BaseRoof, _glass, BaseDoor, _porch, _foundation, _brick };
+		internal static Material[] HouseSlots => new[] { BaseSiding, _trim, BaseRoof, _glass, BaseDoor, _porch, _foundation, _brick };
 
-		private static HouseSpec BuildRanch()
+		internal static HouseSpec BuildRanch()
 		{
 			const float W = 10f, D = 9f, found = 0.45f, wall = 2.9f, roofH = 1.9f;
 			const float gW = 3.8f, gD = 7f, gWall = 2.6f, gRoof = 1.3f;
@@ -387,6 +594,7 @@ namespace Crowds.EditorTools
 				Window(front, -2.5f, 1.45f, 2.4f, 1.4f, shutters: false);
 				Window(front, 4.1f, 1.45f, 1f, 1.4f, shutters: true);
 				SideWindows(t, W, D, found, 1.45f);
+				BackWall(t, W, D, found, 1.45f, door: true);
 				Chimney(t, -2.6f, -D * 0.5f - 1.2f, found + wall, roofH);
 				return Spec(Bake(t, "House_Ranch", HouseSlots, true, false, go => HouseBlocker(go)),
 					gx - gW * 0.5f, W * 0.5f, 2.2f, 2f + 0.65f, gx);
@@ -397,7 +605,7 @@ namespace Crowds.EditorTools
 			}
 		}
 
-		private static HouseSpec BuildColonial()
+		internal static HouseSpec BuildColonial()
 		{
 			const float W = 10f, D = 8f, found = 0.5f, wall = 5.8f, roofH = 2.4f;
 			var t = Temp("House_Colonial");
@@ -415,6 +623,8 @@ namespace Crowds.EditorTools
 				Box(t, _trim, new Vector3(0, found + 2.95f, 0.02f), new Vector3(W + 0.05f, 0.12f, 0.06f));
 				SideWindows(t, W, D, found, 1.4f);
 				SideWindows(t, W, D, found, 4.2f);
+				BackWall(t, W, D, found, 1.4f, door: true);
+				BackWall(t, W, D, found, 4.2f, door: false);
 				// Exterior chimney on the +X side.
 				Box(t, _brick, new Vector3(W * 0.5f + 0.45f, (found + wall + roofH + 0.8f) * 0.5f, -D * 0.5f),
 					new Vector3(0.9f, found + wall + roofH + 0.8f, 1.1f));
@@ -428,7 +638,7 @@ namespace Crowds.EditorTools
 			}
 		}
 
-		private static HouseSpec BuildCape()
+		internal static HouseSpec BuildCape()
 		{
 			const float W = 9.5f, D = 8f, found = 0.45f, wall = 2.6f, roofH = 3.4f;
 			var t = Temp("House_Cape");
@@ -441,6 +651,7 @@ namespace Crowds.EditorTools
 				foreach (float x in new[] { -2.9f, 2.9f })
 					Window(front, x, 1.4f, 1.1f, 1.5f, shutters: true);
 				SideWindows(t, W, D, found, 1.4f);
+				BackWall(t, W, D, found, 1.4f, door: true);
 				// Two dormers on the front slope.
 				float baseY = found + wall;
 				foreach (float x in new[] { -2.3f, 2.3f })
@@ -462,11 +673,11 @@ namespace Crowds.EditorTools
 			}
 		}
 
-		private static HouseSpec Spec(GameObject prefab, float minX, float maxX, float doorX, float stepsZ, float? garageX) =>
+		internal static HouseSpec Spec(GameObject prefab, float minX, float maxX, float doorX, float stepsZ, float? garageX) =>
 			new() { Prefab = prefab, MinX = minX, MaxX = maxX, DoorX = doorX, StepsZ = stepsZ, GarageX = garageX };
 
 		// Houses stop bullets (sparks) — bounds of the baked mesh.
-		private static void HouseBlocker(GameObject go)
+		internal static void HouseBlocker(GameObject go)
 		{
 			var bounds = go.GetComponent<MeshFilter>().sharedMesh.bounds;
 			var blocker = go.AddComponent<BulletBlocker>();
@@ -477,7 +688,7 @@ namespace Crowds.EditorTools
 		}
 
 		// Foundation, siding walls, gable ends and the roof of a W × D box house.
-		private static void Body(GameObject t, float x, float W, float D, float found, float wall, float roofH)
+		internal static void Body(GameObject t, float x, float W, float D, float found, float wall, float roofH)
 		{
 			Box(t, _foundation, new Vector3(x, found * 0.5f, -D * 0.5f), new Vector3(W + 0.1f, found, D + 0.1f));
 			Box(t, BaseSiding, new Vector3(x, found + wall * 0.5f, -D * 0.5f), new Vector3(W, wall, D));
@@ -491,7 +702,7 @@ namespace Crowds.EditorTools
 		}
 
 		// Two roof planes over a gable prism (ridge along X), with an overhang and a ridge cap.
-		private static void GableRoof(GameObject t, float x, float W, float D, float baseY, float h, float overhang)
+		internal static void GableRoof(GameObject t, float x, float W, float D, float baseY, float h, float overhang)
 		{
 			const float thick = 0.12f;
 			float d = D * 0.5f;
@@ -507,7 +718,7 @@ namespace Crowds.EditorTools
 			Box(t, BaseRoof, new Vector3(x, baseY + h + 0.05f, -D * 0.5f), new Vector3(W + overhang * 2f, 0.12f, 0.3f));
 		}
 
-		private static void Porch(GameObject t, float x, float w, float depth, float floorY, float roofY, int columns)
+		internal static void Porch(GameObject t, float x, float w, float depth, float floorY, float roofY, int columns)
 		{
 			Box(t, _foundation, new Vector3(x, (floorY - 0.15f) * 0.5f, depth * 0.5f), new Vector3(w, floorY - 0.15f, depth));
 			Box(t, _porch, new Vector3(x, floorY - 0.075f, depth * 0.5f), new Vector3(w + 0.1f, 0.15f, depth + 0.05f));
@@ -524,14 +735,14 @@ namespace Crowds.EditorTools
 			Box(t, BaseRoof, new Vector3(x, roofY + 0.25f, depth * 0.5f), new Vector3(w + 0.3f, 0.12f, depth + 0.3f), Quaternion.Euler(-6f, 0, 0));
 		}
 
-		private static void Door(Transform face, float x)
+		internal static void Door(Transform face, float x)
 		{
 			Box(face, BaseDoor, new Vector3(x, 1.05f, 0.04f), new Vector3(1f, 2.1f, 0.08f));
 			Frame(face, x, 1.05f, 1f, 2.1f);
 			Box(face, _glass, new Vector3(x, 1.75f, 0.085f), new Vector3(0.5f, 0.35f, 0.02f));
 		}
 
-		private static void Window(Transform face, float x, float y, float w, float h, bool shutters)
+		internal static void Window(Transform face, float x, float y, float w, float h, bool shutters)
 		{
 			Box(face, _glass, new Vector3(x, y, 0.03f), new Vector3(w, h, 0.06f));
 			Frame(face, x, y, w, h);
@@ -544,7 +755,7 @@ namespace Crowds.EditorTools
 				Box(face, BaseDoor, new Vector3(x + s * (w * 0.5f + 0.12f + w * 0.2f), y, 0.04f), new Vector3(w * 0.4f, h + 0.1f, 0.05f));
 		}
 
-		private static void Frame(Transform face, float x, float y, float w, float h)
+		internal static void Frame(Transform face, float x, float y, float w, float h)
 		{
 			Box(face, _trim, new Vector3(x, y + h * 0.5f + 0.06f, 0.05f), new Vector3(w + 0.24f, 0.12f, 0.1f));
 			Box(face, _trim, new Vector3(x, y - h * 0.5f - 0.05f, 0.06f), new Vector3(w + 0.2f, 0.1f, 0.12f));
@@ -553,7 +764,7 @@ namespace Crowds.EditorTools
 		}
 
 		// One window on each side wall (the gaps between houses show the sides).
-		private static void SideWindows(GameObject t, float W, float D, float found, float y)
+		internal static void SideWindows(GameObject t, float W, float D, float found, float y)
 		{
 			foreach (float s in new[] { -1f, 1f })
 			{
@@ -562,7 +773,20 @@ namespace Crowds.EditorTools
 			}
 		}
 
-		private static void Chimney(GameObject t, float x, float z, float baseY, float roofH)
+		// Back wall (z = −D): two windows, optionally a back door with a small stoop between them. The Backyards level
+		// shows the houses from behind.
+		internal static void BackWall(GameObject t, float W, float D, float found, float y, bool door)
+		{
+			var back = Face(t, new Vector3(0, found, -D), 180f);
+			Window(back, -W * 0.3f, y, 1.1f, 1.3f, shutters: false);
+			Window(back, W * 0.3f, y, 1.1f, 1.3f, shutters: false);
+			if (!door)
+				return;
+			Door(back, 0f);
+			Box(back, _porch, new Vector3(0, -found * 0.5f, 0.6f), new Vector3(1.8f, found, 1.2f));
+		}
+
+		internal static void Chimney(GameObject t, float x, float z, float baseY, float roofH)
 		{
 			float top = baseY + roofH + 0.7f;
 			Box(t, _brick, new Vector3(x, (baseY + top) * 0.5f, z), new Vector3(0.8f, top - baseY, 0.8f));
@@ -570,7 +794,7 @@ namespace Crowds.EditorTools
 		}
 
 		// Child frame on a wall: local +Z = out of the wall, X = along it, y = 0 at the floor line.
-		private static Transform Face(GameObject t, Vector3 position, float yaw)
+		internal static Transform Face(GameObject t, Vector3 position, float yaw)
 		{
 			var f = new GameObject("Face").transform;
 			f.SetParent(t.transform, false);
@@ -580,12 +804,12 @@ namespace Crowds.EditorTools
 
 		// ================================================================== primitives / bake
 
-		private static GameObject Temp(string name) => new(name);
+		internal static GameObject Temp(string name) => new(name);
 
-		private static void Box(GameObject t, Material m, Vector3 pos, Vector3 size, Quaternion? rot = null) =>
+		internal static void Box(GameObject t, Material m, Vector3 pos, Vector3 size, Quaternion? rot = null) =>
 			Box(t.transform, m, pos, size, rot);
 
-		private static void Box(Transform parent, Material m, Vector3 pos, Vector3 size, Quaternion? rot = null)
+		internal static void Box(Transform parent, Material m, Vector3 pos, Vector3 size, Quaternion? rot = null)
 		{
 			var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
 			Object.DestroyImmediate(go.GetComponent<Collider>());
@@ -595,10 +819,10 @@ namespace Crowds.EditorTools
 			go.GetComponent<MeshRenderer>().sharedMaterial = m;
 		}
 
-		private static Mesh _prism;
+		internal static Mesh _prism;
 
 		// Triangular prism (gable): base on y = 0 at `pos`, triangle in the YZ plane, extruded along X.
-		private static void Prism(GameObject t, Material m, Vector3 pos, Vector3 size, Quaternion? rot = null)
+		internal static void Prism(GameObject t, Material m, Vector3 pos, Vector3 size, Quaternion? rot = null)
 		{
 			_prism ??= BuildPrismMesh();
 			var go = new GameObject("Prism");
@@ -609,7 +833,7 @@ namespace Crowds.EditorTools
 			go.AddComponent<MeshRenderer>().sharedMaterial = m;
 		}
 
-		private static Mesh BuildPrismMesh()
+		internal static Mesh BuildPrismMesh()
 		{
 			var verts = new List<Vector3>();
 			var normals = new List<Vector3>();
@@ -644,7 +868,7 @@ namespace Crowds.EditorTools
 		/// <paramref name="slots"/> order first), saves it to Meshes/<name>.asset (in place, same guid) and the prefab
 		/// <name>.prefab = MeshFilter + MeshRenderer (+ <paramref name="extra"/> components).
 		/// </summary>
-		private static GameObject Bake(GameObject t, string name, Material[] slots, bool castShadows, bool receiveDecals,
+		internal static GameObject Bake(GameObject t, string name, Material[] slots, bool castShadows, bool receiveDecals,
 			System.Action<GameObject> extra = null)
 		{
 			var order = new List<Material>();
@@ -668,6 +892,8 @@ namespace Crowds.EditorTools
 				if (!groups.TryGetValue(m, out var list)) continue;
 				var sub = new Mesh { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
 				sub.CombineMeshes(list.ToArray(), true, true);
+				if (MetricUV.Contains(m))
+					PlanarUVs(sub);
 				subs.Add(new CombineInstance { mesh = sub, transform = Matrix4x4.identity });
 				mats.Add(m);
 			}
@@ -702,7 +928,38 @@ namespace Crowds.EditorTools
 			}
 		}
 
-		private static Mesh SaveMesh(Mesh mesh, string path)
+		// Materials whose submesh gets metric planar UVs in Bake (textured siding / roofs / foundation).
+		internal static readonly HashSet<Material> MetricUV = new();
+
+		/// <summary>
+		/// Per-vertex planar UVs in metres, projected on each face's own plane (the baked cubes have flat per-face
+		/// normals): U runs horizontally along the face, V up it — siding boards stay level on every wall and shingle
+		/// rows run along the roof slope, at the same scale on every box whatever its size.
+		/// </summary>
+		internal static void PlanarUVs(Mesh mesh)
+		{
+			var verts = mesh.vertices;
+			var normals = mesh.normals;
+			if (normals == null || normals.Length != verts.Length)
+			{
+				mesh.RecalculateNormals();
+				normals = mesh.normals;
+			}
+			var uvs = new Vector2[verts.Length];
+			for (int i = 0; i < verts.Length; i++)
+			{
+				var n = normals[i];
+				var u = Vector3.Cross(Vector3.up, n);
+				if (u.sqrMagnitude < 1e-4f)
+					u = Vector3.right; // horizontal face
+				u.Normalize();
+				var v = Vector3.Cross(n, u);
+				uvs[i] = new Vector2(Vector3.Dot(verts[i], u), Vector3.Dot(verts[i], v));
+			}
+			mesh.uv = uvs;
+		}
+
+		internal static Mesh SaveMesh(Mesh mesh, string path)
 		{
 			var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
 			if (existing == null)
@@ -710,9 +967,30 @@ namespace Crowds.EditorTools
 				AssetDatabase.CreateAsset(mesh, path);
 				return mesh;
 			}
-			string name = existing.name;
-			EditorUtility.CopySerialized(mesh, existing);
-			existing.name = name;
+			// Rewrite the geometry through the Mesh API, not EditorUtility.CopySerialized: CopySerialized updates the
+			// serialized data (and the file), but an already loaded mesh keeps rendering its old geometry until the
+			// editor restarts — a rebuilt level showed stale racks while their colliders were gone. Same asset/GUID.
+			existing.Clear();
+			existing.indexFormat = mesh.indexFormat;
+			existing.SetVertices(mesh.vertices);
+			if (mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Normal))
+				existing.SetNormals(mesh.normals);
+			if (mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Tangent))
+				existing.SetTangents(mesh.tangents);
+			if (mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Color))
+				existing.SetColors(mesh.colors);
+			var uvs = new System.Collections.Generic.List<Vector4>();
+			for (int ch = 0; ch < 8; ch++)
+			{
+				if (!mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.TexCoord0 + ch))
+					continue;
+				mesh.GetUVs(ch, uvs);
+				existing.SetUVs(ch, uvs);
+			}
+			existing.subMeshCount = mesh.subMeshCount;
+			for (int i = 0; i < mesh.subMeshCount; i++)
+				existing.SetTriangles(mesh.GetTriangles(i), i, false);
+			existing.RecalculateBounds();
 			EditorUtility.SetDirty(existing);
 			Object.DestroyImmediate(mesh);
 			return existing;
@@ -720,7 +998,7 @@ namespace Crowds.EditorTools
 
 		// ================================================================== materials
 
-		private static void CreateSuburbMaterials()
+		internal static void CreateSuburbMaterials()
 		{
 			_grass = SMat("Suburb_Grass", new Color(0.34f, 0.56f, 0.25f), 0.12f);
 			_grassAlt = SMat("Suburb_GrassAlt", new Color(0.30f, 0.51f, 0.22f), 0.12f);
@@ -738,6 +1016,8 @@ namespace Crowds.EditorTools
 			_foundation = SMat("Suburb_Foundation", new Color(0.56f, 0.55f, 0.53f), 0.1f);
 			_brick = SMat("Suburb_Brick", new Color(0.56f, 0.26f, 0.19f), 0.1f);
 			_fence = SMat("Suburb_FenceWhite", new Color(0.96f, 0.96f, 0.94f), 0.3f);
+			_hedge = SMat("Suburb_Hedge", new Color(0.15f, 0.33f, 0.13f), 0.08f);
+			_hedgeTop = SMat("Suburb_HedgeTop", new Color(0.22f, 0.43f, 0.17f), 0.08f);
 
 			_sidingCream = SMat("Suburb_Siding_Cream", new Color(0.93f, 0.88f, 0.72f), 0.25f);
 			_sidingBlue = SMat("Suburb_Siding_SkyBlue", new Color(0.68f, 0.8f, 0.88f), 0.25f);
@@ -755,16 +1035,42 @@ namespace Crowds.EditorTools
 			_doorNavy = SMat("Suburb_Door_Navy", new Color(0.12f, 0.18f, 0.35f), 0.4f);
 			_doorGreen = SMat("Suburb_Door_Green", new Color(0.14f, 0.32f, 0.2f), 0.4f);
 			_doorBlack = SMat("Suburb_Door_Black", new Color(0.08f, 0.08f, 0.09f), 0.4f);
+
+			TextureHouses();
 		}
 
-		// URP Lit, colour/smoothness enforced on every run.
-		private static Material SMat(string name, Color color, float smoothness)
+		// Walls, roofs and foundations: small greyscale textures (Assets/Textures, 256), tinted so each material keeps
+		// its old average colour; the meshes get metric UVs (PlanarUVs), tiling = 1 / metres per tile.
+		// Lap siding: 2 m tile (0.25 m boards); panels: 1.2 m (0.6 m bands); stucco: 1.5 m; shingles: 2 m (0.25 m rows).
+		private static void TextureHouses()
+		{
+			MetricUV.Clear();
+			void Tex(Material m, string path, Color average, float metresPerTile)
+			{
+				LevelTextures.Apply(m, path, LevelTextures.TintFor(path, average), 1f / metresPerTile);
+				MetricUV.Add(m);
+			}
+			Tex(_sidingWhite, LevelTextures.SidingLap, new Color(0.94f, 0.94f, 0.92f), 2f);
+			Tex(_sidingCream, LevelTextures.SidingLap, new Color(0.93f, 0.88f, 0.72f), 2f);
+			Tex(_sidingSage, LevelTextures.SidingLap, new Color(0.66f, 0.74f, 0.6f), 2f);
+			Tex(_sidingYellow, LevelTextures.SidingLap, new Color(0.96f, 0.86f, 0.52f), 2f);
+			Tex(_sidingBlue, LevelTextures.SidingPanel, new Color(0.68f, 0.8f, 0.88f), 1.2f);
+			Tex(_sidingGrey, LevelTextures.SidingPanel, new Color(0.66f, 0.68f, 0.7f), 1.2f);
+			Tex(_sidingBeige, LevelTextures.Stucco, new Color(0.82f, 0.74f, 0.62f), 1.5f);
+			Tex(_foundation, LevelTextures.Stucco, new Color(0.56f, 0.55f, 0.53f), 1.5f);
+			Tex(_roofCharcoal, LevelTextures.RoofShingles, new Color(0.22f, 0.22f, 0.24f), 2f);
+			Tex(_roofBrown, LevelTextures.RoofShingles, new Color(0.36f, 0.27f, 0.22f), 2f);
+			Tex(_roofSlate, LevelTextures.RoofShingles, new Color(0.3f, 0.33f, 0.38f), 2f);
+		}
+
+		// Lit See-Through (URP Lit + hole around the player), colour/smoothness enforced on every run.
+		internal static Material SMat(string name, Color color, float smoothness)
 		{
 			string path = $"{MatFolder}/{name}.mat";
 			var m = AssetDatabase.LoadAssetAtPath<Material>(path);
 			if (m == null)
 			{
-				m = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = name };
+				m = new Material(SeeThroughShader.FindLit()) { name = name };
 				AssetDatabase.CreateAsset(m, path);
 			}
 			m.SetColor("_BaseColor", color);

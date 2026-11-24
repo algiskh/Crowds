@@ -190,3 +190,5 @@ MonoBehaviour:
     ShowTimer: 1
   _sectorMode: 0
   _activeSectorRadius: 1
+  _bannedMobBonusIds:
+  - speedup

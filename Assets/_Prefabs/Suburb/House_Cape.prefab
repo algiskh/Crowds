@@ -111,8 +111,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77874947b09f80a479fa631291b0c3fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BulletBlocker
-  _center: {x: 0, y: 3.6250002, z: -2.9852953}
-  _size: {x: 10.4, y: 7.2500005, z: 10.87059}
+  _center: {x: 0, y: 3.6250002, z: -3.3750005}
+  _size: {x: 10.4, y: 7.2500005, z: 11.650001}
   _impactEffectId: wall_spark
 --- !u!114 &2689162654370527869
 MonoBehaviour:
