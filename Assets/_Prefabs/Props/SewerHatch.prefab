@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5312663227235767374}
   - component: {fileID: 1599354900422843408}
+  - component: {fileID: 5132042770169514482}
   m_Layer: 0
   m_Name: SewerHatch
   m_TagString: Untagged
@@ -151,6 +152,39 @@ MonoBehaviour:
   m_IgnoreFromBuild: 1
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &5132042770169514482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1551111713414052064}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed734a7941dbfb74cabb3609a31511eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SewerHatch
+  _modifiers:
+  - rid: 4574116198635274324
+  _linger: 0.3
+  _affectsMobs: 0
+  _entryEffect: 1
+  _radius: 0.75
+  references:
+    version: 2
+    RefIds:
+    - rid: 4574116198635274324
+      type: {class: DamageModifier, ns: , asm: Assembly-CSharp}
+      data:
+        Id: DamageSewerStench
+        Source: 4
+        Value: 1
+        Lifetime: 0
+        HasEffect: 1
+        EffectId: toxicDamage
+        Interval: 0.5
+        Type: 3
+        Chance: 0
 --- !u!1 &1644770915794396119
 GameObject:
   m_ObjectHideFlags: 0

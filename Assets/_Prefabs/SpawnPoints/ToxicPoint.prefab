@@ -49,38 +49,38 @@ MonoBehaviour:
     _weight: 1
     _spawnPresets:
     - DifficultyLevel: 1
-      Cooldown: 9
+      Cooldown: 13.5
     - DifficultyLevel: 2
-      Cooldown: 8
+      Cooldown: 12
     - DifficultyLevel: 3
-      Cooldown: 6
+      Cooldown: 9
   - _mobId: FastToxic
     _weight: 1
     _spawnPresets:
     - DifficultyLevel: 2
-      Cooldown: 5
+      Cooldown: 7.5
     - DifficultyLevel: 3
-      Cooldown: 4
+      Cooldown: 6
     - DifficultyLevel: 4
-      Cooldown: 4
+      Cooldown: 6
     - DifficultyLevel: 5
-      Cooldown: 4
+      Cooldown: 6
     - DifficultyLevel: 6
-      Cooldown: 5
+      Cooldown: 7.5
     - DifficultyLevel: 7
-      Cooldown: 5
+      Cooldown: 7.5
     - DifficultyLevel: 8
-      Cooldown: 4
+      Cooldown: 6
   - _mobId: ToxicHelmet
     _weight: 1
     _spawnPresets:
     - DifficultyLevel: 4
-      Cooldown: 8
+      Cooldown: 12
     - DifficultyLevel: 5
-      Cooldown: 7
+      Cooldown: 10.5
     - DifficultyLevel: 6
-      Cooldown: 6
+      Cooldown: 9
     - DifficultyLevel: 7
-      Cooldown: 6
+      Cooldown: 9
     - DifficultyLevel: 8
-      Cooldown: 5
+      Cooldown: 7.5
