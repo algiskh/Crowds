@@ -98,3 +98,8 @@ MonoBehaviour:
     HasDuration: 1
     Duration: 0.8
     IsChild: 0
+  - Id: box_break
+    Prefab: {fileID: 4462222979750785234, guid: 0567495d7a77223498a0854a735a131c, type: 3}
+    HasDuration: 1
+    Duration: 2
+    IsChild: 0
