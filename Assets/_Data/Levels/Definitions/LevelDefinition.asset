@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
   _levelPrefab: {fileID: 4514173636514703695, guid: bb58f4e376bc5524a8b10942635aab2f, type: 3}
   _displayName: InfiniteScroll
-  _icon: {fileID: 299109539, guid: 05e0567213a58c840a3ea79a4409bdfd, type: 3}
+  _icon: {fileID: 21300000, guid: eff882ace576d844c933f30852ad9145, type: 3}
