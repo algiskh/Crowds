@@ -39,7 +39,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _UseNormalMap: 1
-    - _VatHeight: 495
+    - _VatHeight: 648
     - _VatVertexCount: 27910
     - _VatWidth: 8192
     m_Colors:

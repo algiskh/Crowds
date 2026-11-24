@@ -72,5 +72,44 @@ namespace Crowds.EditorTools
 		[Button(ButtonSizes.Large), PropertySpace(10)]
 		[ContextMenu("Run Setup")]
 		public void RunSetup() => MobModelPipeline.Run(this);
+
+		public enum ReferenceViewSide { Front, Back, Left, Right }
+		public enum ReferenceOverlayMode { Overlay, SideBySide }
+
+		[Title("Reference check (optional)", "Picture (e.g. a Figma frame export) laid over the prefab for a visual match")]
+		[Tooltip("Reference picture. Margins are trimmed automatically (transparency, or the corner colour); the drawn character is scaled to the visual's height.")]
+		[OnValueChanged(nameof(RefreshReference))]
+		public Texture2D ReferenceImage;
+		[Tooltip("Side the picture shows the character from. The mob faces +Z of the prefab root.")]
+		[OnValueChanged(nameof(RefreshReference))]
+		public ReferenceViewSide ReferenceView = ReferenceViewSide.Front;
+		[Tooltip("Overlay: semi-transparent picture over the model. SideBySide: opaque picture next to it.")]
+		[OnValueChanged(nameof(RefreshReference))]
+		public ReferenceOverlayMode ReferenceMode = ReferenceOverlayMode.Overlay;
+		[Range(0.05f, 1f), OnValueChanged(nameof(RefreshReference))]
+		public float ReferenceOpacity = 0.5f;
+		[Tooltip("Picture height relative to the visual's height (1 = same).")]
+		[Range(0.5f, 1.5f), OnValueChanged(nameof(RefreshReference))]
+		public float ReferenceScale = 1f;
+		[Tooltip("Nudge: X in meters (screen right), Y in fractions of the height.")]
+		[OnValueChanged(nameof(RefreshReference))]
+		public Vector2 ReferenceOffset;
+		[OnValueChanged(nameof(RefreshReference))]
+		public bool ReferenceFlipX;
+
+		[ButtonGroup("Reference"), Button("Show Reference")]
+		[ContextMenu("Show Reference")]
+		public void ShowReference() => MobReferenceOverlay.Show(this);
+
+		[ButtonGroup("Reference"), Button("Hide Reference")]
+		[ContextMenu("Hide Reference")]
+		public void HideReference() => MobReferenceOverlay.Hide();
+
+		// Live update while tuning — only if the overlay is already shown for this preset's prefab.
+		private void RefreshReference()
+		{
+			if (MobReferenceOverlay.IsShownFor(this))
+				MobReferenceOverlay.Show(this, frameCamera: false);
+		}
 	}
 }

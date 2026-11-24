@@ -31,8 +31,26 @@ namespace Crowds.EditorTools
 		private static void ImportZombie1Wobbling()
 		{
 			var clip = Import(Zombie1Wobbling, Zombie1Model, "Assets/_Animations/Mob/Zombie1_skid.anim", loop: true, referenceClipFbx: Zombie1Idle, lastFrame: 45);
-			if (clip != null)
-				SetState(Zombie1Controller, "skid", clip);
+			if (clip == null) return;
+			SetState(Zombie1Controller, "skid", clip);
+			RebakeZombie1Vat();
+		}
+
+		// Zombie1 is the visual of the first zombie: Mob.prefab (nests RAW/model@Zombie Running.prefab with
+		// Zombie1.controller) → configs Slow/SlowStrong render it via Mob_CrowdLibrary. The VAT bake takes every
+		// controller state named after an AnimationType, so a new state needs a re-bake (assets overwritten in place,
+		// GUIDs kept — the configs keep their library reference).
+		private const string Zombie1MobPrefab = "Assets/_Prefabs/Mobs/Mob.prefab";
+
+		[MenuItem("Tools/Crowds/Zombie1 ▸ Rebake Mob VAT (Slow, SlowStrong)")]
+		private static void RebakeZombie1Vat()
+		{
+			var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Zombie1MobPrefab);
+			if (prefab == null) { Debug.LogError($"{Log} {Zombie1MobPrefab} not found."); return; }
+			var library = VatBakerWindow.Bake(prefab);
+			Debug.Log(library != null
+				? $"{Log} VAT re-baked for {Zombie1MobPrefab} → {AssetDatabase.GetAssetPath(library)}."
+				: $"{Log} VAT bake failed for {Zombie1MobPrefab} — see [VAT] errors.", library);
 		}
 
 		/// <summary>Imports <paramref name="fbxPath"/> (Blender export) as a clip bound to <paramref name="modelPath"/>'s hierarchy.</summary>
@@ -121,6 +139,10 @@ namespace Crowds.EditorTools
 					if (path + "/" == prefix) { dropped++; continue; }         // the root node itself
 					if (path.StartsWith(prefix)) path = path.Substring(prefix.Length);
 				}
+				// The model root itself: when Unity turns Blender's "Armature" node into the asset root, its baked object
+				// transform (scale 0.01 etc.) lands on path "". Played on a mob it would shrink/move the whole visual
+				// (the mob vanished while skidding) — a Mixamo model's root is never animated.
+				if (path.Length == 0 && b.type == typeof(Transform)) { dropped++; continue; }
 				string last = path.Substring(path.LastIndexOf('/') + 1);
 				// Blender leaf bones ("HeadTop_End_end"); Mixamo's own ends are "_End" (capital E) and are kept.
 				if (last.EndsWith("_end"))
