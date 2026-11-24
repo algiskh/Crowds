@@ -220,3 +220,5 @@ MonoBehaviour:
   _allowedMobWeaponDrops:
   - Rifle
   - SMG
+  _bannedMobBonusIds:
+  - speedup

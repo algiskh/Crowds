@@ -127,5 +127,20 @@ MonoBehaviour:
   _radius: 1.8
   _irregularity: 0.3
   _seed: 1
-  _speedMultiplier: 0.75
+  _modifiers:
+  - rid: 7764491758643259001
   _linger: 0.25
+  _affectsMobs: 1
+  _entryEffect: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 7764491758643259001
+      type: {class: SpeedModifier, ns: , asm: Assembly-CSharp}
+      data:
+        Id: SpeedOilSlick
+        Source: 4
+        Value: 0.75
+        Lifetime: 0
+        HasEffect: 0
+        EffectId: 

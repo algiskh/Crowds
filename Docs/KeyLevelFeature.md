@@ -92,6 +92,7 @@ Other rules:
 | `StageLoot` | `Mission/StageLoot.cs` | Loot spawned once at the start of a stage (`RequestLootSpawn`, Source = MapLoot, so it never despawns). |
 | `MissionComponent` | `Components.cs` | Singleton holding the lists above plus `CollectedKeys` and `OpenedGates`. `OpenedGates` keeps a gate even after it re-closes. Filled by `EntryPoint.RegisterMissionObjects`, including inactive objects. It isn't created if the level has no mission objects. |
 | `MissionSystem` | `ECS/MissionSystem.cs` | Runs after `LevelEventSystem`. Reacts to stage changes (opens gates, shows keys, spawns loot, sets the objective). Every frame it handles key pickup, key gates and gate re-closing. In wave mode, once spawning stops, it adds "Осталось: N" to the banner. `MissionSystem.IsInZone` is a public helper. |
+| `TutorialArrow` / `InputHintFormatter` / `LootCollectedCondition` | see `Docs/TutorialLevelFeature.md` | Stage-bound scene hint arrows (`MissionComponent.Arrows`), `{Action}` key tokens in `Objective`, "loot picked up" stage condition. |
 | `ObjectiveBanner` | `UI/ObjectiveBanner.cs` | Runtime top banner (UniText). The font is borrowed from the scene. Canvas `sortingOrder` is 450. |
 | `MobsClearedCondition` / `GateOpenedCondition` / `PlayerInZoneCondition` | `SmartConditions/*ConditionWrapper.cs` | Stage end conditions. `MobsCleared` counts alive mobs plus pending spawn requests (`_maxAlive`, default 0). `PlayerInZone` latches once the zone is reached. |
 | `NoAmmoAroundCondition` options | `SmartConditions/NoAmmoAroundConditionWrapper.cs` | `_sameCaliberOnly` makes only ammo loot of the current caliber (or `None`) count as "ammo around". With `_lowAmmoThreshold` > 0, the condition triggers on magazine + reserve ≤ threshold. The defaults keep the endless level's original rule. |
@@ -99,7 +100,7 @@ Other rules:
 
 ## Props
 
-- **SewerHatch.** An iron lid with a grate, a rim, and the Toxic zombie's green fog (`FogCalmGrey` from `ToxicMob.prefab`, copied with its overrides). It is visual only: it does no damage. `NavMeshModifier` Ignore From Build keeps it out of the bake.
+- **SewerHatch.** An iron lid with a grate, a rim, and the Toxic zombie's green fog (`FogCalmGrey` from `ToxicMob.prefab`, copied with its overrides). It carries a `SewerHatch` ModifierZone: standing on the lid gives the player light poison (1 HP / 0.5 s), while mobs are immune. See `Docs/SewerHatchFeature.md`. `NavMeshModifier` Ignore From Build keeps it out of the bake.
 - **KeyPickup.** A big flat golden key that reads well from the top-down camera, plus a floor glow and a point light.
 - **LevelGate.** A 5 m steel panel with hazard stripes and a carving obstacle measuring 5.4 × 1.4. The door carries a `BulletBlocker`.
 - **Crates on the level.** These are `Crate.prefab` instances with an added `NavMeshModifier` set to Ignore From Build. Without it, a crate placed before the bake would leave a permanent hole in the navmesh after it breaks.

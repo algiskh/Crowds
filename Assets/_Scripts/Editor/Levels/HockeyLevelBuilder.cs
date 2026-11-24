@@ -13,11 +13,13 @@ namespace Crowds.EditorTools
 	///
 	/// Layout (floor top y = -0.5, one FloorSector, SectorMode.Sliding):
 	///   arena floor  x[-36,36] z[-20,20], enclosed by primitive stands (parapet stops bullets, tiers behind it);
-	///   props in the ring outside the boards: overturned vending machine at the SE gate, cheerleader stage (N side),
-	///   seven-segment scoreboard on the west stand (deaths:frags, ECS.ScoreboardSystem);
+	///   props in the ring outside the boards: overturned vending machine at the SE gate, cheerleader stage (−X/+Z
+	///   corner), music stage with a mic + guitar stand (−X/−Z corner), seven-segment scoreboard on the west stand
+	///   (deaths:frags, ECS.ScoreboardSystem) flanked by two (switched-off) video screens;
+	///   white-grey outer walls close the venue behind the stands on all four sides;
 	///   rink         60×30 rounded rectangle (corner R 8.5) at the centre, boards 1.1 m with 4 gates on the long
 	///                sides; the ice is an IceRink ModifierZone → TractionModifier → inertial sliding for everybody;
-	///   8 tunnel portals in the stands = mob spawn points; player starts at centre ice.
+	///   6 tunnel portals in the long stands = mob spawn points (none behind the goals); player starts at centre ice.
 	/// Script: 3 quota waves (DifficultyStage.MobQuota) — 25 Slow + 15 Fast; 70 Fast + 8 Fatman;
 	///   5 GunnerBare + 5 GunnerMob (helmet) + 45 Fast + 40 Slow — with 12 s breathers in between when loot is thrown onto the ice.
 	/// Loot: no shotguns, 12ga or shield (mob drops filtered by LevelConfig); ammo fallback on the ice.
@@ -39,6 +41,11 @@ namespace Crowds.EditorTools
 		private const string FastSourcePath = "Assets/_Data/Mobs/Fast.asset";
 		private const string CheerZombiePath = "Assets/_Data/Mobs/CheerZombie.asset";
 		private const string CheerZombieId = "CheerZombie";
+		// Speed bonus → skates on this level (loot icon override + SkatesModifier), see Docs/HockeyLevelFeature.md.
+		private const string SpeedBonusId = "speedup";
+		private const string SkatesRefPath = "Assets/REFs/ice_skates_logo.png";
+		private const string SkatesSpritePath = "Assets/Sprites/Bonuses/IceSkates.png";
+		private const float SkatesCounterGrip = 4f; // grip × 4 when steering against the slide (3 → 12 m/s²)
 
 		// Arena / rink geometry. The ring between the boards and the stands is kept narrow (~5–6 m) on purpose so the
 		// player isn't tempted to kite around the rink outside the boards.
@@ -59,6 +66,7 @@ namespace Crowds.EditorTools
 		private static Material _vendingBody, _vendingGlass, _vendingPanel, _vendingWhite, _stageDeck, _speaker;
 		private static Material _scoreHousing, _scoreFrame, _segmentLit, _segmentOff;
 		private static Material _tunnelBlack, _resurfacerWhite, _tire, _headlight, _beacon;
+		private static Material _outerWall, _outerWallTrim, _screenOff, _guitarBody, _guitarNeck;
 
 		[MenuItem("Tools/Crowds/Build Hockey Level")]
 		public static void Build()
@@ -78,7 +86,7 @@ namespace Crowds.EditorTools
 				prototype.FindPropertyRelative("_lowAmmoThreshold").intValue = 3;
 			});
 
-			var config = BuildConfig(mobsCleared, lowAmmo);
+			var config = BuildConfig(mobsCleared, lowAmmo, EnsureSkatesSprite());
 			var prefab = BuildPrefab(config);
 			BuildHockeyDefinition(prefab);
 
@@ -89,7 +97,8 @@ namespace Crowds.EditorTools
 
 		// ================================================================== config
 
-		private static LevelConfig BuildConfig(SmartConditionWrapper mobsCleared, SmartConditionWrapper lowAmmo)
+		private static LevelConfig BuildConfig(SmartConditionWrapper mobsCleared, SmartConditionWrapper lowAmmo,
+			Sprite skatesSprite)
 		{
 			var config = LoadOrCreate<LevelConfig>(LevelConfigPathH);
 			var cleared = new[] { mobsCleared };
@@ -118,6 +127,20 @@ namespace Crowds.EditorTools
 			SetField(config, "_allowedMobWeaponDrops", new[] { "Pistol", "SMG", "AR", "Rifle", "MachineGun" });
 			SetField(config, "_bannedMobAmmoCalibers", new[] { Caliber.Gauge12 });
 			SetField(config, "_bannedMobBonusIds", new[] { "shield" });
+			// The speed bonus is a pair of skates here: own icon + SkatesModifier (counter-steering beats the slide).
+			SetField(config, "_bonusOverrides", new[]
+			{
+				new BonusLevelOverride
+				{
+					BonusId = SpeedBonusId,
+					Preview = skatesSprite,
+					ExtraModifiers = new Modifier[]
+					{
+						new SkatesModifier { Id = ModifierConstants.SkatesCounterGrip, Source = BuffSource.Player,
+							Value = SkatesCounterGrip },
+					},
+				},
+			});
 			EditorUtility.SetDirty(config);
 			return config;
 		}
@@ -189,9 +212,13 @@ namespace Crowds.EditorTools
 
 				// --- Stands around the arena (parapet = wall + bullet blocker) with tunnel portals ---
 				var stands = Child(root.transform, "Stands");
-				var cheerCorner = ComputeCheerCorner();
-				var tunnels = BuildStands(stands, cheerCorner);
-				BuildScoreboard(stands);
+				var cheerCorner = ComputeStageCorner(1f);
+				var musicCorner = ComputeStageCorner(-1f);
+				var tunnels = BuildStands(stands, cheerCorner, musicCorner);
+				var scoreboard = BuildScoreboard(stands);
+				ArenaScreens(stands, scoreboard);
+				// White-grey walls behind the stands close the venue on all four sides.
+				OuterWalls(root.transform);
 
 				// --- Props between the boards and the stands ---
 				var props = Child(root.transform, "Props");
@@ -200,6 +227,9 @@ namespace Crowds.EditorTools
 				// Ice resurfacer parked on the ice in the corner opposite the cheerleaders (+X/−Z), nose toward centre ice.
 				IceResurfacer(rink, new Vector3(19.5f, FloorY + 0.02f, -10.5f), -55f);
 				CheerStage(props, cheerCorner);
+				MusicStage(props, musicCorner);
+				// Crates with skates (speed bonus) in the free corners outside the rink.
+				SkatesCrates(props);
 
 				// --- Mission: zone (banner/fallback), start, loot ---
 				var mission = Child(root.transform, "Mission");
@@ -263,6 +293,90 @@ namespace Crowds.EditorTools
 			finally
 			{
 				Object.DestroyImmediate(root);
+			}
+		}
+
+		// ================================================================== skates
+
+		/// <summary>
+		/// Copies the reference icon (white skates silhouette) into Sprites/Bonuses and imports it as a sprite.
+		/// Returns null (keeps the default speed icon) when the reference is missing.
+		/// </summary>
+		private static Sprite EnsureSkatesSprite()
+		{
+			if (AssetDatabase.LoadAssetAtPath<Texture2D>(SkatesSpritePath) == null)
+			{
+				if (AssetDatabase.LoadAssetAtPath<Texture2D>(SkatesRefPath) == null)
+				{
+					Debug.LogWarning($"[HockeyLevelBuilder] {SkatesRefPath} not found — the speed bonus keeps its default icon.");
+					return null;
+				}
+				EnsureFolder(System.IO.Path.GetDirectoryName(SkatesSpritePath).Replace('\\', '/'));
+				AssetDatabase.CopyAsset(SkatesRefPath, SkatesSpritePath);
+			}
+
+			if (AssetImporter.GetAtPath(SkatesSpritePath) is TextureImporter importer &&
+			    (importer.textureType != TextureImporterType.Sprite || importer.maxTextureSize != 256))
+			{
+				importer.textureType = TextureImporterType.Sprite;
+				importer.spriteImportMode = SpriteImportMode.Single;
+				importer.alphaIsTransparency = true;
+				importer.mipmapEnabled = true;
+				importer.maxTextureSize = 256;
+				importer.SaveAndReimport();
+			}
+			return AssetDatabase.LoadAssetAtPath<Sprite>(SkatesSpritePath);
+		}
+
+		/// <summary>
+		/// One crate per free corner of the arena floor (all but the cheerleader corner), on the diagonal between the
+		/// rounded rink corner and the stands: always drops the speed bonus (skates on this level). Scene breakables,
+		/// excluded from the bake (no hole in the navmesh once broken) — the carving obstacle routes mobs around.
+		/// </summary>
+		private static void SkatesCrates(Transform props)
+		{
+			var crate = AssetDatabase.LoadAssetAtPath<GameObject>(CratePrefabPath);
+			if (crate == null)
+			{
+				Debug.LogWarning($"[HockeyLevelBuilder] {CratePrefabPath} not found — no skates crates.");
+				return;
+			}
+
+			// East corners on the diagonal; both west corners hold stages (cheer −X/+Z, music −X/−Z), so the third crate
+			// stands on the ring behind the west goal, between the goal axis (z 0) and the music stage.
+			var spots = new List<Vector3>();
+			foreach (var sign in new[] { new Vector2(1f, 1f), new Vector2(1f, -1f) })
+			{
+				var rinkCorner = new Vector3(sign.x * (RinkLength * 0.5f - RinkCorner), 0f, sign.y * (RinkWidth * 0.5f - RinkCorner));
+				var arenaCorner = new Vector3(sign.x * ArenaX, 0f, sign.y * ArenaZ);
+				var dir = (arenaCorner - rinkCorner).normalized;
+				// ~4 m past the boards: mid-pocket, ≈5 m clear of the stands' parapet.
+				spots.Add(rinkCorner + dir * (RinkCorner + BoardThickness * 0.5f + 4f));
+			}
+			spots.Add(new Vector3(-33f, 0f, -6.5f));
+
+			for (int i = 0; i < spots.Count; i++)
+			{
+				var pos = spots[i];
+				pos.y = FloorY;
+
+				var c = (GameObject)PrefabUtility.InstantiatePrefab(crate, props);
+				c.name = $"Crate_Skates_{i + 1}";
+				c.transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, 20f + i * 31f, 0f));
+				c.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
+
+				var so = new SerializedObject(c.GetComponent<Breakable>());
+				so.FindProperty("_overrideLoot").boolValue = true;
+				so.FindProperty("_lootCount").intValue = 1;
+				var table = so.FindProperty("_lootTable");
+				table.arraySize = 1;
+				var entry = table.GetArrayElementAtIndex(0);
+				entry.FindPropertyRelative("LootType").enumValueIndex = (int)LootType.Bonus;
+				entry.FindPropertyRelative("Id").stringValue = SpeedBonusId;
+				entry.FindPropertyRelative("Count").intValue = 1;
+				entry.FindPropertyRelative("Chance").floatValue = 1f;
+				entry.FindPropertyRelative("AmmoCaliber").enumValueIndex = 0;
+				so.ApplyModifiedPropertiesWithoutUndo();
 			}
 		}
 
@@ -459,32 +573,37 @@ namespace Crowds.EditorTools
 		/// <summary>
 		/// Stands on all four sides: a concrete parapet on the arena edge (cuts the navmesh, stops bullets with sparks)
 		/// and stepped tiers with coloured seat rows behind it. Long sides run past the corners to close them.
-		/// The cheerleader corner (world −X/+Z, see <see cref="ComputeCheerCorner"/>) is cut out of the north and west
-		/// stands and closed by a short diagonal corner stand right behind the stage.
+		/// The two stage corners on the west end (cheerleaders −X/+Z, musicians −X/−Z, see <see cref="ComputeStageCorner"/>)
+		/// are cut out of the north/south and west stands and closed by short diagonal corner stands behind the stages.
 		/// Tunnel portals (dark openings with a frame) in the parapet — returned as (point on the edge, inward normal)
 		/// for the spawn points.
 		/// </summary>
-		private static List<(Vector3, Vector3)> BuildStands(Transform parent, CheerCorner corner)
+		private static List<(Vector3, Vector3)> BuildStands(Transform parent, StageCorner cheer, StageCorner music)
 		{
 			float depth = 0.4f + StandTiers * TierDepth;
 			var tunnels = new List<(Vector3, Vector3)>();
 
 			// (edge line point, outward normal, [from, to] and tunnel offsets along the edge's local X from that point)
 			// Local X = LookRotation(outward) right: north → +x, south → −x, west → +z, east → −z.
-			var sides = new (Vector3 line, Vector3 outward, float from, float to, Material seat, float[] tunnelsAt)[]
+			// South: local X = −x, so its west end (cut back for the music stage) is the "to" end.
+			// seatLimit: seat rows only where |edge param| ≤ limit. The long sides run past the east corners to close
+			// them, but seats there would face the side of the east stand — those corner tiers stay bare concrete.
+			// No tunnels on the short sides: they sat right behind the goals.
+			const float noLimit = float.PositiveInfinity;
+			var none = System.Array.Empty<float>();
+			var sides = new (string name, Vector3 line, Vector3 outward, float from, float to, Material seat, float[] tunnelsAt, float seatLimit)[]
 			{
-				(new Vector3(0, 0, ArenaZ), Vector3.forward, corner.NorthCutX, ArenaX + depth, _seatRed, new[] { -25f, 0f, 25f }),
-				(new Vector3(0, 0, -ArenaZ), Vector3.back, -ArenaX - depth, ArenaX + depth, _seatBlue, new[] { -25f, 0f, 25f }),
-				(new Vector3(-ArenaX, 0, 0), Vector3.left, -ArenaZ, corner.WestCutZ, _seatBlue, new[] { 0f }),
-				(new Vector3(ArenaX, 0, 0), Vector3.right, -ArenaZ, ArenaZ, _seatRed, new[] { 0f }),
-				(corner.WallCentre, corner.Dir, -corner.WallLength * 0.5f, corner.WallLength * 0.5f, _seatRed, System.Array.Empty<float>()),
+				("Stand_1", new Vector3(0, 0, ArenaZ), Vector3.forward, cheer.LongCutX, ArenaX + depth, _seatRed, new[] { -25f, 0f, 25f }, ArenaX),
+				("Stand_2", new Vector3(0, 0, -ArenaZ), Vector3.back, -ArenaX - depth, -music.LongCutX, _seatBlue, new[] { -25f, 0f, 25f }, ArenaX),
+				("Stand_3", new Vector3(-ArenaX, 0, 0), Vector3.left, music.WestCutZ, cheer.WestCutZ, _seatBlue, none, noLimit),
+				("Stand_4", new Vector3(ArenaX, 0, 0), Vector3.right, -ArenaZ, ArenaZ, _seatRed, none, noLimit),
+				("Stand_CheerCorner", cheer.WallCentre, cheer.Dir, -cheer.WallLength * 0.5f, cheer.WallLength * 0.5f, _seatRed, none, noLimit),
+				("Stand_MusicCorner", music.WallCentre, music.Dir, -music.WallLength * 0.5f, music.WallLength * 0.5f, _seatBlue, none, noLimit),
 			};
 
-			int index = 0;
 			foreach (var side in sides)
 			{
-				var stand = Child(parent, index == 4 ? "Stand_CheerCorner" : $"Stand_{index + 1}");
-				index++;
+				var stand = Child(parent, side.name);
 				var rot = Quaternion.LookRotation(side.outward); // local +Z = outward, local X = along the edge
 				float mid = (side.from + side.to) * 0.5f;
 				var length = side.to - side.from;
@@ -515,9 +634,10 @@ namespace Crowds.EditorTools
 					{
 						Primitive(PrimitiveType.Cube, $"Tier{t}", stand, _wall, new Vector3((a + b) * 0.5f, top * 0.5f, z), Quaternion.identity,
 							new Vector3(b - a, top, TierDepth));
-						if (b - a > 0.6f)
-							Primitive(PrimitiveType.Cube, $"Seats{t}", stand, side.seat, new Vector3((a + b) * 0.5f, top + 0.12f, z + 0.25f),
-								Quaternion.identity, new Vector3(b - a - 0.4f, 0.24f, 0.45f));
+						float sa = Mathf.Max(a, -side.seatLimit - mid), sb = Mathf.Min(b, side.seatLimit - mid);
+						if (sb - sa > 0.6f)
+							Primitive(PrimitiveType.Cube, $"Seats{t}", stand, side.seat, new Vector3((sa + sb) * 0.5f, top + 0.12f, z + 0.25f),
+								Quaternion.identity, new Vector3(sb - sa - 0.4f, 0.24f, 0.45f));
 					}
 				}
 
@@ -798,11 +918,12 @@ namespace Crowds.EditorTools
 					new Vector3(0.066f, 0.12f, 0.066f));
 		}
 
-		// Cheerleader corner = world −X/+Z: the top-right of the screen (the fixed camera looks −X, screen right = +Z),
-		// so the girls face the camera. Passage between the rink boards and the stage front kept narrow on purpose.
+		// Stage corners on the west (−X) end = the top of the screen (the fixed camera looks −X/−Z):
+		//   cheerleaders = world −X/+Z (screen top-right), musicians = world −X/−Z (screen top-left), mirrored in Z.
+		// Passage between the rink boards and the stage front kept narrow on purpose.
 		private const float CheerPassage = 2.6f, CheerDeckLength = 7f, CheerDeckDepth = 5f, CheerDeckHeight = 0.9f;
 
-		internal struct CheerCorner
+		internal struct StageCorner
 		{
 			public Vector3 Dir;         // from the rink corner toward the arena corner (stage local +Z)
 			public Vector3 Perp;        // along the stage front (stage local +X)
@@ -810,32 +931,34 @@ namespace Crowds.EditorTools
 			public Vector3 StageCentre;
 			public Vector3 WallCentre;  // diagonal corner stand: parapet centre line right behind the stage
 			public float WallLength;
-			public float NorthCutX;     // the north stand starts here (x)
-			public float WestCutZ;      // the west stand ends here (z)
+			public float LongCutX;      // the north (zSign +1) / south (zSign −1) stand is cut back to this x
+			public float WestCutZ;      // the west stand is cut back to this z
 		}
 
 		/// <summary>
-		/// Geometry of the cheerleader corner: the stage sits on the diagonal from the rink's rounded corner to the arena
-		/// corner, <see cref="CheerPassage"/> m off the boards; a short diagonal stand closes the corner behind it and the
-		/// north/west stands are cut back to meet that stand (the stage is set into the stands).
+		/// Geometry of a stage corner on the west end (zSign +1 = −X/+Z cheerleaders, −1 = −X/−Z musicians): the stage
+		/// sits on the diagonal from the rink's rounded corner to the arena corner, <see cref="CheerPassage"/> m off the
+		/// boards; a short diagonal stand closes the corner behind it and the long-side/west stands are cut back to meet
+		/// that stand (the stage is set into the stands).
 		/// </summary>
-		private static CheerCorner ComputeCheerCorner()
+		private static StageCorner ComputeStageCorner(float zSign)
 		{
-			var rinkCorner = new Vector3(-(RinkLength * 0.5f - RinkCorner), 0, RinkWidth * 0.5f - RinkCorner);
-			var arenaCorner = new Vector3(-ArenaX, 0, ArenaZ);
-			var c = new CheerCorner();
+			var rinkCorner = new Vector3(-(RinkLength * 0.5f - RinkCorner), 0, zSign * (RinkWidth * 0.5f - RinkCorner));
+			var arenaCorner = new Vector3(-ArenaX, 0, zSign * ArenaZ);
+			var c = new StageCorner();
 			c.Dir = (arenaCorner - rinkCorner).normalized;
 			c.Perp = new Vector3(c.Dir.z, 0, -c.Dir.x); // = LookRotation(Dir) right
 			c.FrontCentre = rinkCorner + c.Dir * (RinkCorner + BoardThickness * 0.5f + CheerPassage);
 			c.StageCentre = c.FrontCentre + c.Dir * (CheerDeckDepth * 0.5f);
 			c.WallCentre = c.FrontCentre + c.Dir * (CheerDeckDepth + 0.4f); // parapet inner face flush with the deck back
 			const float parapetOuter = 0.8f; // reach the outer face of both edge parapets (no gaps)
-			float toNorth = (ArenaZ + parapetOuter - c.WallCentre.z) / c.Perp.z;
-			float toWest = (c.WallCentre.x + ArenaX + parapetOuter) / c.Perp.x;
-			float half = Mathf.Max(toNorth, toWest);
+			float px = Mathf.Abs(c.Perp.x), pz = Mathf.Abs(c.Perp.z);
+			float toLong = (ArenaZ + parapetOuter - Mathf.Abs(c.WallCentre.z)) / pz;
+			float toWest = (c.WallCentre.x + ArenaX + parapetOuter) / px;
+			float half = Mathf.Max(toLong, toWest);
 			c.WallLength = half * 2f;
-			c.NorthCutX = c.WallCentre.x + c.Perp.x * half;
-			c.WestCutZ = c.WallCentre.z - c.Perp.z * half;
+			c.LongCutX = c.WallCentre.x + px * half;        // the end toward +X meets the long side
+			c.WestCutZ = c.WallCentre.z - zSign * pz * half; // the end toward −X meets the west side
 			return c;
 		}
 
@@ -847,7 +970,7 @@ namespace Crowds.EditorTools
 		/// in the passage in front of the stage (escape start / zombie spawns) and the escape point in the opposite corner.
 		/// Local −Z = toward the ice.
 		/// </summary>
-		private static void CheerStage(Transform parent, CheerCorner corner)
+		private static void CheerStage(Transform parent, StageCorner corner)
 		{
 			const float length = CheerDeckLength, depth = CheerDeckDepth, deckH = CheerDeckHeight;
 			var stage = Child(parent, "CheerleaderStage");
@@ -915,13 +1038,107 @@ namespace Crowds.EditorTools
 		}
 
 		/// <summary>
+		/// Music stage in the −X/−Z corner (screen top-left), the mirror of the cheerleader stage: same deck set into the
+		/// stands (red skirt), speaker stacks in the back corners, a microphone on a boom stand with a floor wedge monitor
+		/// at the front centre, an electric guitar resting on its stand next to a combo amp. Decor only for now: the
+		/// empty "Slots" (vocal, guitar) mark where musicians will stand. Not Walkable for the bake. Local −Z = toward the ice.
+		/// </summary>
+		private static void MusicStage(Transform parent, StageCorner corner)
+		{
+			const float length = CheerDeckLength, depth = CheerDeckDepth, deckH = CheerDeckHeight;
+			var stage = Child(parent, "MusicStage");
+			stage.SetPositionAndRotation(new Vector3(corner.StageCentre.x, FloorY, corner.StageCentre.z), Quaternion.LookRotation(corner.Dir));
+			var modifier = stage.gameObject.AddComponent<NavMeshModifier>();
+			modifier.overrideArea = true;
+			modifier.area = 1; // Not Walkable
+			var id = Quaternion.identity;
+
+			Primitive(PrimitiveType.Cube, "Skirt", stage, _seatRed, new Vector3(0, (deckH - 0.1f) * 0.5f, 0), id,
+				new Vector3(length, deckH - 0.1f, depth));
+			Primitive(PrimitiveType.Cube, "Deck", stage, _stageDeck, new Vector3(0, deckH - 0.05f, 0), id,
+				new Vector3(length + 0.1f, 0.1f, depth + 0.1f));
+			Primitive(PrimitiveType.Cube, "EdgeTrim", stage, _kick, new Vector3(0, deckH - 0.16f, -depth * 0.5f - 0.03f), id,
+				new Vector3(length, 0.08f, 0.04f));
+			// Speaker stacks: two cabinets each, the top one slightly smaller.
+			foreach (float side in new[] { -1f, 1f })
+			{
+				float x = side * (length * 0.5f - 0.5f), z = depth * 0.5f - 0.5f;
+				Primitive(PrimitiveType.Cube, "Speaker", stage, _speaker, new Vector3(x, deckH + 0.45f, z), id, new Vector3(0.75f, 0.9f, 0.55f));
+				Primitive(PrimitiveType.Cube, "SpeakerTop", stage, _speaker, new Vector3(x, deckH + 1.22f, z), id, new Vector3(0.65f, 0.64f, 0.5f));
+			}
+
+			// Microphone stand at the front centre: round base, pole, boom angled up toward the singer (+Z), mic at its end.
+			float micZ = -depth * 0.5f + 1.2f;
+			var mic = Child(stage, "MicStand");
+			mic.localPosition = new Vector3(0, deckH, micZ);
+			Primitive(PrimitiveType.Cylinder, "Base", mic, _speaker, new Vector3(0, 0.015f, 0), id, new Vector3(0.4f, 0.03f, 0.4f));
+			Primitive(PrimitiveType.Cylinder, "Pole", mic, _scoreFrame, new Vector3(0, 0.55f, 0), id, new Vector3(0.035f, 1.1f, 0.035f));
+			var boom = Child(mic, "Boom");
+			boom.SetLocalPositionAndRotation(new Vector3(0, 1.1f, 0), Quaternion.Euler(65f, 0, 0)); // local +Y → up and toward +Z
+			Primitive(PrimitiveType.Cylinder, "Arm", boom, _scoreFrame, new Vector3(0, 0.22f, 0), id, new Vector3(0.025f, 0.44f, 0.025f));
+			Primitive(PrimitiveType.Cylinder, "Mic", boom, _speaker, new Vector3(0, 0.5f, 0), id, new Vector3(0.045f, 0.14f, 0.045f));
+			Primitive(PrimitiveType.Sphere, "Grille", boom, _scoreFrame, new Vector3(0, 0.6f, 0), id, new Vector3(0.07f, 0.07f, 0.07f));
+			// Floor wedge monitor in front of the mic, tilted toward the singer.
+			Primitive(PrimitiveType.Cube, "Monitor", stage, _speaker, new Vector3(0, deckH + 0.14f, micZ - 0.55f), Quaternion.Euler(-30f, 0, 0),
+				new Vector3(0.6f, 0.3f, 0.4f));
+
+			// Guitar stand (tripod base, padded cradle, upright leaning back 15° with a yoke) + electric guitar on it.
+			var gs = Child(stage, "GuitarStand");
+			gs.SetLocalPositionAndRotation(new Vector3(2f, deckH, -depth * 0.5f + 1.6f), Quaternion.Euler(0, -20f, 0));
+			foreach (float side in new[] { -1f, 1f })
+				Primitive(PrimitiveType.Cube, "Leg", gs, _speaker, new Vector3(side * 0.12f, 0.015f, -0.12f), Quaternion.Euler(0, side * 30f, 0),
+					new Vector3(0.025f, 0.025f, 0.34f));
+			Primitive(PrimitiveType.Cube, "BackLeg", gs, _speaker, new Vector3(0, 0.015f, 0.12f), id, new Vector3(0.025f, 0.025f, 0.32f));
+			Primitive(PrimitiveType.Cube, "Cradle", gs, _speaker, new Vector3(0, 0.24f, -0.13f), id, new Vector3(0.34f, 0.04f, 0.1f));
+			foreach (float side in new[] { -1f, 1f })
+				Primitive(PrimitiveType.Cube, "CradleArm", gs, _speaker, new Vector3(side * 0.16f, 0.29f, -0.15f), id,
+					new Vector3(0.03f, 0.1f, 0.05f));
+			var upright = Child(gs, "Upright");
+			upright.SetLocalPositionAndRotation(new Vector3(0, 0.02f, -0.05f), Quaternion.Euler(15f, 0, 0));
+			Primitive(PrimitiveType.Cylinder, "Pole", upright, _speaker, new Vector3(0, 0.42f, 0), id, new Vector3(0.03f, 0.84f, 0.03f));
+			Primitive(PrimitiveType.Cube, "Yoke", upright, _speaker, new Vector3(0, 0.84f, -0.06f), id, new Vector3(0.12f, 0.03f, 0.14f));
+
+			// Guitar frame: +Y along the neck, −Z = the front face; leans back 15° with its bottom in the cradle.
+			var guitar = Child(gs, "ElectricGuitar");
+			guitar.SetLocalPositionAndRotation(new Vector3(0, 0.26f, -0.14f), Quaternion.Euler(15f, 0, 0));
+			var face = Quaternion.Euler(90f, 0, 0); // cylinder axis → Z (disc facing the front)
+			Primitive(PrimitiveType.Cylinder, "BodyLower", guitar, _guitarBody, new Vector3(0, 0.16f, 0), face, new Vector3(0.34f, 0.045f, 0.3f));
+			Primitive(PrimitiveType.Cylinder, "BodyUpper", guitar, _guitarBody, new Vector3(0.015f, 0.34f, 0), face, new Vector3(0.27f, 0.045f, 0.24f));
+			Primitive(PrimitiveType.Cube, "Waist", guitar, _guitarBody, new Vector3(0.01f, 0.25f, 0), id, new Vector3(0.24f, 0.14f, 0.045f));
+			Primitive(PrimitiveType.Cube, "Pickguard", guitar, _vendingWhite, new Vector3(-0.04f, 0.24f, -0.024f), id,
+				new Vector3(0.14f, 0.2f, 0.004f));
+			foreach (float py in new[] { 0.19f, 0.3f })
+				Primitive(PrimitiveType.Cube, "Pickup", guitar, _speaker, new Vector3(0, py, -0.027f), id, new Vector3(0.08f, 0.025f, 0.006f));
+			Primitive(PrimitiveType.Cube, "Bridge", guitar, _scoreFrame, new Vector3(0, 0.12f, -0.026f), id, new Vector3(0.09f, 0.02f, 0.008f));
+			Primitive(PrimitiveType.Cylinder, "Knob", guitar, _scoreFrame, new Vector3(0.1f, 0.1f, -0.028f), face, new Vector3(0.03f, 0.012f, 0.03f));
+			Primitive(PrimitiveType.Cube, "Neck", guitar, _guitarNeck, new Vector3(0, 0.7f, 0.003f), id, new Vector3(0.055f, 0.5f, 0.03f));
+			Primitive(PrimitiveType.Cube, "Headstock", guitar, _speaker, new Vector3(0, 1.03f, 0.005f), id, new Vector3(0.085f, 0.17f, 0.02f));
+
+			// Combo amp behind the guitar, angled toward the front.
+			var amp = Child(stage, "ComboAmp");
+			amp.SetLocalPositionAndRotation(new Vector3(2.85f, deckH, 0.2f), Quaternion.Euler(0, -25f, 0));
+			Primitive(PrimitiveType.Cube, "Cabinet", amp, _speaker, new Vector3(0, 0.28f, 0), id, new Vector3(0.62f, 0.56f, 0.3f));
+			Primitive(PrimitiveType.Cube, "Grille", amp, _stageDeck, new Vector3(0, 0.22f, -0.152f), id, new Vector3(0.52f, 0.34f, 0.01f));
+			Primitive(PrimitiveType.Cube, "Panel", amp, _kick, new Vector3(0, 0.47f, -0.152f), id, new Vector3(0.52f, 0.06f, 0.01f));
+
+			// Where the musicians will stand (facing the ice), for a future musician NPC.
+			var slotRoot = Child(stage, "Slots");
+			Child(slotRoot, "Slot_Vocal").SetLocalPositionAndRotation(new Vector3(0, deckH, micZ + 0.6f), Quaternion.Euler(0, 180f, 0));
+			Child(slotRoot, "Slot_Guitar").SetLocalPositionAndRotation(new Vector3(1.9f, deckH, 0.3f), Quaternion.Euler(0, 180f, 0));
+		}
+
+		/// <summary>
 		/// Outdated seven-segment scoreboard on the top tier of the west stand (behind the west goal — the fixed camera
 		/// looks −X, so this stand faces the screen). Shows "HOME:AWAY" = player deaths : frags on 3 + 3 cells, digits
-		/// growing outward from the colon, unused cells dark: "   :51 ", "  1:81 " after death (0 deaths = dark).
+		/// growing outward from the colon, unused cells dark: "  0:51 ", "  1:81 " after death; during a breather the
+		/// away side counts down the seconds instead of the frags.
 		/// Tilted back 20° toward the camera.
 		/// Driven at runtime by ECS.ScoreboardSystem through <see cref="ArenaScoreboard"/>.
+		/// Returns the housing size (width, height) and its centre height in stand space (z) for the flanking screens.
 		/// </summary>
-		private static void BuildScoreboard(Transform stands)
+		private const float ScoreboardInset = 1f;
+
+		private static Vector3 BuildScoreboard(Transform stands)
 		{
 			const float dw = 0.8f, dh = 1.4f, t = 0.14f, gap = 0.3f, colonW = 0.4f, margin = 0.5f, header = 0.45f;
 			const int digits = 3; // per side: symmetric 000:000
@@ -936,14 +1153,18 @@ namespace Crowds.EditorTools
 			var id = Quaternion.identity;
 
 			float tierTop = ParapetHeight + TierRise * StandTiers;
-			float standZ = 0.4f + TierDepth * (StandTiers - 0.5f);
+			// ScoreboardInset m closer to the arena than the top tier's centre (the flanking screens stay on the top tier).
+			float standZ = 0.4f + TierDepth * (StandTiers - 0.5f) - ScoreboardInset;
 			float bottom = tierTop + 0.6f;
-			// Posts run up into the (tilted) housing's back so the board doesn't float.
+			// Posts stand on the tier under them and run up into the (tilted) housing's back so the board doesn't float.
+			float postZ = standZ + 0.1f;
+			int postTier = Mathf.Clamp(Mathf.FloorToInt((postZ - 0.4f) / TierDepth), 0, StandTiers - 1);
+			float postBase = ParapetHeight + TierRise * (postTier + 1);
 			float postTop = bottom + height * 0.5f;
 			foreach (float side in new[] { -1f, 1f })
 				Primitive(PrimitiveType.Cylinder, "Post", board, _scoreFrame,
-					new Vector3(side * (width * 0.5f - 0.6f), (tierTop + postTop) * 0.5f, standZ + 0.1f), id,
-					new Vector3(0.18f, postTop - tierTop, 0.18f));
+					new Vector3(side * (width * 0.5f - 0.6f), (postBase + postTop) * 0.5f, postZ), id,
+					new Vector3(0.18f, postTop - postBase, 0.18f));
 
 			var display = Child(board, "Display");
 			display.SetLocalPositionAndRotation(new Vector3(0, bottom + height * 0.5f, standZ), Quaternion.Euler(20f, 0, 0));
@@ -987,8 +1208,112 @@ namespace Crowds.EditorTools
 			SetField(scoreboard, "_awaySegments", away.ToArray());
 			SetField(scoreboard, "_litMaterial", _segmentLit);
 			SetField(scoreboard, "_offMaterial", _segmentOff);
-			scoreboard.SetScore(0, 0); // prefab shows "   :0  "; ScoreboardSystem takes over at runtime
+			SetField(scoreboard, "_homeBlankZero", false); // "0" on the home side while the player is alive
+			scoreboard.SetScore(0, 0); // prefab shows "  0:0  "; ScoreboardSystem takes over at runtime
 			EditorUtility.SetDirty(scoreboard);
+			return new Vector3(width, height, bottom + height * 0.5f);
+		}
+
+		/// <summary>
+		/// Two video screens on the top tier of the west stand, either side of the scoreboard: same frame, posts and
+		/// 20° tilt, centred on the scoreboard's height. Switched off for now: a glossy black "Panel" in a housing plus a
+		/// dim standby LED. The Panel renderer is where a video material / RenderTexture goes once they work.
+		/// "Screen_Left" is at −Z (screen left for the fixed camera), "Screen_Right" at +Z.
+		/// </summary>
+		private static void ArenaScreens(Transform stands, Vector3 scoreboard)
+		{
+			const float w = 4.4f, h = 2.5f, gap = 0.7f, border = 0.1f;
+			float tierTop = ParapetHeight + TierRise * StandTiers;
+			float standZ = 0.4f + TierDepth * (StandTiers - 0.5f);
+			float centreY = scoreboard.z;
+			float offset = scoreboard.x * 0.5f + 0.1f + gap + w * 0.5f + border + 0.05f; // past the scoreboard frame
+			var id = Quaternion.identity;
+
+			foreach (float side in new[] { -1f, 1f })
+			{
+				var screen = Child(stands, side < 0f ? "Screen_Left" : "Screen_Right");
+				// Same frame as the scoreboard: +Z outward, local X = world +Z.
+				screen.SetPositionAndRotation(new Vector3(-ArenaX, FloorY, side * offset), Quaternion.LookRotation(Vector3.left));
+				screen.gameObject.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
+
+				foreach (float post in new[] { -1f, 1f })
+					Primitive(PrimitiveType.Cylinder, "Post", screen, _scoreFrame,
+						new Vector3(post * (w * 0.5f - 0.5f), (tierTop + centreY) * 0.5f, standZ + 0.1f), id,
+						new Vector3(0.16f, centreY - tierTop, 0.16f));
+
+				var display = Child(screen, "Display");
+				display.SetLocalPositionAndRotation(new Vector3(0, centreY, standZ), Quaternion.Euler(20f, 0, 0));
+				float hw = w + border * 2f, hh = h + border * 2f;
+				Primitive(PrimitiveType.Cube, "Housing", display, _scoreHousing, Vector3.zero, id, new Vector3(hw, hh, 0.3f));
+				foreach (float s in new[] { -1f, 1f })
+				{
+					Primitive(PrimitiveType.Cube, "FrameH", display, _scoreFrame, new Vector3(0, s * (hh * 0.5f + 0.05f), 0), id,
+						new Vector3(hw + 0.2f, 0.1f, 0.35f));
+					Primitive(PrimitiveType.Cube, "FrameV", display, _scoreFrame, new Vector3(s * (hw * 0.5f + 0.05f), 0, 0), id,
+						new Vector3(0.1f, hh + 0.2f, 0.35f));
+				}
+				var panel = Primitive(PrimitiveType.Cube, "Panel", display, _screenOff, new Vector3(0, 0, -0.155f), id,
+					new Vector3(w, h, 0.01f));
+				panel.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+				var led = Primitive(PrimitiveType.Cube, "StandbyLed", display, _segmentLit,
+					new Vector3(w * 0.5f - 0.1f, -h * 0.5f - border * 0.5f, -0.155f), id, new Vector3(0.05f, 0.05f, 0.01f));
+				led.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+			}
+		}
+
+		// Outer walls behind the stands. Far walls (west/south = the top of the screen) are taller; the near ones
+		// (north/east, between the camera and the arena) stay low enough not to hide the player at the parapet.
+		private const float OuterWallFar = 8f, OuterWallNear = 6f, OuterWallThickness = 0.4f, PilasterStep = 8f;
+
+		/// <summary>
+		/// White-grey walls closing the venue on all four sides, inner face flush with the back of the stands' top tier,
+		/// with darker pilasters and a cornice; a concrete backfill under the stands' footprint hides the void behind the
+		/// diagonal corner stands. Visual only: ignored by the navmesh bake (unreachable), cast no shadows (the arena
+		/// lighting stays as it was).
+		/// </summary>
+		private static void OuterWalls(Transform root)
+		{
+			float depth = 0.4f + StandTiers * TierDepth;
+			float ix = ArenaX + depth, iz = ArenaZ + depth, t = OuterWallThickness;
+			var walls = Child(root, "OuterWalls");
+			walls.gameObject.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
+
+			// The far walls own the corners (full length + thickness at both ends), the near ones fit between them.
+			var sides = new (string name, Vector3 centre, Vector3 outward, float length, float height)[]
+			{
+				("Wall_North", new Vector3(t * 0.5f, 0, iz + t * 0.5f), Vector3.forward, ix * 2f + t, OuterWallNear),
+				("Wall_South", new Vector3(0, 0, -iz - t * 0.5f), Vector3.back, (ix + t) * 2f, OuterWallFar),
+				("Wall_West", new Vector3(-ix - t * 0.5f, 0, 0), Vector3.left, (iz + t) * 2f, OuterWallFar),
+				("Wall_East", new Vector3(ix + t * 0.5f, 0, 0), Vector3.right, iz * 2f, OuterWallNear),
+			};
+			var id = Quaternion.identity;
+			foreach (var side in sides)
+			{
+				var wall = Child(walls, side.name);
+				wall.SetPositionAndRotation(new Vector3(side.centre.x, FloorY, side.centre.z), Quaternion.LookRotation(side.outward));
+				float hgt = side.height, len = side.length;
+				Primitive(PrimitiveType.Cube, "Body", wall, _outerWall, new Vector3(0, hgt * 0.5f, 0), id, new Vector3(len, hgt, t));
+				// Cornice along the top, protruding inward (local −Z = toward the arena).
+				Primitive(PrimitiveType.Cube, "Cornice", wall, _outerWallTrim, new Vector3(0, hgt - 0.15f, -0.1f), id,
+					new Vector3(len, 0.3f, t + 0.2f));
+				int n = Mathf.Max(1, Mathf.RoundToInt(len / PilasterStep));
+				for (int i = 1; i < n; i++)
+					Primitive(PrimitiveType.Cube, "Pilaster", wall, _outerWallTrim,
+						new Vector3(-len * 0.5f + i * len / n, (hgt - 0.3f) * 0.5f, -t * 0.5f - 0.12f), id,
+						new Vector3(0.6f, hgt - 0.3f, 0.25f));
+			}
+
+			// Backfill under the stands' footprint (the arena floor itself stays the FloorSector mesh), 2 cm lower.
+			var fill = Child(walls, "Backfill");
+			const float th = 0.1f;
+			float y = FloorY - 0.02f - th * 0.5f;
+			Primitive(PrimitiveType.Cube, "North", fill, _wall, new Vector3(0, y, (ArenaZ + iz) * 0.5f), id, new Vector3(ix * 2f, th, iz - ArenaZ));
+			Primitive(PrimitiveType.Cube, "South", fill, _wall, new Vector3(0, y, -(ArenaZ + iz) * 0.5f), id, new Vector3(ix * 2f, th, iz - ArenaZ));
+			Primitive(PrimitiveType.Cube, "West", fill, _wall, new Vector3(-(ArenaX + ix) * 0.5f, y, 0), id, new Vector3(ix - ArenaX, th, ArenaZ * 2f));
+			Primitive(PrimitiveType.Cube, "East", fill, _wall, new Vector3((ArenaX + ix) * 0.5f, y, 0), id, new Vector3(ix - ArenaX, th, ArenaZ * 2f));
+
+			foreach (var r in walls.GetComponentsInChildren<MeshRenderer>())
+				r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 		}
 
 		// One seven-segment digit centred at (cx, cy) on the display face; renderers in a…g order (ArenaScoreboard).
@@ -1144,6 +1469,8 @@ namespace Crowds.EditorTools
 			_ice.SetColor("_Color", IceColor);
 			_ice.SetFloat("_Smoothness", 0.85f);
 			EditorUtility.SetDirty(_ice);
+			// Scratched-ice texture, tinted so its average stays IceColor; ice UVs are metres / 4 → one tile per 8 m.
+			LevelTextures.Apply(_ice, LevelTextures.Ice, new Color(0.84f, 0.87f, 0.84f), 0.5f);
 			_lineRed = Mat("Level_IceLineRed", new Color(0.78f, 0.08f, 0.08f), 0f, 0.9f);
 			_lineBlue = Mat("Level_IceLineBlue", new Color(0.10f, 0.25f, 0.75f), 0f, 0.9f);
 			_board = Mat("Level_Board", new Color(0.94f, 0.94f, 0.91f), 0f, 0.5f);
@@ -1179,6 +1506,12 @@ namespace Crowds.EditorTools
 			_tire = Mat("Level_Tire", new Color(0.05f, 0.05f, 0.05f), 0f, 0.15f);
 			_headlight = Mat("Level_Headlight", new Color(1f, 0.97f, 0.85f), 0f, 0.9f, new Color(2.2f, 2.1f, 1.7f));
 			_beacon = Mat("Level_Beacon", new Color(1f, 0.6f, 0.05f), 0f, 0.8f, new Color(2.4f, 1.3f, 0.1f));
+
+			_outerWall = Mat("Level_OuterWall", new Color(0.84f, 0.85f, 0.86f), 0f, 0.2f);
+			_outerWallTrim = Mat("Level_OuterWallTrim", new Color(0.66f, 0.67f, 0.69f), 0f, 0.25f);
+			_screenOff = Mat("Level_ScreenOff", new Color(0.02f, 0.025f, 0.03f), 0.1f, 0.92f);
+			_guitarBody = Mat("Level_GuitarBody", new Color(0.62f, 0.06f, 0.08f), 0.1f, 0.88f);
+			_guitarNeck = Mat("Level_GuitarNeck", new Color(0.55f, 0.36f, 0.2f), 0f, 0.5f);
 
 			// Goal net: 256×256 diamond mesh with alpha, cut-out, double-sided. Mat() only creates once → enforce.
 			ConfigureNetMaterial(_net, BuildNetTexture());

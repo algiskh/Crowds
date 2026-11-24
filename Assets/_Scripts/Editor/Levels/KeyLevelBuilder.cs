@@ -151,6 +151,8 @@ namespace Crowds.EditorTools
 			SetField(config, "_activeSectorRadius", 1);
 			SetField(config, "_spawnDistance", new Vector2(7f, 45f));
 			SetField(config, "_allowedMobWeaponDrops", new[] { "Rifle", "SMG" });
+			// The speed bonus drops from mobs only from campaign level 3 (ice arena: skates) on.
+			SetField(config, "_bannedMobBonusIds", new[] { "speedup" });
 			EditorUtility.SetDirty(config);
 			return config;
 		}
@@ -409,6 +411,10 @@ namespace Crowds.EditorTools
 
 		// ================================================================== props
 
+		/// <summary>
+		/// _Prefabs/Props/SewerHatch.prefab: rim + lid + grate, green stench fog, SewerHatch zone (light poison for the
+		/// player). Shared with SewerHatchBuilder (Infinite Scroll), which rebuilds it without touching the Key level.
+		/// </summary>
 		internal static GameObject BuildHatchPrefab()
 		{
 			string path = $"{PropFolder}/SewerHatch.prefab";
@@ -425,6 +431,14 @@ namespace Crowds.EditorTools
 						Quaternion.identity, new Vector3(0.05f, 0.02f, Mathf.Sqrt(1f - (i * 0.18f / 0.58f) * (i * 0.18f / 0.58f)) * 1.05f));
 				Primitive(PrimitiveType.Cube, "Cross", root.transform, _hatchRim, new Vector3(0, 0.08f, 0),
 					Quaternion.identity, new Vector3(1.05f, 0.02f, 0.06f));
+
+				// ModifierZone: light poison for the player standing on the lid (mobs immune — they crawl out of here).
+				var zone = root.AddComponent<SewerHatch>();
+				SetField(zone, "_radius", 0.75f);
+				SetField(zone, "_linger", 0.3f);
+				SetField(zone, "_affectsMobs", false);
+				SetField(zone, "_entryEffect", true);
+				SetField(zone, "_modifiers", new Modifier[] { SewerHatch.CreateDefaultStench() });
 
 				// Stench: the Toxic zombie's green fog (copied with its overrides from ToxicMob.prefab).
 				var toxic = AssetDatabase.LoadAssetAtPath<GameObject>(ToxicMobPrefabPath);
@@ -875,30 +889,34 @@ namespace Crowds.EditorTools
 				so.FindProperty("_particles").objectReferenceValue = sparks.GetComponent<ParticleSystem>();
 				so.ApplyModifiedPropertiesWithoutUndo();
 			});
-			if (prefab == null)
-				return;
+			if (prefab != null)
+				RegisterEffect(WallSparkId, prefab, 0.8f);
+		}
 
+		/// <summary>Adds or updates an FxHolder entry (pooled by EffectsSystem, prewarmed by PoolPrewarmer).</summary>
+		internal static void RegisterEffect(string id, GameObject prefab, float duration)
+		{
 			var holder = AssetDatabase.LoadAssetAtPath<EffectsHolder>(FxHolderPath);
 			if (holder == null)
 			{
-				Debug.LogWarning($"[KeyLevelBuilder] {FxHolderPath} not found — add '{WallSparkId}' by hand.");
+				Debug.LogWarning($"[KeyLevelBuilder] {FxHolderPath} not found — add '{id}' by hand.");
 				return;
 			}
 			var hso = new SerializedObject(holder);
 			var wrappers = hso.FindProperty("_fxWrappers");
 			SerializedProperty entry = null;
 			for (int i = 0; i < wrappers.arraySize; i++)
-				if (wrappers.GetArrayElementAtIndex(i).FindPropertyRelative("Id").stringValue == WallSparkId)
+				if (wrappers.GetArrayElementAtIndex(i).FindPropertyRelative("Id").stringValue == id)
 					entry = wrappers.GetArrayElementAtIndex(i);
 			if (entry == null)
 			{
 				wrappers.arraySize++;
 				entry = wrappers.GetArrayElementAtIndex(wrappers.arraySize - 1);
 			}
-			entry.FindPropertyRelative("Id").stringValue = WallSparkId;
+			entry.FindPropertyRelative("Id").stringValue = id;
 			entry.FindPropertyRelative("Prefab").objectReferenceValue = prefab.GetComponent<SceneEffect>();
 			entry.FindPropertyRelative("HasDuration").boolValue = true;
-			entry.FindPropertyRelative("Duration").floatValue = 0.8f;
+			entry.FindPropertyRelative("Duration").floatValue = duration;
 			entry.FindPropertyRelative("IsChild").boolValue = false;
 			hso.ApplyModifiedPropertiesWithoutUndo();
 			EditorUtility.SetDirty(holder);
@@ -1133,7 +1151,7 @@ namespace Crowds.EditorTools
 			var material = AssetDatabase.LoadAssetAtPath<Material>(path);
 			if (material != null)
 				return material;
-			material = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = name };
+			material = new Material(SeeThroughShader.FindLit()) { name = name };
 			material.SetColor("_BaseColor", color);
 			material.SetColor("_Color", color);
 			material.SetFloat("_Metallic", metallic);

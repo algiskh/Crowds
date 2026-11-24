@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
   _levelPrefab: {fileID: 1282729692082023753, guid: 7a81e1ba32b176444a66942338aabb40, type: 3}
   _displayName: "\u041B\u0435\u0434\u043E\u0432\u0430\u044F \u0430\u0440\u0435\u043D\u0430"
-  _icon: {fileID: 299109539, guid: 05e0567213a58c840a3ea79a4409bdfd, type: 3}
+  _icon: {fileID: 21300000, guid: 30906f08e108d3e42ac6debd77ea26b9, type: 3}

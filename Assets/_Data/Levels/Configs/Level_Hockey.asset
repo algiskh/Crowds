@@ -198,3 +198,20 @@ MonoBehaviour:
   _bannedMobAmmoCalibers: 04000000
   _bannedMobBonusIds:
   - shield
+  _bonusOverrides:
+  - BonusId: speedup
+    Preview: {fileID: 21300000, guid: 29239e16c7439434eabd264dde5ff495, type: 3}
+    ExtraModifiers:
+    - rid: 4574116098358640713
+  references:
+    version: 2
+    RefIds:
+    - rid: 4574116098358640713
+      type: {class: SkatesModifier, ns: , asm: Assembly-CSharp}
+      data:
+        Id: SkatesCounterGrip
+        Source: 6
+        Value: 4
+        Lifetime: 0
+        HasEffect: 0
+        EffectId: 
