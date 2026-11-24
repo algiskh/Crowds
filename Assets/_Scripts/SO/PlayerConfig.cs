@@ -20,6 +20,13 @@ public class PlayerConfig : ScriptableObject
 	public float MaxHealth => _basicMaxHealth;
 	public float HitInvulnerabilityTime => _hitInvulnerabilityTime;
 
+	[Header("Ice")]
+	[Tooltip("Player inertia on slippery ground (TractionModifier) relative to the zone's grip: 1.2 = 20% more " +
+	         "inertia (grip / 1.2) — speeds up, turns and stops more slowly than the mobs on the same ice.")]
+	[SerializeField, Min(0.1f)] private float _iceInertia = 1.2f;
+
+	public float IceInertia => _iceInertia;
+
 	// Per-grenade stats (speed, damage, radius, effects) live in GrenadeConfig.
 	// Here only player-level throw mechanics: starting count, distance range, charge time.
 	[Header("Grenade - inventory")]
@@ -45,6 +52,47 @@ public class PlayerConfig : ScriptableObject
 	[SerializeField] private DamageFeedbackSettings _damageFeedback = new();
 
 	public DamageFeedbackSettings DamageFeedback => _damageFeedback;
+
+	[Header("See-through (round hole in occluders between the camera and the player)")]
+	[SerializeField] private SeeThroughSettings _seeThrough = new();
+
+	public SeeThroughSettings SeeThrough => _seeThrough;
+}
+
+/// <summary>
+/// Soft round "window" in the world geometry that covers the player (Crowds/Lit See-Through shader, driven by
+/// ECS.SeeThroughSystem): only what is closer to the camera than the player AND above the player's feet is cut,
+/// so the floor stays intact. Materials on the Lit See-Through shader only (environment, not characters).
+/// </summary>
+[System.Serializable]
+public class SeeThroughSettings
+{
+	[Tooltip("Turn the effect off entirely (the shader then behaves as plain Lit).")]
+	public bool Enabled = true;
+
+	[Tooltip("Hole radius as a share of the screen height.")]
+	[Range(0.02f, 0.5f)] public float Radius = 0.11f;
+
+	[Tooltip("Soft dithered rim as a share of the radius (0 = hard edge, 1 = fades from the centre).")]
+	[Range(0.01f, 1f)] public float EdgeSoftness = 0.45f;
+
+	[Tooltip("Point the hole is centred on, above the player's pivot (chest height).")]
+	public float FocusHeight = 1.0f;
+
+	[Tooltip("Geometry must be at least this much closer to the camera than the player to be cut (world units).")]
+	[Min(0f)] public float DepthMargin = 0.4f;
+
+	[Tooltip("Depth range over which the cut fades in after the margin (world units).")]
+	[Min(0.01f)] public float DepthFade = 0.8f;
+
+	[Tooltip("Cut only above the player's feet + this offset, so the floor in front of the player survives.")]
+	public float HeightOffset = 0.2f;
+
+	[Tooltip("Height range over which the cut fades in above the offset (world units).")]
+	[Min(0.01f)] public float HeightFade = 0.35f;
+
+	[Tooltip("How fast the hole opens/closes when it is toggled (strength per second).")]
+	[Min(0.1f)] public float FadeSpeed = 4f;
 }
 
 /// <summary>
