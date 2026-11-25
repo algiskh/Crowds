@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using Leopotam.EcsLite;
+using Leopotam.EcsLite.Di;
 using Sirenix.OdinInspector;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,6 +56,8 @@ namespace ECS
 		// ECS
 		private EcsWorld _world;
 		private EcsSystems _systems;
+		// Services injected into systems via ecslite-di (RegisterSystems → Inject). Docs/tasks/T-001.md.
+		private EffectPool _effectPool;
 
 		// Level (resolved in LoadLevel)
 		private LevelRoot _levelRoot;
@@ -282,10 +285,9 @@ namespace ECS
 			ref var decalsHolder = ref _world.CreateSimpleEntity<DecalsHolderComponent>();
 			decalsHolder.Value = _mainHolder.DecalsConfigHolder;
 
-			ref var effectPool = ref _world.CreateSimpleEntity<EffectPoolComponent>();
-			effectPool.Value = new();
-			effectPool.Pools = new Dictionary<string, Stack<SceneEffect>>();
-			effectPool.Parent = _effectParent;
+			_effectPool = new EffectPool(_effectParent);
+			// Bridge for systems not migrated to DI yet (same instance).
+			_world.CreateSimpleEntity<EffectPoolComponent>().Value = _effectPool;
 
 			ref var mobPoolComponent = ref _world.CreateSimpleEntity<MobPoolComponent>();
 			mobPoolComponent.Value = new();
@@ -675,6 +677,13 @@ namespace ECS
 				.Add(new WorldFreezeSystem())
 				.Add(new CameraShakeSystem(apply: true)) // last: the frame renders shaken
 				.Add(new SeeThroughSystem()) // after the final camera position: hole in occluders around the player
+				// Fills EcsWorld/Pool/Filter/Custom inject fields of every system added above. Custom injects
+				// match by type (first instance wins): pass narrow services/configs, not MainHolder.
+				.Inject(
+					_effectPool,
+					_mainHolder.EffectsHolder,
+					_mainHolder.SoundHolder,
+					_mainHolder.PlayerConfig)
 				.Init();
 			#endregion
 		}

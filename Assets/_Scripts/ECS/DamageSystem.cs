@@ -1,4 +1,5 @@
 ﻿using Leopotam.EcsLite;
+using Leopotam.EcsLite.Di;
 using System.Collections.Generic;
 using UnityEngine;
 namespace ECS
@@ -8,13 +9,17 @@ namespace ECS
 		// Seconds left of the player's post-hit invulnerability (PlayerConfig.HitInvulnerabilityTime).
 		private float _playerInvulnerability;
 
+		// Injected by ecslite-di in EntryPoint.RegisterSystems (Docs/tasks/T-001.md). May stay null
+		// if MainHolder has no PlayerConfig — handled below.
+		private readonly EcsCustomInject<PlayerConfig> _playerConfig = default;
+
 		public void Run(IEcsSystems systems)
 		{
 			var world = systems.GetWorld();
 
 			if (_playerInvulnerability > 0f)
 				_playerInvulnerability -= Time.deltaTime;
-			var playerConfig = world.GetAsSingleton<MainHolderComponent>().Value.PlayerConfig;
+			var playerConfig = _playerConfig.Value;
 			float hitInvulnerabilityTime = playerConfig != null ? playerConfig.HitInvulnerabilityTime : 0f;
 
 			ref var fragCount = ref world.GetAsSingleton<FragCountComponent>();

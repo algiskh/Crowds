@@ -64,11 +64,11 @@ public struct BulletPoolComponent
 	public Transform Parent;
 }
 
+// Transitional bridge to the injected ECS.EffectPool service for systems not migrated to DI yet
+// (Docs/tasks/T-001.md). Remove once nothing reads it via GetAsSingleton.
 public struct EffectPoolComponent
 {
-	public List<SceneEffect> Value;
-	public Dictionary<string, Stack<SceneEffect>> Pools;
-	public Transform Parent;
+	public ECS.EffectPool Value;
 }
 #endregion
 

@@ -69,40 +69,15 @@ public static class Utils
 		return false;
 	}
 
-	public static void Pool(this EffectPoolComponent pool, SceneEffect effect)
-	{
-		effect.Hide();
-		effect.SetParent(pool.Parent.transform);
-		if (pool.Pools == null) return;
-		if (!pool.Pools.TryGetValue(effect.Id, out var stack))
-		{
-			stack = new System.Collections.Generic.Stack<SceneEffect>();
-			pool.Pools[effect.Id] = stack;
-		}
-		stack.Push(effect);
-	}
+	// Transitional: delegate to the ECS.EffectPool service behind the bridge singleton (Docs/tasks/T-001.md).
+	// Migrated systems inject EffectPool and call Release/Spawn directly.
+	public static void Pool(this EffectPoolComponent pool, SceneEffect effect) => pool.Value.Release(effect);
 
 	/// <summary>
-	/// Pops an effect from the pool by config (or instantiates a new one). A mirror of the private
-	/// SpawnEffect in EffectsSystem — for systems that need direct control over the effect's
-	/// lifetime (e.g. the grenade's escorting trail).
+	/// Pops an effect from the pool by config (or instantiates a new one) — for systems that need direct
+	/// control over the effect's lifetime (e.g. the grenade's escorting trail).
 	/// </summary>
-	public static SceneEffect SpawnFromPool(this EffectPoolComponent pool, FxWrapper config)
-	{
-		if (config == null || config.Prefab == null) return null;
-
-		SceneEffect effect;
-		if (pool.Pools != null && pool.Pools.TryGetValue(config.Id, out var stack) && stack.Count > 0)
-		{
-			effect = stack.Pop();
-		}
-		else
-		{
-			effect = UnityEngine.Object.Instantiate(config.Prefab, pool.Parent);
-			effect.Initialize(config.Id);
-		}
-		return effect;
-	}
+	public static SceneEffect SpawnFromPool(this EffectPoolComponent pool, FxWrapper config) => pool.Value.Spawn(config);
 
 	public static Vector3 GetForwardPosition(this Transform original, float range)
 	{

@@ -1,22 +1,29 @@
 ﻿using Leopotam.EcsLite;
-using System.Collections.Generic;
+using Leopotam.EcsLite.Di;
 using UnityEngine;
 
 namespace ECS
 {
 	public class EffectsSystem : IEcsRunSystem
 	{
+		// Injected by ecslite-di in EntryPoint.RegisterSystems (Docs/tasks/T-001.md).
+		private readonly EcsWorldInject _world = default;
+		private readonly EcsFilterInject<Inc<EffectComponent>> _effects = default;
+		private readonly EcsFilterInject<Inc<RequestEffectComponent>> _requests = default;
+		private readonly EcsPoolInject<ModifierOwnerComponent> _modifierOwners = default;
+		private readonly EcsCustomInject<EffectsHolder> _effectsHolder = default;
+		private readonly EcsCustomInject<EffectPool> _effectPool = default;
+
 		public void Run(IEcsSystems systems)
 		{
-			var world = systems.GetWorld();
-			var effectsHolder = world.GetAsSingleton<EffectsHolderComponent>();
-			ref var effectMainPool = ref world.GetAsSingleton<EffectPoolComponent>();
-			var effectPool = world.GetPool<EffectComponent>();
-			var requetEffectsPool = world.GetPool<RequestEffectComponent>();
-			var modifiersPool = world.GetPool<ModifierOwnerComponent>();
-			var moveComponentPool = world.GetPool<MoveComponent>();
+			var world = _world.Value;
+			var effectsHolder = _effectsHolder.Value;
+			var effectMainPool = _effectPool.Value;
+			var effectPool = _effects.Pools.Inc1;
+			var requetEffectsPool = _requests.Pools.Inc1;
+			var modifiersPool = _modifierOwners.Value;
 
-			var filter = world.Filter<EffectComponent>().End();
+			var filter = _effects.Value;
 
 			#region IteratingEffects
 			foreach (var entity in filter)
@@ -61,14 +68,14 @@ namespace ECS
 
 				if (fx.LifeTime <= 0 && !fx.HasModifierLink)
 				{
-					effectMainPool.Pool(fx.Effect);
+					effectMainPool.Release(fx.Effect);
 					world.DelEntity(entity);
 				}
 			}
 			#endregion
 
 			#region CreatingEffects
-			var requestFilter = world.Filter<RequestEffectComponent>().End();
+			var requestFilter = _requests.Value;
 			foreach (var entity in requestFilter)
 			{
 				ref var request = ref requetEffectsPool.Get(entity);
@@ -80,7 +87,7 @@ namespace ECS
 					continue;
 				}
 
-				var wrapper = effectsHolder.Value.GetEffect(request.EffectId);
+				var wrapper = effectsHolder.GetEffect(request.EffectId);
 
 				if (wrapper == null)
 				{
@@ -123,21 +130,13 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Takes an effect by id from the pool stack or instantiates a new one.
+		/// Takes an effect by id from the pool (or instantiates a new one) and turns it to the requested yaw.
 		/// </summary>
-		private SceneEffect SpawnEffect(EffectPoolComponent pool, FxWrapper config, float rotation)
+		private static SceneEffect SpawnEffect(EffectPool pool, FxWrapper config, float rotation)
 		{
-			SceneEffect effect;
-			if (pool.Pools != null && pool.Pools.TryGetValue(config.Id, out var stack) && stack.Count > 0)
-			{
-				effect = stack.Pop();
-			}
-			else
-			{
-				effect = Object.Instantiate(config.Prefab, pool.Parent);
-				effect.Initialize(config.Id);
-			}
-			effect.transform.eulerAngles = new Vector3(0, rotation, 0);
+			var effect = pool.Spawn(config);
+			if (effect != null)
+				effect.transform.eulerAngles = new Vector3(0, rotation, 0);
 			return effect;
 		}
 	}

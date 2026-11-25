@@ -1,13 +1,18 @@
 ﻿using Leopotam.EcsLite;
+using Leopotam.EcsLite.Di;
 using UnityEngine;
 
 namespace ECS
 {
 	public class WeaponReloadSystem : IEcsRunSystem
 	{
+		// Injected by ecslite-di in EntryPoint.RegisterSystems (Docs/tasks/T-001.md).
+		private readonly EcsWorldInject _world = default;
+		private readonly EcsCustomInject<SoundHolder> _sounds = default;
+
 		public void Run(IEcsSystems systems)
 		{
-			var world = systems.GetWorld();
+			var world = _world.Value;
 
 			#region Check pause  
 			ref var pauseState = ref world.GetAsSingleton<PauseStateComponent>();
@@ -18,10 +23,10 @@ namespace ECS
 			#endregion
 
 			#region GettingPoolsAndSingletons
+			// Weapon/reload state stays in the world (game state, not a service) — T-001 step 6.
 			ref var weapon = ref world.GetAsSingleton<WeaponComponent>();
-			ref var bulletPoolPool = ref world.GetAsSingleton<BulletPoolComponent>();
 			ref var reloading = ref world.GetAsSingleton<ReloadingComponent>();
-			var soundHolder = world.GetAsSingleton<SoundHolderComponent>();
+			var soundHolder = _sounds.Value;
 			#endregion
 
 			var capacity = weapon.GunConfig.MagazineCapacity;
@@ -78,10 +83,10 @@ namespace ECS
 					return;
 				}
 
-				var sound = soundHolder.Value.GetClip(weapon.GunConfig.ReloadSoundId);
+				var sound = soundHolder.GetClip(weapon.GunConfig.ReloadSoundId);
 				if (sound == null)
 				{
-					sound = soundHolder.Value.GetClip("Reload");
+					sound = soundHolder.GetClip("Reload");
 				}
 				weapon.Weapon.AudioSource.PlayOneShot(sound);
 				reloading.ReloadTime = weapon.GunConfig.ReloadTime;
@@ -89,7 +94,7 @@ namespace ECS
 			}
 		}
 
-		private void ReloadSingleAmmo(EcsWorld world, ref WeaponComponent weapon, ref ReloadingComponent reloading, int capacity, bool hasFireRequest, SoundHolderComponent soundHolder)
+		private void ReloadSingleAmmo(EcsWorld world, ref WeaponComponent weapon, ref ReloadingComponent reloading, int capacity, bool hasFireRequest, SoundHolder soundHolder)
 		{
 			var inventory = world.GetAsSingleton<AmmoInventoryComponent>();
 			var caliber = weapon.GunConfig.Caliber;
@@ -129,10 +134,10 @@ namespace ECS
 			world.DeleteAllWith<RequestReloadComponent>();
 		}
 
-		private void StartShuttering(EcsWorld world, ref WeaponComponent weapon, ref ReloadingComponent reloading, SoundHolderComponent soundHolder)
+		private void StartShuttering(EcsWorld world, ref WeaponComponent weapon, ref ReloadingComponent reloading, SoundHolder soundHolder)
 		{
 			Debug.Log($"Start shuttering weapon {weapon.GunConfig.Id}");
-			var sound = soundHolder.Value.GetClip(weapon.GunConfig.ReloadEndSoundId);
+			var sound = soundHolder.GetClip(weapon.GunConfig.ReloadEndSoundId);
 			if (sound != null)
 			{
 				weapon.Weapon.AudioSource.PlayOneShot(sound);

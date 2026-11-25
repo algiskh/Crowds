@@ -63,7 +63,6 @@ namespace ECS
 
 			// --- Effects ---
 			ref var fxPool = ref world.GetAsSingleton<EffectPoolComponent>();
-			fxPool.Pools ??= new Dictionary<string, Stack<SceneEffect>>();
 			if (holder.EffectsHolder != null && holder.EffectPrewarmPerId > 0)
 			{
 				foreach (var fx in holder.EffectsHolder.GetAll())
@@ -72,7 +71,7 @@ namespace ECS
 						continue;
 					for (int i = 0; i < holder.EffectPrewarmPerId; i++)
 					{
-						var effect = Object.Instantiate(fx.Prefab, fxPool.Parent);
+						var effect = Object.Instantiate(fx.Prefab, fxPool.Value.Parent);
 						effect.Initialize(fx.Id);
 						effect.transform.position = NextPosition();
 						if (i == 0)

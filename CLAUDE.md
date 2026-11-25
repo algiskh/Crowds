@@ -58,6 +58,7 @@ Top-down Unity shooter with an ECS architecture. "Crowds" of mobs attack the pla
 - Comments and `[Title(...)]` headers are written in English.
 - Commit `.meta` files — don't delete or create files behind Unity's back.
 - New systems: add an `IEcsRun/Init/DestroySystem` class → register it in `EntryPoint.RegisterSystems()` in the correct order.
+- Services/configs (holders, pools, managers, UI views) go into systems via **ecslite-di** (`EcsCustomInject<T>`, passed to `.Inject(...)` in `RegisterSystems()`), not as new singleton entities; game state and requests stay in the world. Migration of the old singletons: `Docs/tasks/T-001.md`.
 - New components: add a `struct` to `Components.cs`.
 
 ## Commands
